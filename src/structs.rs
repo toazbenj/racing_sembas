@@ -1,8 +1,15 @@
 use nalgebra::{Const, OMatrix, SVector};
 
+// pub type PointNode<const N: usize> = (SVector<f64, N>, bool);
+
+pub struct PointNode<const N: usize> {
+    pub p: SVector<f64, N>,
+    pub class: bool,
+}
+
 pub struct Halfspace<const N: usize> {
-    b: SVector<f64, N>,
-    n: SVector<f64, N>,
+    pub b: SVector<f64, N>,
+    pub n: SVector<f64, N>,
 }
 
 pub struct Span<const N: usize> {
@@ -17,7 +24,7 @@ pub struct Domain<const N: usize> {
 
 impl<const N: usize> Span<N> {
     // Provides a span, composed of two vectors which will be orthonormalized.
-    fn new(u: SVector<f64, N>, v: SVector<f64, N>) -> Self {
+    pub fn new(u: SVector<f64, N>, v: SVector<f64, N>) -> Self {
         let u = u.normalize();
         let v = v.normalize();
         let v = (v - u * u.dot(&v)).normalize();
@@ -26,7 +33,7 @@ impl<const N: usize> Span<N> {
 
     // Provides a rotater function rot(angle: f64) which returns a rotation matrix
     // that rotates by angle radians along the @&self span.
-    fn get_rotater(&self) -> impl Fn(f64) -> OMatrix<f64, Const<N>, Const<N>> {
+    pub fn get_rotater(&self) -> impl Fn(f64) -> OMatrix<f64, Const<N>, Const<N>> {
         let identity = OMatrix::<f64, Const<N>, Const<N>>::identity();
 
         let a = self.v * self.v.transpose() - self.u * self.v.transpose();
@@ -42,16 +49,44 @@ impl<const N: usize> Domain<N> {
     //     let high = SVector::<f64, N>::repeat(1.0);
     //     return Domain { low, high };
     // }
+    pub fn contains(&self, p: SVector<f64, N>) -> bool {
+        let below_low = SVector::<bool, N>::from_fn(|i, _| p[i] < self.low[i]);
+        if below_low.iter().any(|&x| x) {
+            return false;
+        }
 
-    fn dimensions(&self) -> SVector<f64, N> {
+        let above_high = SVector::<bool, N>::from_fn(|i, _| p[i] > self.high[i]);
+        if above_high.iter().any(|&x| x) {
+            return false;
+        }
+
+        return true;
+    }
+
+    pub fn dimensions(&self) -> SVector<f64, N> {
         return self.high - self.low;
     }
 
-    fn translate_point_domains(
+    pub fn translate_point_domains(
         p: SVector<f64, N>,
         from: Domain<N>,
         to: Domain<N>,
     ) -> SVector<f64, N> {
         ((p - from.low).component_div(&from.dimensions())).component_mul(&to.dimensions()) + to.low
     }
+}
+
+impl<const N: usize> Clone for Halfspace<N> {
+    fn clone(&self) -> Self {
+        Self {
+            b: self.b.clone(),
+            n: self.n.clone(),
+        }
+    }
+}
+
+impl<const N: usize> Copy for Halfspace<N> {}
+
+pub trait Classifier<const N: usize> {
+    fn classify(p: SVector<f64, N>) -> bool;
 }

@@ -1,22 +1,25 @@
 // The core components of an adherer
 
-use nalgebra::{OMatrix, SVector};
+use nalgebra::SVector;
 
-use crate::structs::Halfspace;
+use crate::structs::{Halfspace, PointNode};
 
-pub enum AdhererErrors {
-    BoundaryLostError(String),
-    OutOfBoundsError(String),
+pub enum AdhererError<const N: usize> {
+    BoundaryLostError(SVector<f64, N>, String),
+    OutOfBoundsError(SVector<f64, N>, String),
 }
 
-type PointNode<const N: usize> = (SVector<f64, N>, bool);
+#[derive(Clone, Copy)]
+pub enum AdhererState<const N: usize> {
+    Searching,
+    FoundBoundary(Halfspace<N>),
+}
 
 pub trait Adherer<const N: usize> {
-    fn sample_next(&mut self) -> Result<PointNode<N>, AdhererErrors>;
-    fn has_next(&self) -> bool;
-    fn get_result(&self) -> Option<Halfspace<N>>;
+    fn sample_next(&mut self) -> Result<PointNode<N>, AdhererError<N>>;
+    fn get_state(&self) -> AdhererState<N>;
 }
 
 pub trait AdhererFactory<const N: usize> {
-    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>);
+    fn adhere_from(&self, hs: &Halfspace<N>, v: &SVector<f64, N>) -> Box<dyn Adherer<N>>;
 }
