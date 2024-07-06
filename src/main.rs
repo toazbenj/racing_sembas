@@ -1,11 +1,10 @@
 use std::{f64::consts::PI, fmt::format, thread::sleep, time::Duration};
 
-use adherer_core::{Adherer, AdhererError, AdhererState};
+use adherer_core::{Adherer, AdhererState, SamplingError};
 use adherers::const_adherer::{ConstantAdherer, ConstantAdhererFactory};
 use explorer_core::Explorer;
 use explorers::mesh_explorer::MeshExplorer;
 use nalgebra::{coordinates::X, vector, SVector};
-use petgraph::Graph;
 use plotters::prelude::*;
 // use plotters::{
 //     backend::BitMapBackend,
@@ -23,6 +22,8 @@ mod adherers;
 mod explorer_core;
 mod explorers;
 mod extensions;
+mod pipeline;
+mod search;
 mod structs;
 mod utils;
 
@@ -32,9 +33,9 @@ const DOMAIN: Domain<3> = Domain {
     low: vector![-2.0, -2.0, -2.0],
     high: vector![2.0, 2.0, 2.0],
 };
-fn classify(p: SVector<f64, 3>) -> Result<bool, AdhererError<3>> {
+fn classify(p: SVector<f64, 3>) -> Result<bool, SamplingError<3>> {
     if !DOMAIN.contains(p) {
-        return Err(AdhererError::OutOfBoundsError(
+        return Err(SamplingError::OutOfBoundsError(
             p,
             "Out of bounds.".to_string(),
         ));
