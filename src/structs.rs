@@ -1,4 +1,8 @@
+use core::fmt;
+
 use nalgebra::{Const, OMatrix, SVector};
+
+use crate::utils::vector_to_string;
 
 // pub type PointNode<const N: usize> = (SVector<f64, N>, bool);
 
@@ -7,6 +11,7 @@ pub struct PointNode<const N: usize> {
     pub class: bool,
 }
 
+#[derive(Clone, Copy)]
 pub struct Halfspace<const N: usize> {
     pub b: SVector<f64, N>,
     pub n: SVector<f64, N>,
@@ -18,8 +23,8 @@ pub struct Span<const N: usize> {
 }
 
 pub struct Domain<const N: usize> {
-    low: SVector<f64, N>,
-    high: SVector<f64, N>,
+    pub low: SVector<f64, N>,
+    pub high: SVector<f64, N>,
 }
 
 impl<const N: usize> Span<N> {
@@ -31,13 +36,20 @@ impl<const N: usize> Span<N> {
         return Span { u, v };
     }
 
+    pub fn get_u(&self) -> SVector<f64, N> {
+        return self.u;
+    }
+    pub fn get_v(&self) -> SVector<f64, N> {
+        return self.v;
+    }
+
     // Provides a rotater function rot(angle: f64) which returns a rotation matrix
     // that rotates by angle radians along the @&self span.
     pub fn get_rotater(&self) -> impl Fn(f64) -> OMatrix<f64, Const<N>, Const<N>> {
         let identity = OMatrix::<f64, Const<N>, Const<N>>::identity();
 
-        let a = self.v * self.v.transpose() - self.u * self.v.transpose();
-        let b = self.u * self.u.transpose() - self.v * self.v.transpose();
+        let a = self.u * self.v.transpose() - self.v * self.u.transpose();
+        let b = self.v * self.v.transpose() + self.u * self.u.transpose();
 
         move |angle: f64| identity + a * angle.sin() + b * (angle.cos() - 1.0)
     }
@@ -76,17 +88,28 @@ impl<const N: usize> Domain<N> {
     }
 }
 
-impl<const N: usize> Clone for Halfspace<N> {
-    fn clone(&self) -> Self {
-        Self {
-            b: self.b.clone(),
-            n: self.n.clone(),
-        }
+pub trait Classifier<const N: usize> {
+    fn classify(p: SVector<f64, N>) -> bool;
+}
+
+impl<const N: usize> fmt::Display for PointNode<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "PointNode(p: {}, class: {})",
+            vector_to_string(&self.p),
+            self.class
+        )
     }
 }
 
-impl<const N: usize> Copy for Halfspace<N> {}
-
-pub trait Classifier<const N: usize> {
-    fn classify(p: SVector<f64, N>) -> bool;
+impl<const N: usize> fmt::Display for Span<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Span({}, {})",
+            vector_to_string(&self.u),
+            vector_to_string(&self.v)
+        )
+    }
 }

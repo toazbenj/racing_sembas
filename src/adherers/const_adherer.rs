@@ -1,17 +1,17 @@
 use crate::{
-    adherer_core::{Adherer, AdhererError, AdhererState},
+    adherer_core::{Adherer, AdhererError, AdhererFactory, AdhererState},
     structs::{Classifier, Domain, Halfspace, PointNode, Span},
+    utils::vector_to_string,
 };
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;
 
-struct ConstantAdherer<const N: usize> {
+pub struct ConstantAdherer<const N: usize> {
     span: Span<N>,
     pivot: Halfspace<N>,
     v: SVector<f64, N>,
     samples: Vec<PointNode<N>>,
     rot: Option<OMatrix<f64, Const<N>, Const<N>>>,
-    domain: Domain<N>,
     angle: f64,
     delta_angle: f64,
     max_rotation: f64,
@@ -19,19 +19,22 @@ struct ConstantAdherer<const N: usize> {
     classify: fn(SVector<f64, N>) -> Result<bool, AdhererError<N>>,
 }
 
+pub struct ConstantAdhererFactory<const N: usize> {
+    d: f64,
+    delta_angle: f64,
+    max_rotation: Option<f64>,
+    classifier: fn(SVector<f64, N>) -> Result<bool, AdhererError<N>>,
+}
+
 impl<const N: usize> ConstantAdherer<N> {
-    fn new(
+    pub fn new(
         pivot: Halfspace<N>,
         v: SVector<f64, N>,
         delta_angle: f64,
         max_rotation: Option<f64>,
-        domain: Domain<N>,
         classifier: fn(SVector<f64, N>) -> Result<bool, AdhererError<N>>,
     ) -> Self {
         let span = Span::new(pivot.n, v);
-        let rotater = span.get_rotater();
-        let rot = rotater(delta_angle);
-        let v = rotater(-PI / 2.0) * pivot.n;
 
         let max_rotation = max_rotation.unwrap_or(PI);
 
@@ -39,7 +42,6 @@ impl<const N: usize> ConstantAdherer<N> {
             span,
             pivot,
             v,
-            domain,
             delta_angle,
             max_rotation,
             rot: None,
@@ -114,5 +116,33 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
         self.samples.push(PointNode { p: cur, class: cls });
 
         return Ok(PointNode { p: cur, class: cls });
+    }
+}
+
+impl<const N: usize> ConstantAdhererFactory<N> {
+    pub fn new(
+        d: f64,
+        delta_angle: f64,
+        max_rotation: Option<f64>,
+        classifier: fn(SVector<f64, N>) -> Result<bool, AdhererError<N>>,
+    ) -> Self {
+        return ConstantAdhererFactory {
+            d,
+            delta_angle,
+            max_rotation,
+            classifier,
+        };
+    }
+}
+
+impl<const N: usize> AdhererFactory<N> for ConstantAdhererFactory<N> {
+    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Box<dyn Adherer<N>> {
+        return Box::new(ConstantAdherer::new(
+            hs,
+            v,
+            self.delta_angle,
+            self.max_rotation,
+            self.classifier,
+        ));
     }
 }

@@ -1,4 +1,5 @@
 use nalgebra::SVector;
+use std::fmt::Write;
 
 pub fn svector_to_array<const N: usize>(v: SVector<f64, N>) -> [f64; N] {
     // let mut arr = [0.0; N];
@@ -31,4 +32,19 @@ pub fn array_distance<const N: usize>(a1: &[f64; N], a2: &[f64; N]) -> f64 {
     };
 
     return (v2 - v1).norm();
+}
+
+pub fn vector_to_string<const N: usize>(v: &SVector<f64, N>) -> String {
+    let mut result = String::new();
+    write!(result, "[").unwrap();
+
+    for i in 0..N {
+        if i > 0 {
+            write!(result, ", ").unwrap();
+        }
+        write!(result, "{}", v[i]).unwrap();
+    }
+
+    write!(result, "]").unwrap();
+    result
 }

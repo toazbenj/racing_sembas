@@ -1,1 +1,1 @@
-mod mesh_explorer;
+pub mod mesh_explorer;
