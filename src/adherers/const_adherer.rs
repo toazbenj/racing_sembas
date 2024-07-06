@@ -1,5 +1,5 @@
 use crate::{
-    adherer_core::{Adherer, AdhererError, AdhererFactory, AdhererState},
+    adherer_core::{Adherer, SamplingError, AdhererFactory, AdhererState},
     structs::{Classifier, Domain, Halfspace, PointNode, Span},
     utils::vector_to_string,
 };
@@ -16,14 +16,14 @@ pub struct ConstantAdherer<const N: usize> {
     delta_angle: f64,
     max_rotation: f64,
     pub state: AdhererState<N>,
-    classify: fn(SVector<f64, N>) -> Result<bool, AdhererError<N>>,
+    classify: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
 }
 
 pub struct ConstantAdhererFactory<const N: usize> {
     d: f64,
     delta_angle: f64,
     max_rotation: Option<f64>,
-    classifier: fn(SVector<f64, N>) -> Result<bool, AdhererError<N>>,
+    classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
 }
 
 impl<const N: usize> ConstantAdherer<N> {
@@ -32,7 +32,7 @@ impl<const N: usize> ConstantAdherer<N> {
         v: SVector<f64, N>,
         delta_angle: f64,
         max_rotation: Option<f64>,
-        classifier: fn(SVector<f64, N>) -> Result<bool, AdhererError<N>>,
+        classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
     ) -> Self {
         let span = Span::new(pivot.n, v);
 
@@ -52,7 +52,7 @@ impl<const N: usize> ConstantAdherer<N> {
         };
     }
 
-    fn take_initial_sample(&mut self) -> Result<PointNode<N>, AdhererError<N>> {
+    fn take_initial_sample(&mut self) -> Result<PointNode<N>, SamplingError<N>> {
         let cur = self.pivot.b + self.v;
         let cls = (self.classify)(cur)?;
         let delta_angle = if cls {
@@ -67,7 +67,7 @@ impl<const N: usize> ConstantAdherer<N> {
     fn take_sample(
         &mut self,
         rot: OMatrix<f64, Const<N>, Const<N>>,
-    ) -> Result<PointNode<N>, AdhererError<N>> {
+    ) -> Result<PointNode<N>, SamplingError<N>> {
         self.v = rot * self.v;
         let cur = self.pivot.b + self.v;
         let cls = (self.classify)(cur)?;
@@ -83,7 +83,7 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
         return self.state;
     }
 
-    fn sample_next(&mut self) -> Result<PointNode<N>, AdhererError<N>> {
+    fn sample_next(&mut self) -> Result<PointNode<N>, SamplingError<N>> {
         let cur;
         let cls;
         if let Some(rot) = self.rot {
@@ -107,7 +107,7 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
         }
 
         if matches!(self.state, AdhererState::Searching {}) && self.angle > self.max_rotation {
-            return Err(AdhererError::BoundaryLostError(
+            return Err(SamplingError::BoundaryLostError(
                 cur,
                 "Max rotation exceeded".to_string(),
             ));
@@ -124,7 +124,7 @@ impl<const N: usize> ConstantAdhererFactory<N> {
         d: f64,
         delta_angle: f64,
         max_rotation: Option<f64>,
-        classifier: fn(SVector<f64, N>) -> Result<bool, AdhererError<N>>,
+        classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
     ) -> Self {
         return ConstantAdhererFactory {
             d,

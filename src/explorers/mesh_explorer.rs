@@ -1,5 +1,5 @@
 use crate::{
-    adherer_core::{Adherer, AdhererError, AdhererFactory, AdhererState},
+    adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
     explorer_core::Explorer,
     extensions::Queue,
     structs::{Halfspace, PointNode, Span},
@@ -138,7 +138,7 @@ impl<const N: usize> MeshExplorer<N> {
 }
 
 impl<const N: usize> Explorer<N> for MeshExplorer<N> {
-    fn step(&mut self) -> Result<Option<PointNode<N>>, AdhererError<N>> {
+    fn step(&mut self) -> Result<Option<PointNode<N>>, SamplingError<N>> {
         let mut adherer = self.adherer.take().or_else(|| {
             if let Some((hs, id, v)) = self.select_parent() {
                 // begin new adherence
