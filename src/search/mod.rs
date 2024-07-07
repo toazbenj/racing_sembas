@@ -1,2 +1,2 @@
-mod global;
-mod surfacing;
+pub mod global;
+pub mod surfacing;
