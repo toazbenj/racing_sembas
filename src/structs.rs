@@ -23,8 +23,8 @@ pub struct Span<const N: usize> {
 }
 
 pub struct Domain<const N: usize> {
-    pub low: SVector<f64, N>,
-    pub high: SVector<f64, N>,
+    low: SVector<f64, N>,
+    high: SVector<f64, N>,
 }
 
 impl<const N: usize> Span<N> {
@@ -56,11 +56,28 @@ impl<const N: usize> Span<N> {
 }
 
 impl<const N: usize> Domain<N> {
-    // fn normalized() -> Self {
-    //     let low = SVector::<f64, N>::zeros();
-    //     let high = SVector::<f64, N>::repeat(1.0);
-    //     return Domain { low, high };
-    // }
+    /// Returns a domain bounded by the two points.
+    pub fn new(p1: SVector<f64, N>, p2: SVector<f64, N>) -> Self {
+        let low = p1.zip_map(&p2, |a, b| a.min(b));
+        let high = p1.zip_map(&p2, |a, b| a.max(b));
+
+        return Domain { low, high };
+    }
+
+    fn normalized() -> Self {
+        let low = SVector::<f64, N>::zeros();
+        let high = SVector::<f64, N>::repeat(1.0);
+        return Domain { low, high };
+    }
+
+    pub fn low(&self) -> SVector<f64, N> {
+        self.low
+    }
+
+    pub fn high(&self) -> SVector<f64, N> {
+        self.high
+    }
+
     pub fn contains(&self, p: SVector<f64, N>) -> bool {
         let below_low = SVector::<bool, N>::from_fn(|i, _| p[i] < self.low[i]);
         if below_low.iter().any(|&x| x) {
