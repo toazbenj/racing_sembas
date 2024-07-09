@@ -42,5 +42,5 @@ fn binary_surface_search<const N: usize>(
 
     let n = s.normalize();
 
-    return Ok(Halfspace { b: p_t, n });
+    Ok(Halfspace { b: p_t, n })
 }

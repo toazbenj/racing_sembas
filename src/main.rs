@@ -39,7 +39,7 @@ fn classify(p: SVector<f64, 3>) -> Result<bool, SamplingError<3>> {
             "Out of bounds.".to_string(),
         ));
     }
-    return Ok((CENTER - p).norm() <= RADIUS);
+    Ok((CENTER - p).norm() <= RADIUS)
 }
 
 fn main() {
@@ -64,7 +64,7 @@ fn test_visual() {
 
     // let mut adh = ConstantAdherer::new(d, pivot, v, delta_angle, None, DOMAIN, classify);
 
-    let adhf = ConstantAdhererFactory::new(d, delta_angle, Some(PI), classify);
+    let adhf = ConstantAdhererFactory::new(delta_angle, Some(PI), classify);
 
     let mut exp = MeshExplorer::new(d, pivot, d * 0.9, Box::new(adhf));
 
@@ -103,12 +103,10 @@ fn test_visual() {
 
         chart
             .draw_series(PointSeries::of_element(
-                convert_boundary_to_vec(exp.get_boundary()),
+                convert_boundary_to_vec(exp.boundary()),
                 5,
                 &RED,
-                &|c, s, st| {
-                    return EmptyElement::at(c) + Circle::new((0, 0), s, st.filled());
-                },
+                &|c, s, st| EmptyElement::at(c) + Circle::new((0, 0), s, st.filled()),
             ))
             .unwrap();
 
@@ -117,9 +115,7 @@ fn test_visual() {
                 vec![(b0[0], b0[1], b0[2]), (node.p[0], node.p[1], node.p[2])],
                 5,
                 &BLUE,
-                &|c, s, st| {
-                    return EmptyElement::at(c) + Circle::new((0, 0), s, st.filled());
-                },
+                &|c, s, st| EmptyElement::at(c) + Circle::new((0, 0), s, st.filled()),
             ))
             .unwrap();
 

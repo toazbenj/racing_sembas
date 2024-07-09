@@ -1,5 +1,3 @@
-// The core components of an adherer
-
 use core::fmt;
 
 use nalgebra::SVector;
@@ -33,9 +31,6 @@ impl<const N: usize> fmt::Display for SamplingError<N> {
             SamplingError::BoundaryLostError(_p, _msg) => write!(f, "BLE"),
             SamplingError::OutOfBoundsError(_p, _msg) => write!(f, "OOB"),
             SamplingError::MaxSamplesExceeded(_, _) => write!(f, "Exceeded max samples"),
-            // MyError::CustomError(msg) => write!(f, "Custom Error: {}", msg),
-            // MyError::IOError(err) => write!(f, "IO Error: {}", err),
-            // MyError::NotFound => write!(f, "Not found error"),
         }
     }
 }

@@ -1,7 +1,6 @@
 use crate::{
-    adherer_core::{Adherer, SamplingError, AdhererFactory, AdhererState},
-    structs::{Classifier, Domain, Halfspace, PointNode, Span},
-    utils::vector_to_string,
+    adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
+    structs::{Halfspace, PointNode, Span},
 };
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;
@@ -20,7 +19,6 @@ pub struct ConstantAdherer<const N: usize> {
 }
 
 pub struct ConstantAdhererFactory<const N: usize> {
-    d: f64,
     delta_angle: f64,
     max_rotation: Option<f64>,
     classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
@@ -121,13 +119,11 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
 
 impl<const N: usize> ConstantAdhererFactory<N> {
     pub fn new(
-        d: f64,
         delta_angle: f64,
         max_rotation: Option<f64>,
         classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
     ) -> Self {
         return ConstantAdhererFactory {
-            d,
             delta_angle,
             max_rotation,
             classifier,

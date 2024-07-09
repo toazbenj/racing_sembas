@@ -33,14 +33,14 @@ impl<const N: usize> Span<N> {
         let u = u.normalize();
         let v = v.normalize();
         let v = (v - u * u.dot(&v)).normalize();
-        return Span { u, v };
+        Span { u, v }
     }
 
-    pub fn get_u(&self) -> SVector<f64, N> {
-        return self.u;
+    pub fn u(&self) -> SVector<f64, N> {
+        self.u
     }
-    pub fn get_v(&self) -> SVector<f64, N> {
-        return self.v;
+    pub fn v(&self) -> SVector<f64, N> {
+        self.v
     }
 
     // Provides a rotater function rot(angle: f64) which returns a rotation matrix
@@ -72,11 +72,11 @@ impl<const N: usize> Domain<N> {
             return false;
         }
 
-        return true;
+        true
     }
 
     pub fn dimensions(&self) -> SVector<f64, N> {
-        return self.high - self.low;
+        self.high - self.low
     }
 
     pub fn translate_point_domains(
@@ -86,10 +86,6 @@ impl<const N: usize> Domain<N> {
     ) -> SVector<f64, N> {
         ((p - from.low).component_div(&from.dimensions())).component_mul(&to.dimensions()) + to.low
     }
-}
-
-pub trait Classifier<const N: usize> {
-    fn classify(p: SVector<f64, N>) -> bool;
 }
 
 impl<const N: usize> fmt::Display for PointNode<N> {

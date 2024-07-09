@@ -58,7 +58,8 @@ impl<const N: usize> MeshExplorer<N> {
         };
 
         exp.add_child(root, None);
-        return exp;
+
+        exp
     }
     // Returns the
     fn select_parent(&mut self) -> Option<(Halfspace<N>, NodeID, SVector<f64, N>)> {
@@ -71,7 +72,7 @@ impl<const N: usize> MeshExplorer<N> {
             }
         }
 
-        return None;
+        None
     }
 
     fn add_child(&mut self, hs: Halfspace<N>, parent_id: Option<NodeIndex>) {
@@ -96,7 +97,7 @@ impl<const N: usize> MeshExplorer<N> {
             .map(|&v| (id, v))
             .collect();
 
-        return next_paths;
+        next_paths
     }
 
     // Creates the cardinal vectors around a given boundary point's surface vector
@@ -123,17 +124,18 @@ impl<const N: usize> MeshExplorer<N> {
             cardinals.push(column);
             cardinals.push(-column);
         }
-        return cardinals;
+
+        cardinals
     }
 
     fn check_overlap(&self, p: SVector<f64, N>) -> bool {
         let p = svector_to_array(p);
 
-        return if let Some(nearest) = self.knn_index.nearest_neighbor(&p) {
+        if let Some(nearest) = self.knn_index.nearest_neighbor(&p) {
             array_distance(&p, nearest.geom()) < self.margin
         } else {
             false
-        };
+        }
     }
 }
 
@@ -169,14 +171,14 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
             adherer
         };
 
-        return Ok(Some(node));
+        Ok(Some(node))
     }
 
-    fn get_boundary(&self) -> &Vec<Halfspace<N>> {
-        return &self.boundary;
+    fn boundary(&self) -> &Vec<Halfspace<N>> {
+        &self.boundary
     }
 
-    fn get_boundary_count(&self) -> usize {
-        return self.boundary.len();
+    fn boundary_count(&self) -> usize {
+        self.boundary.len()
     }
 }

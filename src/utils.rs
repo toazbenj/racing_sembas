@@ -11,13 +11,10 @@ pub fn svector_to_array<const N: usize>(v: SVector<f64, N>) -> [f64; N] {
     let arr;
     unsafe {
         let ptr = v.as_ptr();
-        arr = std::slice::from_raw_parts(ptr, N)
-            .clone()
-            .try_into()
-            .unwrap();
+        arr = std::slice::from_raw_parts(ptr, N).try_into().unwrap();
     }
 
-    return arr;
+    arr
 }
 
 pub fn array_distance<const N: usize>(a1: &[f64; N], a2: &[f64; N]) -> f64 {
@@ -31,7 +28,7 @@ pub fn array_distance<const N: usize>(a1: &[f64; N], a2: &[f64; N]) -> f64 {
         SVector::from_column_slice(std::slice::from_raw_parts(a2_ptr, N))
     };
 
-    return (v2 - v1).norm();
+    (v2 - v1).norm()
 }
 
 pub fn vector_to_string<const N: usize>(v: &SVector<f64, N>) -> String {
