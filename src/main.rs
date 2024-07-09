@@ -34,10 +34,7 @@ const DOMAIN: Domain<3> = Domain {
 };
 fn classify(p: SVector<f64, 3>) -> Result<bool, SamplingError<3>> {
     if !DOMAIN.contains(p) {
-        return Err(SamplingError::OutOfBoundsError(
-            p,
-            "Out of bounds.".to_string(),
-        ));
+        return Err(SamplingError::OutOfBounds(p, "Out of bounds.".to_string()));
     }
     Ok((CENTER - p).norm() <= RADIUS)
 }

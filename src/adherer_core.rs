@@ -5,8 +5,8 @@ use nalgebra::SVector;
 use crate::structs::{Halfspace, PointNode};
 
 pub enum SamplingError<const N: usize> {
-    BoundaryLostError(SVector<f64, N>, String),
-    OutOfBoundsError(SVector<f64, N>, String),
+    BoundaryLost(SVector<f64, N>, String),
+    OutOfBounds(SVector<f64, N>, String),
     MaxSamplesExceeded(SVector<f64, N>, String),
 }
 
@@ -28,8 +28,8 @@ pub trait AdhererFactory<const N: usize> {
 impl<const N: usize> fmt::Display for SamplingError<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SamplingError::BoundaryLostError(_p, _msg) => write!(f, "BLE"),
-            SamplingError::OutOfBoundsError(_p, _msg) => write!(f, "OOB"),
+            SamplingError::BoundaryLost(_p, _msg) => write!(f, "BLE"),
+            SamplingError::OutOfBounds(_p, _msg) => write!(f, "OOB"),
             SamplingError::MaxSamplesExceeded(_, _) => write!(f, "Exceeded max samples"),
         }
     }

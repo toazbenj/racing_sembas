@@ -105,7 +105,7 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
         }
 
         if matches!(self.state, AdhererState::Searching {}) && self.angle > self.max_rotation {
-            return Err(SamplingError::BoundaryLostError(
+            return Err(SamplingError::BoundaryLost(
                 cur,
                 "Max rotation exceeded".to_string(),
             ));
