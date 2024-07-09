@@ -3,13 +3,14 @@ use nalgebra::SVector;
 use crate::{adherer_core::SamplingError, structs::Halfspace};
 
 /// Finds the surface of an envelope, i.e. the initial halfspace for beginning
-/// surface exploration.
+/// surface exploration by iteratively splitting the space in half until a desireable
+/// distance from the boundary has been reached.
 /// # Arguments
 /// * `d` The desired maximum distance from the boundary.
 /// * `t0` A target sample
 /// * `x0` A non-target sample
 /// * `max_samples` The maximum number of samples before the failing the process.
-fn linear_surfacer<const N: usize>(
+fn binary_surface_search<const N: usize>(
     d: f64,
     t0: SVector<f64, N>,
     x0: SVector<f64, N>,
