@@ -129,3 +129,78 @@ impl<const N: usize> fmt::Display for Span<N> {
         )
     }
 }
+
+#[cfg(test)]
+mod span_tests {
+    use super::*;
+
+    const ATOL: f64 = 1e-10;
+
+    fn approx(a: f64, b: f64, atol: f64) -> bool {
+        (a - b).abs() < atol
+    }
+
+    #[test]
+    fn is_orthogonal() {
+        let u = nalgebra::vector![0.5, 0.5, 0.1, 0.4, 1.0];
+        let v = nalgebra::vector![1.1, -0.2, -0.5, 0.1, 0.8];
+
+        let span = Span::new(u, v);
+
+        assert!(approx(span.u.angle(&span.v).to_degrees(), 90.0, ATOL));
+    }
+
+    #[test]
+    fn is_normal() {
+        let u = nalgebra::vector![0.5, 0.5, 0.1, 0.4, 1.0];
+        let v = nalgebra::vector![1.1, -0.2, -0.5, 0.1, 0.8];
+
+        let span = Span::new(u, v);
+
+        assert!(approx(span.u.norm(), 1.0, ATOL));
+        assert!(approx(span.v.norm(), 1.0, ATOL));
+    }
+
+    #[test]
+    fn rotater_90() {
+        let u = nalgebra::vector![0.5, 0.5, 0.1, 0.4, 1.0];
+        let v = nalgebra::vector![1.1, -0.2, -0.5, 0.1, 0.8];
+
+        let span = Span::new(u, v);
+
+        let x0 = v;
+        let angle = 90.0f64.to_radians();
+
+        let x1 = span.get_rotater()(angle) * x0;
+
+        assert!(approx(x0.angle(&x1), angle, ATOL));
+    }
+
+    #[test]
+    fn rotater_25() {
+        let u = nalgebra::vector![0.5, 0.5, 0.1, 0.4, 1.0];
+        let v = nalgebra::vector![1.1, -0.2, -0.5, 0.1, 0.8];
+
+        let span = Span::new(u, v);
+
+        let x0 = v;
+        let angle = 25.0f64.to_radians();
+
+        let x1 = span.get_rotater()(angle) * x0;
+
+        assert!(approx(x0.angle(&x1), angle, ATOL));
+    }
+}
+
+// #[cfg(test)]
+// mod domain_tests {
+//     use super::*;
+
+//     const ATOL: f64 = 1e-10;
+
+//     #[test]
+//     fn () {
+
+//     }
+
+// }
