@@ -1,6 +1,6 @@
 use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
-    structs::{Halfspace, PointNode, Span},
+    structs::{Classifier, Halfspace, PointNode, Span},
 };
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;
@@ -15,13 +15,11 @@ pub struct ConstantAdherer<const N: usize> {
     delta_angle: f64,
     max_rotation: f64,
     pub state: AdhererState<N>,
-    classify: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
 }
 
 pub struct ConstantAdhererFactory<const N: usize> {
     delta_angle: f64,
     max_rotation: Option<f64>,
-    classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
 }
 
 impl<const N: usize> ConstantAdherer<N> {
@@ -30,7 +28,6 @@ impl<const N: usize> ConstantAdherer<N> {
         v: SVector<f64, N>,
         delta_angle: f64,
         max_rotation: Option<f64>,
-        classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
     ) -> Self {
         let span = Span::new(pivot.n, v);
 
@@ -46,13 +43,15 @@ impl<const N: usize> ConstantAdherer<N> {
             samples: vec![],
             angle: 0.0,
             state: AdhererState::Searching,
-            classify: classifier,
         }
     }
 
-    fn take_initial_sample(&mut self) -> Result<PointNode<N>, SamplingError<N>> {
+    fn take_initial_sample(
+        &mut self,
+        classifier: &Classifier<N>,
+    ) -> Result<PointNode<N>, SamplingError<N>> {
         let cur = self.pivot.b + self.v;
-        let cls = (self.classify)(cur)?;
+        let cls = classifier(cur)?;
         let delta_angle = if cls {
             self.delta_angle
         } else {
@@ -65,10 +64,11 @@ impl<const N: usize> ConstantAdherer<N> {
     fn take_sample(
         &mut self,
         rot: OMatrix<f64, Const<N>, Const<N>>,
+        classifier: &Classifier<N>,
     ) -> Result<PointNode<N>, SamplingError<N>> {
         self.v = rot * self.v;
         let cur = self.pivot.b + self.v;
-        let cls = (self.classify)(cur)?;
+        let cls = classifier(cur)?;
 
         self.angle += self.delta_angle;
 
@@ -81,13 +81,16 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
         self.state
     }
 
-    fn sample_next(&mut self) -> Result<PointNode<N>, SamplingError<N>> {
+    fn sample_next(
+        &mut self,
+        classifier: &Classifier<N>,
+    ) -> Result<PointNode<N>, SamplingError<N>> {
         let cur;
         let cls;
         if let Some(rot) = self.rot {
-            PointNode { p: cur, class: cls } = self.take_sample(rot)?;
+            PointNode { p: cur, class: cls } = self.take_sample(rot, classifier)?;
         } else {
-            PointNode { p: cur, class: cls } = self.take_initial_sample()?;
+            PointNode { p: cur, class: cls } = self.take_initial_sample(classifier)?;
         }
 
         if let Some(&PointNode {
@@ -118,15 +121,10 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
 }
 
 impl<const N: usize> ConstantAdhererFactory<N> {
-    pub fn new(
-        delta_angle: f64,
-        max_rotation: Option<f64>,
-        classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
-    ) -> Self {
+    pub fn new(delta_angle: f64, max_rotation: Option<f64>) -> Self {
         ConstantAdhererFactory {
             delta_angle,
             max_rotation,
-            classifier,
         }
     }
 }
@@ -138,7 +136,6 @@ impl<const N: usize> AdhererFactory<N> for ConstantAdhererFactory<N> {
             v,
             self.delta_angle,
             self.max_rotation,
-            self.classifier,
         ))
     }
 }

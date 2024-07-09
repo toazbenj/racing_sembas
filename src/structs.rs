@@ -2,7 +2,10 @@ use core::fmt;
 
 use nalgebra::{Const, OMatrix, SVector};
 
-use crate::utils::vector_to_string;
+use crate::{adherer_core::SamplingError, utils::vector_to_string};
+
+pub type Classifier<const N: usize> =
+    Box<dyn Fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>>;
 
 // pub type PointNode<const N: usize> = (SVector<f64, N>, bool);
 

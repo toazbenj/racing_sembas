@@ -2,7 +2,7 @@ use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
     explorer_core::Explorer,
     extensions::Queue,
-    structs::{Halfspace, PointNode, Span},
+    structs::{Classifier, Halfspace, PointNode, Span},
     utils::{array_distance, svector_to_array},
 };
 use nalgebra::{self, Const, OMatrix, SVector};
@@ -140,7 +140,10 @@ impl<const N: usize> MeshExplorer<N> {
 }
 
 impl<const N: usize> Explorer<N> for MeshExplorer<N> {
-    fn step(&mut self) -> Result<Option<PointNode<N>>, SamplingError<N>> {
+    fn step(
+        &mut self,
+        classifier: &Classifier<N>,
+    ) -> Result<Option<PointNode<N>>, SamplingError<N>> {
         let mut adherer = self.adherer.take().or_else(|| {
             if let Some((hs, id, v)) = self.select_parent() {
                 // begin new adherence
@@ -156,7 +159,7 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
         let node;
         let state;
         if let Some(ref mut adh) = adherer {
-            node = adh.sample_next()?;
+            node = adh.sample_next(classifier)?;
             state = adh.get_state();
         } else {
             // Ends exploration

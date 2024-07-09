@@ -2,7 +2,7 @@ use core::fmt;
 
 use nalgebra::SVector;
 
-use crate::structs::{Halfspace, PointNode};
+use crate::structs::{Classifier, Halfspace, PointNode};
 
 pub enum SamplingError<const N: usize> {
     BoundaryLost(SVector<f64, N>, String),
@@ -17,7 +17,8 @@ pub enum AdhererState<const N: usize> {
 }
 
 pub trait Adherer<const N: usize> {
-    fn sample_next(&mut self) -> Result<PointNode<N>, SamplingError<N>>;
+    fn sample_next(&mut self, classifier: &Classifier<N>)
+        -> Result<PointNode<N>, SamplingError<N>>;
     fn get_state(&self) -> AdhererState<N>;
 }
 
