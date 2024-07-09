@@ -3,11 +3,11 @@ use crate::{
     explorer_core::Explorer,
     extensions::Queue,
     structs::{Halfspace, PointNode, Span},
-    utils::{array_distance, svector_to_array, vector_to_string},
+    utils::{array_distance, svector_to_array},
 };
 use nalgebra::{self, Const, OMatrix, SVector};
-use petgraph::{graph::NodeIndex, visit::NodeRef, Graph};
-use rstar::{primitives::GeomWithData, PointDistance, RTree};
+use petgraph::{graph::NodeIndex, Graph};
+use rstar::{primitives::GeomWithData, RTree};
 
 // const BASIS_VECTORS = nalgebra::OMatrix::<f64, Const<N>, Const<N>>::identity();
 

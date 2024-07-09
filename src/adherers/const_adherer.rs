@@ -36,7 +36,7 @@ impl<const N: usize> ConstantAdherer<N> {
 
         let max_rotation = max_rotation.unwrap_or(PI);
 
-        return ConstantAdherer {
+        ConstantAdherer {
             span,
             pivot,
             v,
@@ -47,7 +47,7 @@ impl<const N: usize> ConstantAdherer<N> {
             angle: 0.0,
             state: AdhererState::Searching,
             classify: classifier,
-        };
+        }
     }
 
     fn take_initial_sample(&mut self) -> Result<PointNode<N>, SamplingError<N>> {
@@ -59,7 +59,7 @@ impl<const N: usize> ConstantAdherer<N> {
             -self.delta_angle
         };
         self.rot = Some(self.span.get_rotater()(delta_angle));
-        return Ok(PointNode { p: cur, class: cls });
+        Ok(PointNode { p: cur, class: cls })
     }
 
     fn take_sample(
@@ -72,13 +72,13 @@ impl<const N: usize> ConstantAdherer<N> {
 
         self.angle += self.delta_angle;
 
-        return Ok(PointNode { p: cur, class: cls });
+        Ok(PointNode { p: cur, class: cls })
     }
 }
 
 impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
     fn get_state(&self) -> AdhererState<N> {
-        return self.state;
+        self.state
     }
 
     fn sample_next(&mut self) -> Result<PointNode<N>, SamplingError<N>> {
@@ -113,7 +113,7 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
 
         self.samples.push(PointNode { p: cur, class: cls });
 
-        return Ok(PointNode { p: cur, class: cls });
+        Ok(PointNode { p: cur, class: cls })
     }
 }
 
@@ -123,22 +123,22 @@ impl<const N: usize> ConstantAdhererFactory<N> {
         max_rotation: Option<f64>,
         classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
     ) -> Self {
-        return ConstantAdhererFactory {
+        ConstantAdhererFactory {
             delta_angle,
             max_rotation,
             classifier,
-        };
+        }
     }
 }
 
 impl<const N: usize> AdhererFactory<N> for ConstantAdhererFactory<N> {
     fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Box<dyn Adherer<N>> {
-        return Box::new(ConstantAdherer::new(
+        Box::new(ConstantAdherer::new(
             hs,
             v,
             self.delta_angle,
             self.max_rotation,
             self.classifier,
-        ));
+        ))
     }
 }

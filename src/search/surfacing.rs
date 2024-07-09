@@ -24,9 +24,9 @@ fn binary_surface_search<const N: usize>(
 
     while s.norm() > d && i < max_samples {
         if classifier(p_t + s)? {
-            p_t = p_t + s;
+            p_t += s;
         } else {
-            p_x = p_x - s;
+            p_x -= s;
         }
 
         s = (p_x - p_t) / 2.0;
