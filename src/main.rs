@@ -22,7 +22,6 @@ mod adherers;
 mod explorer_core;
 mod explorers;
 mod extensions;
-mod pipeline;
 mod search;
 mod structs;
 mod utils;
