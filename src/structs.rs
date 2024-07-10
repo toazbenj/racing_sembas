@@ -65,13 +65,13 @@ impl<const N: usize> Domain<N> {
         let low = p1.zip_map(&p2, |a, b| a.min(b));
         let high = p1.zip_map(&p2, |a, b| a.max(b));
 
-        return Domain { low, high };
+        Domain { low, high }
     }
 
     pub fn normalized() -> Self {
         let low = SVector::<f64, N>::zeros();
         let high = SVector::<f64, N>::repeat(1.0);
-        return Domain { low, high };
+        Domain { low, high }
     }
 
     pub fn low(&self) -> SVector<f64, N> {
