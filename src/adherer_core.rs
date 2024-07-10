@@ -19,7 +19,7 @@ pub enum AdhererState<const N: usize> {
 pub trait Adherer<const N: usize> {
     fn sample_next(
         &mut self,
-        classifier: &Box<dyn Classifier<N>>,
+        classifier: &mut Box<dyn Classifier<N>>,
     ) -> Result<PointNode<N>, SamplingError<N>>;
     fn get_state(&self) -> AdhererState<N>;
 }

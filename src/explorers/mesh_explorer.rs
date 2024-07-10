@@ -142,7 +142,7 @@ impl<const N: usize> MeshExplorer<N> {
 impl<const N: usize> Explorer<N> for MeshExplorer<N> {
     fn step(
         &mut self,
-        classifier: &Box<dyn Classifier<N>>,
+        classifier: &mut Box<dyn Classifier<N>>,
     ) -> Result<Option<PointNode<N>>, SamplingError<N>> {
         let mut adherer = self.adherer.take().or_else(|| {
             if let Some((hs, id, v)) = self.select_parent() {

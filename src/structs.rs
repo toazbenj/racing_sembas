@@ -5,7 +5,7 @@ use nalgebra::{Const, OMatrix, SVector};
 use crate::{adherer_core::SamplingError, utils::vector_to_string};
 
 pub trait Classifier<const N: usize> {
-    fn classify(&self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>>;
+    fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>>;
 }
 
 // pub type PointNode<const N: usize> = (SVector<f64, N>, bool);
