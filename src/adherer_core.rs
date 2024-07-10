@@ -8,6 +8,7 @@ pub enum SamplingError<const N: usize> {
     BoundaryLost(SVector<f64, N>, String),
     OutOfBounds(SVector<f64, N>, String),
     MaxSamplesExceeded(SVector<f64, N>, String),
+    InvalidClassifierResponse(String),
 }
 
 #[derive(Clone, Copy)]
@@ -34,6 +35,7 @@ impl<const N: usize> fmt::Display for SamplingError<N> {
             SamplingError::BoundaryLost(_p, _msg) => write!(f, "BLE"),
             SamplingError::OutOfBounds(_p, _msg) => write!(f, "OOB"),
             SamplingError::MaxSamplesExceeded(_, _) => write!(f, "Exceeded max samples"),
+            SamplingError::InvalidClassifierResponse(msg) => write!(f, "{msg}"),
         }
     }
 }
