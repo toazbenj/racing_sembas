@@ -193,15 +193,90 @@ mod span_tests {
     }
 }
 
-// #[cfg(test)]
-// mod domain_tests {
-//     use super::*;
+#[cfg(test)]
+mod domain_tests {
+    use nalgebra::vector;
 
-//     const ATOL: f64 = 1e-10;
+    use super::*;
 
-//     #[test]
-//     fn () {
+    const ATOL: f64 = 1e-10;
 
-//     }
+    fn is_near<const N: usize>(a: &SVector<f64, N>, b: &SVector<f64, N>, atol: f64) -> bool {
+        (b - a).norm() <= atol
+    }
 
-// }
+    #[test]
+    fn point_translation_low_to_low() {
+        let src = Domain::<3>::normalized();
+        let dst = Domain::<3>::new(vector![1.0, 2.5, 3.5], vector![4.0, 5.0, 6.0]);
+
+        let p0 = src.low();
+        let p1 = Domain::translate_point_domains(&p0, &src, &dst);
+
+        assert!(is_near(&p1, &dst.low(), ATOL))
+    }
+
+    #[test]
+    fn point_translation_high_to_high() {
+        let src = Domain::<3>::normalized();
+        let dst = Domain::<3>::new(vector![1.0, 2.5, 3.5], vector![4.0, 5.0, 6.0]);
+
+        let p0 = src.high();
+        let p1 = Domain::translate_point_domains(&p0, &src, &dst);
+
+        assert!(is_near(&p1, &dst.high(), ATOL))
+    }
+
+    #[test]
+    fn point_translation_mid_to_mid() {
+        let src = Domain::<3>::normalized();
+        let dst = Domain::<3>::new(vector![1.0, 2.5, 3.5], vector![4.0, 5.0, 6.0]);
+
+        let src_mid = src.low() + src.dimensions() / 2.0;
+        let dst_mid = dst.low() + dst.dimensions() / 2.0;
+
+        let p0 = src_mid;
+        let p1 = Domain::translate_point_domains(&p0, &src, &dst);
+
+        assert!(is_near(&p1, &dst_mid, ATOL))
+    }
+
+    #[test]
+    fn low_is_below_high() {
+        let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
+
+        assert!(d.low().iter().zip(d.high.iter()).all(|(l, h)| l < h));
+    }
+
+    #[test]
+    fn contains_false_when_below_low() {
+        let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
+        let p = d.low() - vector![0.01, 0.01, 0.01];
+
+        assert!(!d.contains(p))
+    }
+
+    #[test]
+    fn contains_true_when_on_low() {
+        let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
+        let p = d.low();
+
+        assert!(d.contains(p))
+    }
+
+    #[test]
+    fn contains_false_when_above_high() {
+        let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
+        let p = d.high() + vector![0.01, 0.01, 0.01];
+
+        assert!(!d.contains(p))
+    }
+
+    #[test]
+    fn contains_true_when_on_high() {
+        let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
+        let p = d.high();
+
+        assert!(d.contains(p))
+    }
+}
