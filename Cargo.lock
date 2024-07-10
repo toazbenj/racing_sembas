@@ -285,18 +285,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_sembas"
-version = "0.1.0"
-dependencies = [
- "nalgebra",
- "petgraph",
- "rand",
- "rstar",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "ryu"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -309,6 +297,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3460605018fdc9612bce72735cba0d27efbcd9904780d44c7e3a9948f96148a"
 dependencies = [
  "bytemuck",
+]
+
+[[package]]
+name = "sembas"
+version = "0.1.0"
+dependencies = [
+ "nalgebra",
+ "petgraph",
+ "rand",
+ "rstar",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

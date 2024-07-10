@@ -1,5 +1,6 @@
-[package]
-name = "rust_sembas"
+[lib]
+name = "sembas"
+path = "src/lib.rs"
 version = "0.1.0"
 edition = "2021"
 
