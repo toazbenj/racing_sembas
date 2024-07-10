@@ -34,10 +34,7 @@ fn binary_surface_search<const N: usize>(
     }
 
     if i >= max_samples && s.norm() > d {
-        return Err(SamplingError::MaxSamplesExceeded(
-            p_t,
-            format!("Exceeded {max_samples} samples.").to_string(),
-        ));
+        return Err(SamplingError::MaxSamplesExceeded);
     }
 
     let n = s.normalize();

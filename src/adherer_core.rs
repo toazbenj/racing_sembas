@@ -5,9 +5,9 @@ use nalgebra::SVector;
 use crate::structs::{Classifier, Halfspace, PointNode};
 
 pub enum SamplingError<const N: usize> {
-    BoundaryLost(SVector<f64, N>, String),
-    OutOfBounds(SVector<f64, N>, String),
-    MaxSamplesExceeded(SVector<f64, N>, String),
+    BoundaryLost,
+    OutOfBounds,
+    MaxSamplesExceeded,
     InvalidClassifierResponse(String),
 }
 
@@ -29,12 +29,14 @@ pub trait AdhererFactory<const N: usize> {
     fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Box<dyn Adherer<N>>;
 }
 
-impl<const N: usize> fmt::Display for SamplingError<N> {
+impl<const N: usize> fmt::Debug for SamplingError<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SamplingError::BoundaryLost(_p, _msg) => write!(f, "BLE"),
-            SamplingError::OutOfBounds(_p, _msg) => write!(f, "OOB"),
-            SamplingError::MaxSamplesExceeded(_, _) => write!(f, "Exceeded max samples"),
+            SamplingError::BoundaryLost => write!(f, "Boundary lost during adherence."),
+            SamplingError::OutOfBounds => {
+                write!(f, "Boundary was sampled out of domain bounds.")
+            }
+            SamplingError::MaxSamplesExceeded => write!(f, "Exceeded max samples."),
             SamplingError::InvalidClassifierResponse(msg) => write!(f, "{msg}"),
         }
     }
