@@ -101,9 +101,9 @@ impl<const N: usize> Domain<N> {
     }
 
     pub fn translate_point_domains(
-        p: SVector<f64, N>,
-        from: Domain<N>,
-        to: Domain<N>,
+        p: &SVector<f64, N>,
+        from: &Domain<N>,
+        to: &Domain<N>,
     ) -> SVector<f64, N> {
         ((p - from.low).component_div(&from.dimensions())).component_mul(&to.dimensions()) + to.low
     }
