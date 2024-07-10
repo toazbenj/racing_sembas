@@ -6,7 +6,7 @@ use crate::{
 pub trait Explorer<const N: usize> {
     fn step(
         &mut self,
-        classifier: &Classifier<N>,
+        classifier: &Box<dyn Classifier<N>>,
     ) -> Result<Option<PointNode<N>>, SamplingError<N>>;
 
     fn boundary(&self) -> &Vec<Halfspace<N>>;

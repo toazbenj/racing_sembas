@@ -48,10 +48,10 @@ impl<const N: usize> ConstantAdherer<N> {
 
     fn take_initial_sample(
         &mut self,
-        classifier: &Classifier<N>,
+        classifier: &Box<dyn Classifier<N>>,
     ) -> Result<PointNode<N>, SamplingError<N>> {
         let cur = self.pivot.b + self.v;
-        let cls = classifier(cur)?;
+        let cls = classifier.classify(cur)?;
         let delta_angle = if cls {
             self.delta_angle
         } else {
@@ -64,11 +64,11 @@ impl<const N: usize> ConstantAdherer<N> {
     fn take_sample(
         &mut self,
         rot: OMatrix<f64, Const<N>, Const<N>>,
-        classifier: &Classifier<N>,
+        classifier: &Box<dyn Classifier<N>>,
     ) -> Result<PointNode<N>, SamplingError<N>> {
         self.v = rot * self.v;
         let cur = self.pivot.b + self.v;
-        let cls = classifier(cur)?;
+        let cls = classifier.classify(cur)?;
 
         self.angle += self.delta_angle;
 
@@ -83,7 +83,7 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
 
     fn sample_next(
         &mut self,
-        classifier: &Classifier<N>,
+        classifier: &Box<dyn Classifier<N>>,
     ) -> Result<PointNode<N>, SamplingError<N>> {
         let cur;
         let cls;
