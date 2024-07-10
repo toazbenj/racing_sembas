@@ -67,7 +67,7 @@ impl<const N: usize> Domain<N> {
         return Domain { low, high };
     }
 
-    fn normalized() -> Self {
+    pub fn normalized() -> Self {
         let low = SVector::<f64, N>::zeros();
         let high = SVector::<f64, N>::repeat(1.0);
         return Domain { low, high };
