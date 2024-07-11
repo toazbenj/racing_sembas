@@ -10,22 +10,25 @@ pub trait Classifier<const N: usize> {
 
 // pub type PointNode<const N: usize> = (SVector<f64, N>, bool);
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct PointNode<const N: usize> {
     pub p: SVector<f64, N>,
     pub class: bool,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Halfspace<const N: usize> {
     pub b: SVector<f64, N>,
     pub n: SVector<f64, N>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Span<const N: usize> {
     u: SVector<f64, N>,
     v: SVector<f64, N>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Domain<const N: usize> {
     low: SVector<f64, N>,
     high: SVector<f64, N>,
