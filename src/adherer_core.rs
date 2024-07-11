@@ -11,7 +11,7 @@ pub enum SamplingError<const N: usize> {
     InvalidClassifierResponse(String),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AdhererState<const N: usize> {
     Searching,
     FoundBoundary(Halfspace<N>),

@@ -5,6 +5,7 @@ use crate::{
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;
 
+#[derive(Debug)]
 pub struct ConstantAdherer<const N: usize> {
     span: Span<N>,
     pivot: Halfspace<N>,
