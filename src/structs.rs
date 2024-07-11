@@ -85,7 +85,7 @@ impl<const N: usize> Domain<N> {
         self.high
     }
 
-    pub fn contains(&self, p: SVector<f64, N>) -> bool {
+    pub fn contains(&self, p: &SVector<f64, N>) -> bool {
         let below_low = SVector::<bool, N>::from_fn(|i, _| p[i] < self.low[i]);
         if below_low.iter().any(|&x| x) {
             return false;
@@ -256,7 +256,7 @@ mod domain_tests {
         let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
         let p = d.low() - vector![0.01, 0.01, 0.01];
 
-        assert!(!d.contains(p))
+        assert!(!d.contains(&p))
     }
 
     #[test]
@@ -264,7 +264,7 @@ mod domain_tests {
         let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
         let p = d.low();
 
-        assert!(d.contains(p))
+        assert!(d.contains(&p))
     }
 
     #[test]
@@ -272,7 +272,7 @@ mod domain_tests {
         let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
         let p = d.high() + vector![0.01, 0.01, 0.01];
 
-        assert!(!d.contains(p))
+        assert!(!d.contains(&p))
     }
 
     #[test]
@@ -280,6 +280,6 @@ mod domain_tests {
         let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
         let p = d.high();
 
-        assert!(d.contains(p))
+        assert!(d.contains(&p))
     }
 }
