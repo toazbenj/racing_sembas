@@ -54,7 +54,7 @@ impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
         &mut self,
         p: nalgebra::SVector<f64, N>,
     ) -> Result<bool, crate::adherer_core::SamplingError<N>> {
-        if !self.domain.contains(p) {
+        if !self.domain.contains(&p) {
             return Err(SamplingError::OutOfBounds);
         }
 
