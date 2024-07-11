@@ -4,6 +4,7 @@ use nalgebra::SVector;
 
 use crate::structs::{Classifier, Halfspace, PointNode};
 
+#[derive(Clone, PartialEq)]
 pub enum SamplingError<const N: usize> {
     BoundaryLost,
     OutOfBounds,
