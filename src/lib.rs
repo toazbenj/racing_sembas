@@ -1,9 +1,9 @@
-mod adherer_core;
-mod adherers;
-mod api;
-mod explorer_core;
-mod explorers;
+pub mod adherer_core;
+pub mod adherers;
+pub mod api;
+pub mod explorer_core;
+pub mod explorers;
 mod extensions;
-mod search;
-mod structs;
+pub mod search;
+pub mod structs;
 mod utils;
