@@ -156,6 +156,7 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
                 self.current_parent = id;
                 Some(self.adherer_f.adhere_from(hs, v * self.d))
             } else {
+                // No remaining paths to explore. Terminate early.
                 None
             }
         });
@@ -163,7 +164,9 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
         let node;
         let state;
         if let Some(ref mut adh) = adherer {
-            node = adh.sample_next(classifier)?;
+            node = adh.sample_next(classifier).inspect_err(|_| {
+                self.adherer = None;
+            })?;
             state = adh.get_state();
         } else {
             // Ends exploration
