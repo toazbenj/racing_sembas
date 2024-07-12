@@ -89,16 +89,17 @@ fn loses_boundary_when_out_of_reach() {
 
     let mut i = 0;
     while adh.get_state() == AdhererState::Searching {
-        if i > max_steps + 1 {
-            println!("Failed adherer state: {adh:?}");
-            panic!("Failed to lose boundary, exceeded max steps without returning error!")
-        }
         if let Err(e) = adh.sample_next(&mut classifier) {
             assert_eq!(
                 e,
                 SamplingError::BoundaryLost,
                 "Unexpected error type? Expected BSE got {e:?}"
             );
+            return;
+        }
+        if i > max_steps + 1 {
+            println!("Failed adherer state: {adh:?}");
+            panic!("Failed to lose boundary, exceeded max steps without returning error!")
         }
         i += 1;
     }
