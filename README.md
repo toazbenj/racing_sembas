@@ -22,13 +22,13 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [ ] MeshExplorer for Sphere
   - [ ] RemoteClassifier
 - [ ] Add description to all structs
-  - [ ] Domain
-  - [ ] Span
-  - [ ] PointNode
-  - [ ] Halfspace
+  - [x] Domain
+  - [x] Span
+  - [x] PointNode
+  - [x] Halfspace
 - [ ] Add docs to all methods
-  - [ ] Domain methods
-  - [ ] Span methods
+  - [x] Domain methods
+  - [x] Span methods
   - [ ] Adherer methods
   - [ ] Explorer methods
   - [ ] ConstantAdherer methods

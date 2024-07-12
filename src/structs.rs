@@ -4,30 +4,39 @@ use nalgebra::{Const, OMatrix, SVector};
 
 use crate::{adherer_core::SamplingError, utils::vector_to_string};
 
+/// A system under test whose output can be classified as "target" or "non-target"
+/// behavior. For example, safe/unsafe.
 pub trait Classifier<const N: usize> {
     fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>>;
 }
 
-// pub type PointNode<const N: usize> = (SVector<f64, N>, bool);
-
+/// A sample from the system under test's input space with a corresponding target
+/// performance classification.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PointNode<const N: usize> {
     pub p: SVector<f64, N>,
     pub class: bool,
 }
 
+/// A halfspace is the smallest discrete unit of a hyper-geometry's surface. It
+/// describes the location (the boundary point, b) and the direction of the surface
+/// (the ortho[n]ormal surface vector, n).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Halfspace<const N: usize> {
     pub b: SVector<f64, N>,
     pub n: SVector<f64, N>,
 }
 
+/// A 2-dimensional subspace of an N-dimensional input space, described by two
+/// orthonormal vectors, u and v.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Span<const N: usize> {
     u: SVector<f64, N>,
     v: SVector<f64, N>,
 }
 
+/// An N-dimensional hyperrectangle that is defined by an lower and upper bound (low
+/// and high). Ex. a valid input region to sample from for a system under test.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Domain<const N: usize> {
     low: SVector<f64, N>,
@@ -35,7 +44,6 @@ pub struct Domain<const N: usize> {
 }
 
 impl<const N: usize> Span<N> {
-    // Provides a span, composed of two vectors which will be orthonormalized.
     pub fn new(u: SVector<f64, N>, v: SVector<f64, N>) -> Self {
         let u = u.normalize();
         let v = v.normalize();
@@ -51,7 +59,7 @@ impl<const N: usize> Span<N> {
     }
 
     // Provides a rotater function rot(angle: f64) which returns a rotation matrix
-    // that rotates by angle radians along the @&self span.
+    // that rotates by an angle in radians along &self's span.
     pub fn get_rotater(&self) -> impl Fn(f64) -> OMatrix<f64, Const<N>, Const<N>> {
         let identity = OMatrix::<f64, Const<N>, Const<N>>::identity();
 
@@ -71,20 +79,24 @@ impl<const N: usize> Domain<N> {
         Domain { low, high }
     }
 
+    /// Returns a Domain bounded between 0 and 1 for all dimensions.
     pub fn normalized() -> Self {
         let low = SVector::<f64, N>::zeros();
         let high = SVector::<f64, N>::repeat(1.0);
         Domain { low, high }
     }
 
+    /// The lower bound of the domain.
     pub fn low(&self) -> SVector<f64, N> {
         self.low
     }
 
+    /// The upper bound of the domain.
     pub fn high(&self) -> SVector<f64, N> {
         self.high
     }
 
+    /// Checks if the given vector is within the domain.
     pub fn contains(&self, p: &SVector<f64, N>) -> bool {
         let below_low = SVector::<bool, N>::from_fn(|i, _| p[i] < self.low[i]);
         if below_low.iter().any(|&x| x) {
@@ -99,10 +111,19 @@ impl<const N: usize> Domain<N> {
         true
     }
 
+    /// Returns the size of each dimension as a vector.
     pub fn dimensions(&self) -> SVector<f64, N> {
         self.high - self.low
     }
 
+    /// Projects a point from one domain to another.
+    /// Retains the relative position for all points within the source domain.
+    /// Useful for projecting an input from one domain to a normalized domain and vis
+    /// versa.
+    /// ## Arguments
+    /// * p: The point that is being projected
+    /// * from: The domain that the point is projecting from
+    /// * to: The domain that the point is projecting to
     pub fn translate_point_domains(
         p: &SVector<f64, N>,
         from: &Domain<N>,
@@ -214,7 +235,7 @@ mod domain_tests {
         let dst = Domain::<3>::new(vector![1.0, 2.5, 3.5], vector![4.0, 5.0, 6.0]);
 
         let p0 = src.low();
-        let p1 = Domain::translate_point_domains(&p0, &src, &dst);
+        let p1 = Domain::project_point_domains(&p0, &src, &dst);
 
         assert!(is_near(&p1, &dst.low(), ATOL))
     }
@@ -225,7 +246,7 @@ mod domain_tests {
         let dst = Domain::<3>::new(vector![1.0, 2.5, 3.5], vector![4.0, 5.0, 6.0]);
 
         let p0 = src.high();
-        let p1 = Domain::translate_point_domains(&p0, &src, &dst);
+        let p1 = Domain::project_point_domains(&p0, &src, &dst);
 
         assert!(is_near(&p1, &dst.high(), ATOL))
     }
@@ -239,7 +260,7 @@ mod domain_tests {
         let dst_mid = dst.low() + dst.dimensions() / 2.0;
 
         let p0 = src_mid;
-        let p1 = Domain::translate_point_domains(&p0, &src, &dst);
+        let p1 = Domain::project_point_domains(&p0, &src, &dst);
 
         assert!(is_near(&p1, &dst_mid, ATOL))
     }
