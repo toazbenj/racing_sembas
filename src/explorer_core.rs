@@ -3,6 +3,8 @@ use crate::{
     structs::{Classifier, Halfspace, PointNode},
 };
 
+/// The system responsible for the full boundary exploration process. Leverages
+/// Adherers to find neighboring boundary points.
 pub trait Explorer<const N: usize> {
     /// Take a step in the boundary exploration process.
     /// ## Arguments
