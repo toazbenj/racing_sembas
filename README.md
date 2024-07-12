@@ -29,7 +29,7 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
 - [ ] Add docs to all methods
   - [x] Domain methods
   - [x] Span methods
-  - [ ] Adherer methods
+  - [x] Adherer methods
   - [ ] Explorer methods
   - [ ] ConstantAdherer methods
   - [ ] MeshExplorer methods
