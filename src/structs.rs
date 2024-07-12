@@ -124,7 +124,7 @@ impl<const N: usize> Domain<N> {
     /// * p: The point that is being projected
     /// * from: The domain that the point is projecting from
     /// * to: The domain that the point is projecting to
-    pub fn translate_point_domains(
+    pub fn project_point_domains(
         p: &SVector<f64, N>,
         from: &Domain<N>,
         to: &Domain<N>,
