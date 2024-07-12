@@ -5,6 +5,8 @@ use crate::{
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;
 
+/// Pivots around a known boundary halfspace by taking fixed-angle rotations until
+/// the boundary is crossed.
 #[derive(Debug)]
 pub struct ConstantAdherer<const N: usize> {
     span: Span<N>,
@@ -18,6 +20,7 @@ pub struct ConstantAdherer<const N: usize> {
     pub state: AdhererState<N>,
 }
 
+/// Builds a ConstantAdherer instance.
 pub struct ConstantAdhererFactory<const N: usize> {
     delta_angle: f64,
     max_rotation: Option<f64>,

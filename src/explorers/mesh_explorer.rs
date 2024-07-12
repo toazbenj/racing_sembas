@@ -15,6 +15,7 @@ type NodeID = usize;
 type Path<const N: usize> = (NodeID, SVector<f64, N>);
 type KnnNode<const N: usize> = GeomWithData<[f64; N], NodeID>;
 
+/// Explores a surface uniformly by using a grid-search approach.
 pub struct MeshExplorer<const N: usize> {
     d: f64,
     boundary: Vec<Halfspace<N>>,
@@ -31,6 +32,15 @@ pub struct MeshExplorer<const N: usize> {
 }
 
 impl<const N: usize> MeshExplorer<N> {
+    /// Creates a MeshExplorer instance.
+    /// ## Arguments
+    /// * d: The jump distance between boundary points. Describes how far apart the
+    ///   samples are taken.
+    /// * root: The initial boundary halfspace to begin exploration from.
+    /// * margin: 0 < margin < d, The minimum distance between a sample and a known
+    ///   halfspace before a path along a cardinal direction is rejected.
+    ///   Values that are closer to d improve efficiency at the cost of coverage.
+    ///   If uncertain of what value to use, try 0.9 * d to start.
     pub fn new(
         d: f64,
         root: Halfspace<N>,
@@ -61,7 +71,7 @@ impl<const N: usize> MeshExplorer<N> {
 
         exp
     }
-    // Returns the
+
     fn select_parent(&mut self) -> Option<(Halfspace<N>, NodeID, SVector<f64, N>)> {
         while let Some((id, v)) = self.path_queue.dequeue() {
             let hs = &self.boundary[id];
@@ -83,7 +93,6 @@ impl<const N: usize> MeshExplorer<N> {
 
         self.path_queue
             .extend(self.get_next_paths_from(next_id.index()));
-        // TODO: We are going to need to add some KNN logic. We use RTree in python.
 
         let b = svector_to_array(hs.b);
 
@@ -100,14 +109,12 @@ impl<const N: usize> MeshExplorer<N> {
         next_paths
     }
 
-    // Creates the cardinal vectors around a given boundary point's surface vector
     fn create_cardinals(
         n: SVector<f64, N>,
         basis_vectors: OMatrix<f64, Const<N>, Const<N>>,
     ) -> Vec<SVector<f64, N>> {
         let align_vector: SVector<f64, N> = basis_vectors.column(0).into();
-        // let
-        let span = Span::new(n, align_vector); // NOTE: Potential directional issue
+        let span = Span::new(n, align_vector);
         let angle = align_vector.angle(&n);
 
         let axes = if angle <= 1e-10 {
@@ -115,7 +122,7 @@ impl<const N: usize> MeshExplorer<N> {
         } else {
             let rot = span.get_rotater()(angle);
             rot * basis_vectors
-        }; //.columns(2, N);
+        };
 
         let mut cardinals = vec![];
 
@@ -146,12 +153,9 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
     ) -> Result<Option<PointNode<N>>, SamplingError<N>> {
         let mut adherer = self.adherer.take().or_else(|| {
             if let Some((hs, id, v)) = self.select_parent() {
-                // begin new adherence
-                // self.update_adherer(&hs, &v);
                 self.current_parent = id;
                 Some(self.adherer_f.adhere_from(hs, v * self.d))
             } else {
-                // End of exploration
                 None
             }
         });

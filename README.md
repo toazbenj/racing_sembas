@@ -26,13 +26,13 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [x] Span
   - [x] PointNode
   - [x] Halfspace
-- [ ] Add docs to all methods
+- [x] Add docs to all methods
   - [x] Domain methods
   - [x] Span methods
   - [x] Adherer methods
   - [x] Explorer methods
-  - [ ] ConstantAdherer methods
-  - [ ] MeshExplorer methods
+  - [x] ConstantAdherer methods
+  - [x] MeshExplorer methods
 
 ## Road Map to v0.5.0 (incomplete)
 
