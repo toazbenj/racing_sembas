@@ -33,9 +33,12 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [x] Explorer methods
   - [x] ConstantAdherer methods
   - [x] MeshExplorer methods
+- [ ] Compile-time Conditional logging feature
 
 ## Road Map to v0.5.0 (incomplete)
 
+- [ ] Improve MeshExplorer step() method
+  - [ ] Create a Explorer state enum (Exploring, EarlyTerminating, Interim)
 - [ ] Add ExponentialAdherer
 - [ ] Add integration tests
   - [ ] ExponentialAdherer
