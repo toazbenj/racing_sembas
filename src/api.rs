@@ -5,10 +5,7 @@ use std::net;
 
 use crate::adherer_core::SamplingError;
 use crate::structs::Domain;
-use crate::{
-    structs::Classifier,
-    utils::{svector_to_array, vector_to_string},
-};
+use crate::{structs::Classifier, utils::svector_to_array};
 
 const BUFFER_SIZE: usize = 2usize.pow(10);
 
@@ -20,6 +17,11 @@ struct ClassifierRequest {
 #[derive(Deserialize)]
 struct ClassifierResponse {
     pub cls: bool,
+}
+
+#[derive(Deserialize)]
+struct Config {
+    num_params: usize,
 }
 
 /// A means to allow an external function under test to connect to SEMBAS and request
@@ -34,10 +36,53 @@ impl<const N: usize> RemoteClassifier<N> {
     pub fn bind(addr: String) -> Result<Self, io::Error> {
         let listener = net::TcpListener::bind(addr)?;
         println!("Listening for client connection...");
-        let (stream, _) = listener.accept()?;
+        let (mut stream, _) = listener.accept()?;
         println!("Connection established.");
+
+        println!("Waiting for sim config...");
+        let mut buffer = [0u8; BUFFER_SIZE];
+        let n = stream.read(&mut buffer)?;
+        let config: Config = serde_json::from_slice(&buffer[..n]).map_err(|_| {
+            stream
+                .write_all("ERROR\n".as_bytes())
+                .expect("Invalid 'ERROR' write to stream?");
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Received malformed config data.",
+            )
+        })?;
+
+        if config.num_params != N {
+            stream
+                .write_all(format!("{N}\n").as_bytes())
+                .expect("Invalid N write to stream?");
+
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "Invalid number of param names! Expected {N}, Got {}",
+                    config.num_params
+                ),
+            ));
+        }
+
+        stream
+            .write_all("OK\n".as_bytes())
+            .expect("Invalid 'OK' write to stream?");
+
+        println!("Got config. Ready");
+
         let domain = Domain::<N>::normalized();
         Ok(RemoteClassifier { stream, domain })
+    }
+}
+
+impl<const N: usize> Drop for RemoteClassifier<N> {
+    fn drop(&mut self) {
+        let buffer = "end\n".as_bytes();
+        self.stream
+            .write_all(buffer)
+            .expect("Invalid 'end' write to stream?")
     }
 }
 
@@ -52,7 +97,7 @@ impl<const N: usize> From<io::Error> for SamplingError<N> {
 impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
     fn classify(
         &mut self,
-        p: nalgebra::SVector<f64, N>,
+        p: SVector<f64, N>,
     ) -> Result<bool, crate::adherer_core::SamplingError<N>> {
         if !self.domain.contains(&p) {
             return Err(SamplingError::OutOfBounds);
@@ -63,7 +108,7 @@ impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
         let r = ClassifierRequest { p: v };
         let json = serde_json::to_string(&r).expect("Invalid ClassifierRequest serialization?");
         self.stream
-            .write_all(json.as_bytes())
+            .write_all((json + "\n").as_bytes())
             .expect("Failed to send classification request to client.");
 
         // Receive response
