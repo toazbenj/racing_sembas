@@ -1,6 +1,6 @@
 use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
-    structs::{Classifier, Halfspace, PointNode, Span},
+    structs::{Classifier, Halfspace, Sample, Span},
 };
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;
@@ -12,7 +12,7 @@ pub struct ConstantAdherer<const N: usize> {
     span: Span<N>,
     pivot: Halfspace<N>,
     v: SVector<f64, N>,
-    samples: Vec<PointNode<N>>,
+    samples: Vec<Sample<N>>,
     rot: Option<OMatrix<f64, Const<N>, Const<N>>>,
     angle: f64,
     delta_angle: f64,
@@ -53,7 +53,7 @@ impl<const N: usize> ConstantAdherer<N> {
     fn take_initial_sample(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<PointNode<N>, SamplingError<N>> {
+    ) -> Result<Sample<N>, SamplingError<N>> {
         let cur = self.pivot.b + self.v;
         let cls = classifier.classify(cur)?;
         let delta_angle = if cls {
@@ -62,21 +62,21 @@ impl<const N: usize> ConstantAdherer<N> {
             -self.delta_angle
         };
         self.rot = Some(self.span.get_rotater()(delta_angle));
-        Ok(PointNode { p: cur, class: cls })
+        Ok(Sample::new(cur, cls))
     }
 
     fn take_sample(
         &mut self,
         rot: OMatrix<f64, Const<N>, Const<N>>,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<PointNode<N>, SamplingError<N>> {
+    ) -> Result<Sample<N>, SamplingError<N>> {
         self.v = rot * self.v;
         let cur = self.pivot.b + self.v;
         let cls = classifier.classify(cur)?;
 
         self.angle += self.delta_angle;
 
-        Ok(PointNode { p: cur, class: cls })
+        Ok(Sample::new(cur, cls))
     }
 }
 
@@ -88,26 +88,25 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
     fn sample_next(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<PointNode<N>, SamplingError<N>> {
-        let cur;
-        let cls;
-        if let Some(rot) = self.rot {
-            PointNode { p: cur, class: cls } = self.take_sample(rot, classifier)?;
+    ) -> Result<&Sample<N>, SamplingError<N>> {
+        let cur = if let Some(rot) = self.rot {
+            self.take_sample(rot, classifier)?
         } else {
-            PointNode { p: cur, class: cls } = self.take_initial_sample(classifier)?;
-        }
+            self.take_initial_sample(classifier)?
+        };
 
-        if let Some(&PointNode {
-            p: prev,
-            class: prev_cls,
-        }) = self.samples.last()
-        {
-            if cls != prev_cls {
-                let b = if cls { cur } else { prev };
-                let s = b - self.pivot.b;
-                let rot90 = self.span.get_rotater()(PI / 2.0);
-                let n = (rot90 * s).normalize();
-                self.state = AdhererState::FoundBoundary(Halfspace { b, n })
+        if let Some(prev) = self.samples.last() {
+            match (&cur, &prev) {
+                // <- Move occurs here
+                (Sample::Target(t), Sample::NonTarget(_))
+                | (Sample::NonTarget(_), Sample::Target(t)) => {
+                    let b = t.clone();
+                    let s = b - self.pivot.b;
+                    let rot90 = self.span.get_rotater()(PI / 2.0);
+                    let n = (rot90 * s).normalize();
+                    self.state = AdhererState::FoundBoundary(Halfspace { b, n });
+                }
+                _ => {}
             }
         }
 
@@ -115,9 +114,12 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
             return Err(SamplingError::BoundaryLost);
         }
 
-        self.samples.push(PointNode { p: cur, class: cls });
+        self.samples.push(cur); // <- use of moved value occurs here
 
-        Ok(PointNode { p: cur, class: cls })
+        Ok(self
+            .samples
+            .last()
+            .expect("Invalid state, cur was not added to samples?"))
     }
 }
 

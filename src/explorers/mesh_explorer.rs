@@ -2,7 +2,7 @@ use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
     explorer_core::Explorer,
     extensions::Queue,
-    structs::{Classifier, Halfspace, PointNode, Span},
+    structs::{Classifier, Halfspace, Sample, Span},
     utils::{array_distance, svector_to_array},
 };
 use nalgebra::{self, Const, OMatrix, SVector};
@@ -150,38 +150,35 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
     fn step(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Option<PointNode<N>>, SamplingError<N>> {
-        let mut adherer = self.adherer.take().or_else(|| {
+    ) -> Result<Option<Sample<N>>, SamplingError<N>> {
+        if self.adherer.is_none() {
             if let Some((hs, id, v)) = self.select_parent() {
                 self.current_parent = id;
-                Some(self.adherer_f.adhere_from(hs, v * self.d))
-            } else {
-                // No remaining paths to explore. Terminate early.
-                None
+                self.adherer = Some(self.adherer_f.adhere_from(hs, v * self.d))
             }
-        });
-
-        let node;
-        let state;
-        if let Some(ref mut adh) = adherer {
-            node = adh.sample_next(classifier).inspect_err(|_| {
-                self.adherer = None;
-            })?;
-            state = adh.get_state();
-        } else {
-            // Ends exploration
-            return Ok(None);
         }
 
-        self.adherer = if let AdhererState::FoundBoundary(hs) = state {
-            self.boundary.push(hs);
-            self.add_child(hs, Some(NodeIndex::new(self.current_parent)));
-            None
+        let node = if let Some(ref mut adh) = self.adherer {
+            let sample = adh.sample_next(classifier).inspect_err(|_| {})?;
+
+            // Clone needed, lifespan of sample attached to adherer. Adherer will be
+            // dropped when boundary found.
+            let sample = sample.clone();
+            let state = adh.get_state();
+
+            if let AdhererState::FoundBoundary(hs) = state {
+                self.boundary.push(hs);
+                self.add_child(hs, Some(NodeIndex::new(self.current_parent)));
+                self.adherer = None
+            }
+
+            Ok(Some(sample))
         } else {
-            adherer
+            // Ends exploration
+            Ok(None)
         };
 
-        Ok(Some(node))
+        node.inspect_err(|_| self.adherer = None)
     }
 
     fn boundary(&self) -> &Vec<Halfspace<N>> {

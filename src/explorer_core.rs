@@ -1,6 +1,6 @@
 use crate::{
     adherer_core::SamplingError,
-    structs::{Classifier, Halfspace, PointNode},
+    structs::{Classifier, Halfspace, Sample},
 };
 
 /// The system responsible for the full boundary exploration process. Leverages
@@ -15,7 +15,7 @@ pub trait Explorer<const N: usize> {
     fn step(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Option<PointNode<N>>, SamplingError<N>>;
+    ) -> Result<Option<Sample<N>>, SamplingError<N>>;
 
     /// Gets the current state of the explored boundary.
     /// ## Returns

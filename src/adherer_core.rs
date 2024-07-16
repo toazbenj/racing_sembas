@@ -2,7 +2,7 @@ use core::fmt;
 
 use nalgebra::SVector;
 
-use crate::structs::{Classifier, Halfspace, PointNode};
+use crate::structs::{Classifier, Halfspace, Sample};
 
 /// An error that occurred from sampling an system under test's input space.
 #[derive(Clone, PartialEq)]
@@ -32,7 +32,7 @@ pub trait Adherer<const N: usize> {
     fn sample_next(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<PointNode<N>, SamplingError<N>>;
+    ) -> Result<&Sample<N>, SamplingError<N>>;
 
     /// Returns the current state of the adherer, either Searching or
     /// FoundBoundary(hs) where hs is the resulting halfspace.

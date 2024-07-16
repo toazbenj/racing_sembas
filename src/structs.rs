@@ -13,9 +13,9 @@ pub trait Classifier<const N: usize> {
 /// A sample from the system under test's input space with a corresponding target
 /// performance classification.
 #[derive(Debug, Clone, PartialEq)]
-pub struct PointNode<const N: usize> {
-    pub p: SVector<f64, N>,
-    pub class: bool,
+pub enum Sample<const N: usize> {
+    Target(SVector<f64, N>),
+    NonTarget(SVector<f64, N>),
 }
 
 /// A halfspace is the smallest discrete unit of a hyper-geometry's surface. It
@@ -41,6 +41,16 @@ pub struct Span<const N: usize> {
 pub struct Domain<const N: usize> {
     low: SVector<f64, N>,
     high: SVector<f64, N>,
+}
+
+impl<const N: usize> Sample<N> {
+    pub fn new(p: SVector<f64, N>, cls: bool) -> Self {
+        if cls {
+            Sample::Target(p)
+        } else {
+            Sample::NonTarget(p)
+        }
+    }
 }
 
 impl<const N: usize> Span<N> {
@@ -133,14 +143,12 @@ impl<const N: usize> Domain<N> {
     }
 }
 
-impl<const N: usize> fmt::Display for PointNode<N> {
+impl<const N: usize> fmt::Display for Sample<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "PointNode(p: {}, class: {})",
-            vector_to_string(&self.p),
-            self.class
-        )
+        match &self {
+            Sample::Target(t) => write!(f, "Target(p: {:?})", t),
+            Sample::NonTarget(x) => write!(f, "Non-Target(p: {:?})", x),
+        }
     }
 }
 
