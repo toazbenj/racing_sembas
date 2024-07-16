@@ -1,3 +1,4 @@
+use nalgebra::SVector;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::io::{self, Read};
@@ -123,3 +124,19 @@ impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
         Ok(cls)
     }
 }
+
+// #[cfg(test)]
+// mod temporary {
+//     use nalgebra::vector;
+
+//     use super::*;
+
+//     #[test]
+//     fn manual_remote() {
+//         let mut classifier = RemoteClassifier::<6>::bind("127.0.0.1:2000".to_string()).unwrap();
+//         let r = classifier
+//             .classify(vector![0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+//             .unwrap();
+//         println!("Got: {r}");
+//     }
+// }
