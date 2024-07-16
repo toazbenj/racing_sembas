@@ -12,6 +12,9 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
 ## Road Map to stable v0.2.0
 
 - [x] Add server to allow for external classifier.
+- [ ] Add unit tests for search methods
+  - [ ] Binary surface search
+  - [ ] MonteCarlo global search
 - [x] Add unit tests for implemented traits
   - [x] Domain
   - [x] Span
@@ -34,6 +37,7 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [x] ConstantAdherer methods
   - [x] MeshExplorer methods
 - [ ] Compile-time Conditional logging feature
+- [ ] Compile-time error handling of target/nontarget samples.
 
 ## Road Map to v0.5.0 (incomplete)
 
