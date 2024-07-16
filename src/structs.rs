@@ -51,6 +51,13 @@ impl<const N: usize> Sample<N> {
             Sample::NonTarget(p)
         }
     }
+
+    pub fn into_inner(self) -> SVector<f64, N> {
+        match self {
+            Sample::Target(p) => p,
+            Sample::NonTarget(p) => p,
+        }
+    }
 }
 
 impl<const N: usize> Span<N> {
