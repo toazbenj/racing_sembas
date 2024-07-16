@@ -2,7 +2,7 @@ use nalgebra::SVector;
 
 use crate::{
     adherer_core::SamplingError,
-    structs::{BoundaryPair, Halfspace},
+    structs::{BoundaryPair, Classifier, Halfspace},
 };
 
 /// Finds the surface of an envelope, i.e. the initial halfspace for beginning
@@ -15,9 +15,9 @@ use crate::{
 /// * `max_samples` The maximum number of samples before the failing the process.
 pub fn binary_surface_search<const N: usize>(
     d: f64,
-    b_pair: BoundaryPair<N>,
+    b_pair: &BoundaryPair<N>,
     max_samples: u32,
-    classifier: fn(SVector<f64, N>) -> Result<bool, SamplingError<N>>,
+    classifier: &mut Box<dyn Classifier<N>>,
 ) -> Result<Halfspace<N>, SamplingError<N>> {
     let mut p_t = b_pair.t().into_inner();
     let mut p_x = b_pair.x().into_inner();
@@ -25,7 +25,7 @@ pub fn binary_surface_search<const N: usize>(
     let mut i = 0;
 
     while s.norm() > d && i < max_samples {
-        if classifier(p_t + s)? {
+        if classifier.classify(p_t + s)? {
             p_t += s;
         } else {
             p_x -= s;
