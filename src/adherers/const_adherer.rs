@@ -100,7 +100,7 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
                 // <- Move occurs here
                 (Sample::Target(t), Sample::NonTarget(_))
                 | (Sample::NonTarget(_), Sample::Target(t)) => {
-                    let b = t.clone();
+                    let b = *t;
                     let s = b - self.pivot.b;
                     let rot90 = self.span.get_rotater()(PI / 2.0);
                     let n = (rot90 * s).normalize();
