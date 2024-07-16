@@ -1,2 +1,2 @@
-pub mod global;
+pub mod global_search;
 pub mod surfacing;
