@@ -13,7 +13,7 @@ use crate::{
 /// * `t0` A target sample
 /// * `x0` A non-target sample
 /// * `max_samples` The maximum number of samples before the failing the process.
-fn binary_surface_search<const N: usize>(
+pub fn binary_surface_search<const N: usize>(
     d: f64,
     b_pair: BoundaryPair<N>,
     max_samples: u32,
