@@ -18,6 +18,12 @@ pub enum Sample<const N: usize> {
     NonTarget(SVector<f64, N>),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct BoundaryPair<const N: usize> {
+    t: SVector<f64, N>,
+    x: SVector<f64, N>,
+}
+
 /// A halfspace is the smallest discrete unit of a hyper-geometry's surface. It
 /// describes the location (the boundary point, b) and the direction of the surface
 /// (the ortho[n]ormal surface vector, n).
@@ -57,6 +63,29 @@ impl<const N: usize> Sample<N> {
             Sample::Target(p) => p,
             Sample::NonTarget(p) => p,
         }
+    }
+}
+
+impl<const N: usize> BoundaryPair<N> {
+    pub fn new(t: Sample<N>, x: Sample<N>) -> Self {
+        if let Sample::NonTarget(_) = t {
+            panic!("t must be a target sample!");
+        } else if let Sample::Target(_) = x {
+            panic!("x must be a non-target sample!");
+        }
+
+        BoundaryPair {
+            t: t.into_inner(),
+            x: x.into_inner(),
+        }
+    }
+
+    pub fn t(&self) -> Sample<N> {
+        Sample::Target(self.t)
+    }
+
+    pub fn x(&self) -> Sample<N> {
+        Sample::NonTarget(self.x)
     }
 }
 
