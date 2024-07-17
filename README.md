@@ -24,7 +24,7 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
 - [ ] Add examples
   - [ ] MeshExplorer for Sphere
   - [ ] RemoteClassifier
-- [ ] Add description to all structs
+- [x] Add description to all structs
   - [x] Domain
   - [x] Span
   - [x] PointNode
@@ -36,13 +36,14 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [x] Explorer methods
   - [x] ConstantAdherer methods
   - [x] MeshExplorer methods
-- [ ] Compile-time Conditional logging feature
-- [ ] Compile-time error handling of target/nontarget samples.
+- [ ] Compile-time Conditional logging (optional feature)
+- [ ] Compile-time error handling of target/nontarget sample dependency problems.
+- [x] Improve MeshExplorer step() method
+- [ ] Add example usage in README
 
 ## Road Map to v0.5.0 (incomplete)
 
-- [ ] Improve MeshExplorer step() method
-  - [ ] Create a Explorer state enum (Exploring, EarlyTerminating, Interim)
+- [ ] Add gradient descent or similar global search
 - [ ] Add ExponentialAdherer
 - [ ] Add integration tests
   - [ ] ExponentialAdherer
