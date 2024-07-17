@@ -38,8 +38,8 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [x] MeshExplorer methods
 - [ ] QAL
   - [ ] Allow for samples to be treated as their inner content (SVector)
-- [ ] Compile-time Conditional logging feature
-- [ ] Compile-time error handling of target/nontarget samples.
+  - [ ] Compile-time Conditional logging feature
+  - [ ] Compile-time error handling of target/nontarget samples.
 - [x] Improve MeshExplorer step() method
 - [ ] Add example usage in README
 
