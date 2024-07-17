@@ -18,9 +18,9 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
 - [x] Add unit tests for implemented traits
   - [x] Domain
   - [x] Span
-- [ ] Add integration tests
+- [x] Add integration tests
   - [x] ConstantAdherer
-  - [ ] MeshExplorer
+  - [x] MeshExplorer
 - [ ] Add examples
   - [ ] MeshExplorer for Sphere
   - [ ] RemoteClassifier
@@ -37,7 +37,7 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [x] ConstantAdherer methods
   - [x] MeshExplorer methods
 - [ ] QAL
-  - [ ] Allow for samples to be treated as their inner content (SVector)
+  - [x] Allow for samples to be coerced to their inner content (SVector)
   - [ ] Compile-time Conditional logging feature
   - [ ] Compile-time error handling of target/nontarget samples.
 - [x] Improve MeshExplorer step() method
@@ -49,3 +49,4 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
 - [ ] Add ExponentialAdherer
 - [ ] Add integration tests
   - [ ] ExponentialAdherer
+- [ ] Reorganize to break out complex structs into separate files

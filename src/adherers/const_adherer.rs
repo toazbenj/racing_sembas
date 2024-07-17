@@ -98,8 +98,8 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
         if let Some(prev) = self.samples.last() {
             match (&cur, &prev) {
                 // <- Move occurs here
-                (Sample::Target(t), Sample::NonTarget(_))
-                | (Sample::NonTarget(_), Sample::Target(t)) => {
+                (Sample::WithinMode(t), Sample::OutOfMode(_))
+                | (Sample::OutOfMode(_), Sample::WithinMode(t)) => {
                     let b = *t;
                     let s = b - self.pivot.b;
                     let rot90 = self.span.get_rotater()(PI / 2.0);

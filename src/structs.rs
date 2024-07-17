@@ -1,4 +1,5 @@
 use core::fmt;
+use std::ops::Deref;
 
 use nalgebra::{Const, OMatrix, SVector};
 
@@ -14,8 +15,8 @@ pub trait Classifier<const N: usize> {
 /// performance classification.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Sample<const N: usize> {
-    Target(SVector<f64, N>),
-    NonTarget(SVector<f64, N>),
+    WithinMode(SVector<f64, N>),
+    OutOfMode(SVector<f64, N>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -52,25 +53,36 @@ pub struct Domain<const N: usize> {
 impl<const N: usize> Sample<N> {
     pub fn new(p: SVector<f64, N>, cls: bool) -> Self {
         if cls {
-            Sample::Target(p)
+            Sample::WithinMode(p)
         } else {
-            Sample::NonTarget(p)
+            Sample::OutOfMode(p)
         }
     }
 
     pub fn into_inner(self) -> SVector<f64, N> {
         match self {
-            Sample::Target(p) => p,
-            Sample::NonTarget(p) => p,
+            Sample::WithinMode(p) => p,
+            Sample::OutOfMode(p) => p,
+        }
+    }
+}
+
+impl<const N: usize> Deref for Sample<N> {
+    type Target = SVector<f64, N>;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Sample::WithinMode(t) => t,
+            Sample::OutOfMode(x) => x,
         }
     }
 }
 
 impl<const N: usize> BoundaryPair<N> {
     pub fn new(t: Sample<N>, x: Sample<N>) -> Self {
-        if let Sample::NonTarget(_) = t {
+        if let Sample::OutOfMode(_) = t {
             panic!("t must be a target sample!");
-        } else if let Sample::Target(_) = x {
+        } else if let Sample::WithinMode(_) = x {
             panic!("x must be a non-target sample!");
         }
 
@@ -81,11 +93,11 @@ impl<const N: usize> BoundaryPair<N> {
     }
 
     pub fn t(&self) -> Sample<N> {
-        Sample::Target(self.t)
+        Sample::WithinMode(self.t)
     }
 
     pub fn x(&self) -> Sample<N> {
-        Sample::NonTarget(self.x)
+        Sample::OutOfMode(self.x)
     }
 }
 
@@ -182,8 +194,8 @@ impl<const N: usize> Domain<N> {
 impl<const N: usize> fmt::Display for Sample<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
-            Sample::Target(t) => write!(f, "Target(p: {:?})", t),
-            Sample::NonTarget(x) => write!(f, "Non-Target(p: {:?})", x),
+            Sample::WithinMode(t) => write!(f, "Target(p: {:?})", t),
+            Sample::OutOfMode(x) => write!(f, "Non-Target(p: {:?})", x),
         }
     }
 }
