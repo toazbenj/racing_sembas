@@ -41,7 +41,7 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
 - [x] Improve MeshExplorer step() method
 - [ ] Add example usage in README
 
-## Road Map to v0.5.0 (incomplete)
+## Road Map to v0.3.0 (incomplete)
 
 - [ ] Add gradient descent or similar global search
 - [ ] Add ExponentialAdherer
