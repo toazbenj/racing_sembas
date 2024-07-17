@@ -54,7 +54,7 @@ impl<const N: usize> ConstantAdherer<N> {
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
     ) -> Result<Sample<N>, SamplingError<N>> {
-        let cur = self.pivot.b + self.v;
+        let cur = *self.pivot.b + self.v;
         let cls = classifier.classify(cur)?;
         let delta_angle = if cls {
             self.delta_angle
@@ -62,7 +62,7 @@ impl<const N: usize> ConstantAdherer<N> {
             -self.delta_angle
         };
         self.rot = Some(self.span.get_rotater()(delta_angle));
-        Ok(Sample::new(cur, cls))
+        Ok(Sample::from_class(cur, cls))
     }
 
     fn take_sample(
@@ -71,12 +71,12 @@ impl<const N: usize> ConstantAdherer<N> {
         classifier: &mut Box<dyn Classifier<N>>,
     ) -> Result<Sample<N>, SamplingError<N>> {
         self.v = rot * self.v;
-        let cur = self.pivot.b + self.v;
+        let cur = *self.pivot.b + self.v;
         let cls = classifier.classify(cur)?;
 
         self.angle += self.delta_angle;
 
-        Ok(Sample::new(cur, cls))
+        Ok(Sample::from_class(cur, cls))
     }
 }
 
@@ -101,7 +101,7 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
                 (Sample::WithinMode(t), Sample::OutOfMode(_))
                 | (Sample::OutOfMode(_), Sample::WithinMode(t)) => {
                     let b = *t;
-                    let s = b - self.pivot.b;
+                    let s = *b - *self.pivot.b;
                     let rot90 = self.span.get_rotater()(PI / 2.0);
                     let n = (rot90 * s).normalize();
                     self.state = AdhererState::FoundBoundary(Halfspace { b, n });

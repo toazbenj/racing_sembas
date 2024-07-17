@@ -75,7 +75,7 @@ impl<const N: usize> MeshExplorer<N> {
     fn select_parent(&mut self) -> Option<(Halfspace<N>, NodeID, SVector<f64, N>)> {
         while let Some((id, v)) = self.path_queue.dequeue() {
             let hs = &self.boundary[id];
-            let p = hs.b + self.d * v;
+            let p = *hs.b + self.d * v;
 
             if !self.check_overlap(p) {
                 return Some((*hs, id, v));
@@ -94,7 +94,7 @@ impl<const N: usize> MeshExplorer<N> {
         self.path_queue
             .extend(self.get_next_paths_from(next_id.index()));
 
-        let b = svector_to_array(hs.b);
+        let b = svector_to_array(*hs.b);
 
         self.knn_index.insert(KnnNode::new(b, next_id.index()));
     }

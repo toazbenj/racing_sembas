@@ -6,7 +6,7 @@ use sembas::{
     adherers::const_adherer::ConstantAdhererFactory,
     explorer_core::Explorer,
     explorers::MeshExplorer,
-    structs::{Classifier, Domain, Halfspace},
+    structs::{Classifier, Domain, Halfspace, WithinMode},
 };
 
 const D: usize = 10;
@@ -36,7 +36,13 @@ impl<const N: usize> Classifier<N> for Sphere<N> {
 }
 
 fn setup_mesh_expl<const N: usize>(sphere: &Sphere<N>) -> MeshExplorer<N> {
-    let b = SVector::from_fn(|i, _| if i == 0 { 0.49 + sphere.radius } else { 0.5 });
+    let b = WithinMode(SVector::from_fn(|i, _| {
+        if i == 0 {
+            0.49 + sphere.radius
+        } else {
+            0.5
+        }
+    }));
     let mut n = SVector::zeros();
     n[0] = 1.0;
     let root = Halfspace { b, n };
@@ -115,7 +121,7 @@ fn fully_explores_sphere() {
     // In order to know that we explored the sphere, we need to know it covered the
     // full shape. To do this, we can find the average position and make sure it was
     // close to the center.
-    let boundary_points = expl.boundary().iter().map(|x| x.b).collect();
+    let boundary_points = expl.boundary().iter().map(|x| *x.b).collect();
     let center_of_mass = average_vectors(&boundary_points).expect("Empty boundary?");
 
     let avg_dist_from_center = (center_of_mass - center).norm();

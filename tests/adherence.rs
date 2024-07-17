@@ -4,7 +4,7 @@ use nalgebra::{vector, SVector};
 use sembas::{
     adherer_core::{Adherer, AdhererState, SamplingError},
     adherers,
-    structs::{Classifier, Domain, Halfspace},
+    structs::{Classifier, Domain, Halfspace, WithinMode},
 };
 
 struct Cube<const N: usize> {
@@ -38,7 +38,7 @@ impl<const N: usize> Classifier<N> for Cube<N> {
 fn finds_boundary_when_near() {
     let dist = 0.1;
 
-    let b = vector![0.5, 0.5, 0.71];
+    let b = WithinMode(vector![0.5, 0.5, 0.71]);
     let n = vector![0.0, 0.0, 1.0];
     let pivot = Halfspace { b, n };
     let v = dist * vector![1.0, 0.0, 0.0];
@@ -47,7 +47,7 @@ fn finds_boundary_when_near() {
 
     let cube = Cube::new(0.25, vector![0.5, 0.5, 0.5], Domain::normalized());
 
-    let z_dist = (b - cube.shape.high())[2];
+    let z_dist = (*b - cube.shape.high())[2];
     let angle_to_boundary = (z_dist / dist).asin();
     let n_steps_to_boundary = (angle_to_boundary / delta_angle).ceil() as i32;
 
@@ -71,7 +71,7 @@ fn finds_boundary_when_near() {
 fn loses_boundary_when_out_of_reach() {
     let dist = 0.1;
 
-    let b = vector![0.5, 0.5, 0.5];
+    let b = WithinMode(vector![0.5, 0.5, 0.5]);
     let n = vector![0.0, 0.0, 1.0];
     let pivot = Halfspace { b, n };
     let v = dist * vector![1.0, 0.0, 0.0];

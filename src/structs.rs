@@ -11,18 +11,23 @@ pub trait Classifier<const N: usize> {
     fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>>;
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct WithinMode<const N: usize>(pub SVector<f64, N>);
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct OutOfMode<const N: usize>(pub SVector<f64, N>);
+
 /// A sample from the system under test's input space with a corresponding target
 /// performance classification.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Sample<const N: usize> {
-    WithinMode(SVector<f64, N>),
-    OutOfMode(SVector<f64, N>),
+    WithinMode(WithinMode<N>),
+    OutOfMode(OutOfMode<N>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BoundaryPair<const N: usize> {
-    t: SVector<f64, N>,
-    x: SVector<f64, N>,
+    t: WithinMode<N>,
+    x: OutOfMode<N>,
 }
 
 /// A halfspace is the smallest discrete unit of a hyper-geometry's surface. It
@@ -30,7 +35,7 @@ pub struct BoundaryPair<const N: usize> {
 /// (the ortho[n]ormal surface vector, n).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Halfspace<const N: usize> {
-    pub b: SVector<f64, N>,
+    pub b: WithinMode<N>,
     pub n: SVector<f64, N>,
 }
 
@@ -51,18 +56,18 @@ pub struct Domain<const N: usize> {
 }
 
 impl<const N: usize> Sample<N> {
-    pub fn new(p: SVector<f64, N>, cls: bool) -> Self {
+    pub fn from_class(p: SVector<f64, N>, cls: bool) -> Self {
         if cls {
-            Sample::WithinMode(p)
+            Sample::WithinMode(WithinMode(p))
         } else {
-            Sample::OutOfMode(p)
+            Sample::OutOfMode(OutOfMode(p))
         }
     }
 
     pub fn into_inner(self) -> SVector<f64, N> {
         match self {
-            Sample::WithinMode(p) => p,
-            Sample::OutOfMode(p) => p,
+            Sample::WithinMode(WithinMode(p)) => p,
+            Sample::OutOfMode(OutOfMode(p)) => p,
         }
     }
 }
@@ -72,32 +77,38 @@ impl<const N: usize> Deref for Sample<N> {
 
     fn deref(&self) -> &Self::Target {
         match self {
-            Sample::WithinMode(t) => t,
-            Sample::OutOfMode(x) => x,
+            Sample::WithinMode(WithinMode(t)) => t,
+            Sample::OutOfMode(OutOfMode(x)) => x,
         }
     }
 }
 
+impl<const N: usize> Deref for WithinMode<N> {
+    type Target = SVector<f64, N>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl<const N: usize> Deref for OutOfMode<N> {
+    type Target = SVector<f64, N>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl<const N: usize> BoundaryPair<N> {
-    pub fn new(t: Sample<N>, x: Sample<N>) -> Self {
-        if let Sample::OutOfMode(_) = t {
-            panic!("t must be a target sample!");
-        } else if let Sample::WithinMode(_) = x {
-            panic!("x must be a non-target sample!");
-        }
-
-        BoundaryPair {
-            t: t.into_inner(),
-            x: x.into_inner(),
-        }
+    pub fn new(t: WithinMode<N>, x: OutOfMode<N>) -> Self {
+        BoundaryPair { t, x }
     }
 
-    pub fn t(&self) -> Sample<N> {
-        Sample::WithinMode(self.t)
+    pub fn t(&self) -> &WithinMode<N> {
+        &self.t
     }
 
-    pub fn x(&self) -> Sample<N> {
-        Sample::OutOfMode(self.x)
+    pub fn x(&self) -> &OutOfMode<N> {
+        &self.x
     }
 }
 
