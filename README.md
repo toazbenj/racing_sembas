@@ -13,7 +13,7 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
 
 - [x] Add server to allow for external classifier.
 - [ ] Add unit tests for search methods
-  - [ ] Binary surface search
+  - [x] Binary surface search
   - [ ] MonteCarlo global search
 - [x] Add unit tests for implemented traits
   - [x] Domain
