@@ -132,9 +132,3 @@ fn fully_explores_sphere() {
     // );
     // println!("{measured_points_per_area} - {ideal_points_per_area} = {}", measured_points_per_area - ideal_points_per_area);
 }
-
-#[test]
-fn test() {
-    let v = vector![1.0, 2.0, 3.0];
-    println!("Debug string: {:?}", v);
-}
