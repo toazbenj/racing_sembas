@@ -36,6 +36,8 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [x] Explorer methods
   - [x] ConstantAdherer methods
   - [x] MeshExplorer methods
+- [ ] QAL
+  - [ ] Allow for samples to be treated as their inner content (SVector)
 - [ ] Compile-time Conditional logging feature
 - [ ] Compile-time error handling of target/nontarget samples.
 
