@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use nalgebra::{vector, SVector};
+use nalgebra::SVector;
 use sembas::{
     adherers::const_adherer::ConstantAdhererFactory,
     explorer_core::Explorer,
@@ -22,8 +22,8 @@ struct Sphere<const N: usize> {
 }
 
 impl<const N: usize> Classifier<N> for Sphere<N> {
-    fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-        if !self.domain.contains(&p) {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+        if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }
 

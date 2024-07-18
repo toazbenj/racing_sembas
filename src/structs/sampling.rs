@@ -7,7 +7,7 @@ use crate::structs::SamplingError;
 /// A system under test whose output can be classified as "target" or "non-target"
 /// behavior. For example, safe/unsafe.
 pub trait Classifier<const N: usize> {
-    fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>>;
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

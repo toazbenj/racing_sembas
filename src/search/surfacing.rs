@@ -19,13 +19,13 @@ pub fn binary_surface_search<const N: usize>(
     max_samples: u32,
     classifier: &mut Box<dyn Classifier<N>>,
 ) -> Result<Halfspace<N>, SamplingError<N>> {
-    let mut p_t = **b_pair.t();
-    let mut p_x = **b_pair.x();
+    let mut p_t = b_pair.t().0;
+    let mut p_x = b_pair.x().0;
     let mut s = (p_x - p_t) / 2.0;
     let mut i = 0;
 
     while s.norm() > d && i < max_samples {
-        if classifier.classify(p_t + s)? {
+        if classifier.classify(&(p_t + s))? {
             p_t += s;
         } else {
             p_x -= s;
@@ -67,7 +67,7 @@ mod test_surfacer {
     }
 
     impl<const N: usize> Classifier<N> for Sphere<N> {
-        fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+        fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
             if !self.domain.contains(&p) {
                 return Err(SamplingError::OutOfBounds);
             }
@@ -106,11 +106,11 @@ mod test_surfacer {
             .expect("Failed to find boundary?");
 
         assert!(
-            sphere.classify(*hs.b).unwrap(),
+            sphere.classify(&hs.b).unwrap(),
             "Halfspace outside of geometry?"
         );
         assert!(
-            !sphere.classify(*hs.b + hs.n * d).unwrap(),
+            !sphere.classify(&(hs.b + hs.n * d)).unwrap(),
             "Halfspace not on boundary?"
         );
     }
@@ -134,11 +134,11 @@ mod test_surfacer {
             .expect("Failed to find boundary within the maximum number of samples ({max_samples})");
 
         assert!(
-            sphere.classify(*hs.b).unwrap(),
+            sphere.classify(&hs.b).unwrap(),
             "Halfspace outside of geometry?"
         );
         assert!(
-            !sphere.classify(*hs.b + hs.n * d).unwrap(),
+            !sphere.classify(&(hs.b + hs.n * d)).unwrap(),
             "Halfspace not on boundary?"
         );
     }

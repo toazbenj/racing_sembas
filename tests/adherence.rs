@@ -22,12 +22,12 @@ impl<const N: usize> Cube<N> {
 }
 
 impl<const N: usize> Classifier<N> for Cube<N> {
-    fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-        if !self.domain.contains(&p) {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+        if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }
 
-        Ok(self.shape.contains(&p))
+        Ok(self.shape.contains(p))
     }
 }
 
