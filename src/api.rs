@@ -34,6 +34,18 @@ pub struct RemoteClassifier<const N: usize> {
 }
 
 impl<const N: usize> RemoteClassifier<N> {
+    /// Opens a socket to be connected to by a remote function under test (FUT).  
+    /// Once a connection is established, the RemoteClassifier will send the points
+    /// to the FUT to be classified, and the FUT will return the resulting class
+    /// (bool).
+    /// # Connection Sequence
+    /// 1. RemoteClassifier binds to TcpListener.
+    /// 2. FUT connects to socket.
+    /// 3. RemoteClassifier accepts connection.
+    /// 4. FUT sends config containing { num_params } config info
+    /// 5. RemoteClassifier accepts configuration, throwing error if N != num_params
+    /// 6. RemoteClassifier returns OK
+    /// 7. RemoteClassifier setup complete, ready to classify.
     pub fn bind(addr: String) -> Result<Self, io::Error> {
         let listener = net::TcpListener::bind(addr)?;
         println!("Listening for client connection...");
