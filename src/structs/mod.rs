@@ -1,43 +1,16 @@
+pub mod boundary;
+pub mod error;
+pub mod sampling;
+
+pub use boundary::*;
+pub use error::*;
+pub use sampling::*;
+
 use core::fmt;
-use std::ops::Deref;
 
 use nalgebra::{Const, OMatrix, SVector};
 
-use crate::{adherer_core::SamplingError, utils::vector_to_string};
-
-/// A system under test whose output can be classified as "target" or "non-target"
-/// behavior. For example, safe/unsafe.
-pub trait Classifier<const N: usize> {
-    fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>>;
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct WithinMode<const N: usize>(pub SVector<f64, N>);
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct OutOfMode<const N: usize>(pub SVector<f64, N>);
-
-/// A sample from the system under test's input space with a corresponding target
-/// performance classification.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Sample<const N: usize> {
-    WithinMode(WithinMode<N>),
-    OutOfMode(OutOfMode<N>),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct BoundaryPair<const N: usize> {
-    t: WithinMode<N>,
-    x: OutOfMode<N>,
-}
-
-/// A halfspace is the smallest discrete unit of a hyper-geometry's surface. It
-/// describes the location (the boundary point, b) and the direction of the surface
-/// (the ortho[n]ormal surface vector, n).
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Halfspace<const N: usize> {
-    pub b: WithinMode<N>,
-    pub n: SVector<f64, N>,
-}
+use crate::utils::vector_to_string;
 
 /// A 2-dimensional subspace of an N-dimensional input space, described by two
 /// orthonormal vectors, u and v.
@@ -53,63 +26,6 @@ pub struct Span<const N: usize> {
 pub struct Domain<const N: usize> {
     low: SVector<f64, N>,
     high: SVector<f64, N>,
-}
-
-impl<const N: usize> Sample<N> {
-    pub fn from_class(p: SVector<f64, N>, cls: bool) -> Self {
-        if cls {
-            Sample::WithinMode(WithinMode(p))
-        } else {
-            Sample::OutOfMode(OutOfMode(p))
-        }
-    }
-
-    pub fn into_inner(self) -> SVector<f64, N> {
-        match self {
-            Sample::WithinMode(WithinMode(p)) => p,
-            Sample::OutOfMode(OutOfMode(p)) => p,
-        }
-    }
-}
-
-impl<const N: usize> Deref for Sample<N> {
-    type Target = SVector<f64, N>;
-
-    fn deref(&self) -> &Self::Target {
-        match self {
-            Sample::WithinMode(WithinMode(t)) => t,
-            Sample::OutOfMode(OutOfMode(x)) => x,
-        }
-    }
-}
-
-impl<const N: usize> Deref for WithinMode<N> {
-    type Target = SVector<f64, N>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-impl<const N: usize> Deref for OutOfMode<N> {
-    type Target = SVector<f64, N>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<const N: usize> BoundaryPair<N> {
-    pub fn new(t: WithinMode<N>, x: OutOfMode<N>) -> Self {
-        BoundaryPair { t, x }
-    }
-
-    pub fn t(&self) -> &WithinMode<N> {
-        &self.t
-    }
-
-    pub fn x(&self) -> &OutOfMode<N> {
-        &self.x
-    }
 }
 
 impl<const N: usize> Span<N> {
@@ -199,15 +115,6 @@ impl<const N: usize> Domain<N> {
         to: &Domain<N>,
     ) -> SVector<f64, N> {
         ((p - from.low).component_div(&from.dimensions())).component_mul(&to.dimensions()) + to.low
-    }
-}
-
-impl<const N: usize> fmt::Display for Sample<N> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            Sample::WithinMode(t) => write!(f, "Target(p: {:?})", t),
-            Sample::OutOfMode(x) => write!(f, "Non-Target(p: {:?})", x),
-        }
     }
 }
 
