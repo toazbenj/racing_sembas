@@ -1,10 +1,11 @@
 use nalgebra::SVector;
-use rand::{rngs::ThreadRng, Rng};
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha20Rng;
 
 use crate::structs::Domain;
 
 pub struct MonteCarloSearch<const N: usize> {
-    rng: ThreadRng,
+    rng: ChaCha20Rng,
     domain: Domain<N>,
 }
 
@@ -14,8 +15,8 @@ pub trait SearchFactory<const N: usize> {
 }
 
 impl<const N: usize> MonteCarloSearch<N> {
-    pub fn new(domain: Domain<N>) -> Self {
-        let rng = rand::thread_rng();
+    pub fn new(domain: Domain<N>, seed: u64) -> Self {
+        let rng = ChaCha20Rng::seed_from_u64(seed);
         MonteCarloSearch { rng, domain }
     }
 }
@@ -28,5 +29,24 @@ impl<const N: usize> SearchFactory<N> for MonteCarloSearch<N> {
 
     fn get_domain(&self) -> &Domain<N> {
         &self.domain
+    }
+}
+
+#[cfg(test)]
+mod test_monte_carlo {
+    use crate::structs::Domain;
+
+    use super::{MonteCarloSearch, SearchFactory};
+
+    #[test]
+    fn all_points_fall_in_domain() {
+        //
+        let domain = Domain::<10>::normalized();
+        let mut mc = MonteCarloSearch::new(domain.clone(), 1);
+
+        assert!(
+            (0..10000).all(|_| domain.contains(&mc.sample())),
+            "MonteCarlo resulted in invalid samples - out of bounds?"
+        )
     }
 }
