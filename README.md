@@ -12,9 +12,9 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
 ## Road Map to stable v0.2.0
 
 - [x] Add server to allow for external classifier.
-- [ ] Add unit tests for search methods
+- [x] Add unit tests for search methods
   - [x] Binary surface search
-  - [ ] MonteCarlo global search
+  - [x] MonteCarlo global search
 - [x] Add unit tests for implemented traits
   - [x] Domain
   - [x] Span
@@ -36,9 +36,8 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [x] Explorer methods
   - [x] ConstantAdherer methods
   - [x] MeshExplorer methods
-- [ ] QAL
+- [x] QAL
   - [x] Allow for samples to be coerced to their inner content (SVector)
-  - [ ] Compile-time Conditional logging feature
   - [x] Compile-time error handling of target/nontarget samples.
 - [x] Improve MeshExplorer step() method
 - [ ] Add example usage in README
