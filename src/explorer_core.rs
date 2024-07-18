@@ -1,6 +1,6 @@
 use crate::{
-    adherer_core::SamplingError,
-    structs::{Classifier, Halfspace, Sample},
+    structs::{Classifier, Halfspace, Sample, SamplingError},
+    // structs::{Classifier, Halfspace, Sample},
 };
 
 /// The system responsible for the full boundary exploration process. Leverages

@@ -1,6 +1,6 @@
 use crate::{
-    adherer_core::SamplingError,
-    structs::{BoundaryPair, Classifier, Halfspace},
+    structs::SamplingError,
+    structs::{BoundaryPair, Classifier, Halfspace, WithinMode},
 };
 
 /// Finds the surface of an envelope, i.e. the initial halfspace for beginning
@@ -17,13 +17,13 @@ pub fn binary_surface_search<const N: usize>(
     max_samples: u32,
     classifier: &mut Box<dyn Classifier<N>>,
 ) -> Result<Halfspace<N>, SamplingError<N>> {
-    let mut p_t = b_pair.t().into_inner();
-    let mut p_x = b_pair.x().into_inner();
+    let mut p_t = b_pair.t().0;
+    let mut p_x = b_pair.x().0;
     let mut s = (p_x - p_t) / 2.0;
     let mut i = 0;
 
     while s.norm() > d && i < max_samples {
-        if classifier.classify(p_t + s)? {
+        if classifier.classify(&(p_t + s))? {
             p_t += s;
         } else {
             p_x -= s;
@@ -39,17 +39,17 @@ pub fn binary_surface_search<const N: usize>(
 
     let n = s.normalize();
 
-    Ok(Halfspace { b: p_t, n })
+    Ok(Halfspace {
+        b: WithinMode(p_t),
+        n,
+    })
 }
 
 #[cfg(test)]
 mod test_surfacer {
     use nalgebra::SVector;
 
-    use crate::{
-        adherer_core::SamplingError,
-        structs::{BoundaryPair, Classifier, Domain, Sample},
-    };
+    use crate::structs::{BoundaryPair, Classifier, Domain, OutOfMode, SamplingError, WithinMode};
 
     use super::binary_surface_search;
 
@@ -63,8 +63,8 @@ mod test_surfacer {
     }
 
     impl<const N: usize> Classifier<N> for Sphere<N> {
-        fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-            if !self.domain.contains(&p) {
+        fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+            if !self.domain.contains(p) {
                 return Err(SamplingError::OutOfBounds);
             }
 
@@ -93,20 +93,20 @@ mod test_surfacer {
         // a little perturbed from the center
         let mut t = SVector::from_fn(|_, _| 0.5);
         t[D - 1] += 0.15;
-        let t = Sample::new(t, sphere.classify(t).unwrap());
+        let t = WithinMode(t);
         let mut x = SVector::from_fn(|_, _| 0.15);
         x[0] += 0.3;
-        let x = Sample::new(x, sphere.classify(x).unwrap());
+        let x = OutOfMode(x);
 
         let hs = binary_surface_search(d, &BoundaryPair::new(t, x), 100, &mut sphere)
             .expect("Failed to find boundary?");
 
         assert!(
-            sphere.classify(hs.b).unwrap(),
+            sphere.classify(&hs.b).unwrap(),
             "Halfspace outside of geometry?"
         );
         assert!(
-            !sphere.classify(hs.b + hs.n * d).unwrap(),
+            !sphere.classify(&(hs.b + hs.n * d)).unwrap(),
             "Halfspace not on boundary?"
         );
     }
@@ -120,22 +120,21 @@ mod test_surfacer {
         // a little perturbed from the center
         let mut t = SVector::from_fn(|_, _| 0.5);
         t[D - 1] += 0.15;
-        let t = Sample::new(t, sphere.classify(t).unwrap());
+        let t = WithinMode(t);
         let mut x = SVector::from_fn(|_, _| 0.15);
         x[0] += 0.3;
-        let x = Sample::new(x, sphere.classify(x).unwrap());
-
+        let x = OutOfMode(x);
         let max_samples = (DIAMETER / d).log2().ceil() as u32;
 
         let hs = binary_surface_search(d, &BoundaryPair::new(t, x), max_samples, &mut sphere)
             .expect("Failed to find boundary within the maximum number of samples ({max_samples})");
 
         assert!(
-            sphere.classify(hs.b).unwrap(),
+            sphere.classify(&hs.b).unwrap(),
             "Halfspace outside of geometry?"
         );
         assert!(
-            !sphere.classify(hs.b + hs.n * d).unwrap(),
+            !sphere.classify(&(hs.b + hs.n * d)).unwrap(),
             "Halfspace not on boundary?"
         );
     }
@@ -148,11 +147,11 @@ mod test_surfacer {
 
         // a little perturbed from the center
         let t = SVector::from_fn(|_, _| 0.5);
-        let t = Sample::new(t, sphere.classify(t).unwrap());
+        let t = WithinMode(t);
+
         let mut x = SVector::from_fn(|_, _| 0.5);
         x[0] = 0.0;
-        let x = Sample::new(x, sphere.classify(x).unwrap());
-
+        let x = OutOfMode(x);
         let minimum_sample_count = (RADIUS / d).log2().ceil() as u32;
 
         let err: SamplingError<10> = binary_surface_search(

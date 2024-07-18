@@ -1,8 +1,8 @@
 use crate::{
-    adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
+    adherer_core::{Adherer, AdhererFactory, AdhererState},
     explorer_core::Explorer,
     extensions::Queue,
-    structs::{Classifier, Halfspace, Sample, Span},
+    structs::{Classifier, Halfspace, Sample, SamplingError, Span},
     utils::{array_distance, svector_to_array},
 };
 use nalgebra::{self, Const, OMatrix, SVector};
@@ -75,7 +75,7 @@ impl<const N: usize> MeshExplorer<N> {
     fn select_parent(&mut self) -> Option<(Halfspace<N>, NodeID, SVector<f64, N>)> {
         while let Some((id, v)) = self.path_queue.dequeue() {
             let hs = &self.boundary[id];
-            let p = hs.b + self.d * v;
+            let p = *hs.b + self.d * v;
 
             if !self.check_overlap(p) {
                 return Some((*hs, id, v));
@@ -94,7 +94,7 @@ impl<const N: usize> MeshExplorer<N> {
         self.path_queue
             .extend(self.get_next_paths_from(next_id.index()));
 
-        let b = svector_to_array(hs.b);
+        let b: [f64; N] = hs.b.into();
 
         self.knn_index.insert(KnnNode::new(b, next_id.index()));
     }
@@ -163,7 +163,7 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
 
             // Clone needed, lifespan of sample attached to adherer. Adherer will be
             // dropped when boundary found.
-            let sample = sample.clone();
+            let sample = *sample;
             let state = adh.get_state();
 
             if let AdhererState::FoundBoundary(hs) = state {

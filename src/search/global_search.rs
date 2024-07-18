@@ -22,7 +22,7 @@ impl<const N: usize> MonteCarloSearch<N> {
 
 impl<const N: usize> SearchFactory<N> for MonteCarloSearch<N> {
     fn sample(&mut self) -> SVector<f64, N> {
-        let mut v: SVector<f64, N> = SVector::from_fn(|_, _| self.rng.gen());
+        let v: SVector<f64, N> = SVector::from_fn(|_, _| self.rng.gen());
         v.component_mul(&self.domain.dimensions()) + self.domain.low()
     }
 

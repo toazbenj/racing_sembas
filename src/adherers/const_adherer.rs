@@ -1,6 +1,6 @@
 use crate::{
-    adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
-    structs::{Classifier, Halfspace, Sample, Span},
+    adherer_core::{Adherer, AdhererFactory, AdhererState},
+    structs::{Classifier, Halfspace, Sample, SamplingError, Span},
 };
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;
@@ -55,14 +55,14 @@ impl<const N: usize> ConstantAdherer<N> {
         classifier: &mut Box<dyn Classifier<N>>,
     ) -> Result<Sample<N>, SamplingError<N>> {
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(cur)?;
+        let cls = classifier.classify(&cur)?;
         let delta_angle = if cls {
             self.delta_angle
         } else {
             -self.delta_angle
         };
         self.rot = Some(self.span.get_rotater()(delta_angle));
-        Ok(Sample::new(cur, cls))
+        Ok(Sample::from_class(cur, cls))
     }
 
     fn take_sample(
@@ -72,11 +72,11 @@ impl<const N: usize> ConstantAdherer<N> {
     ) -> Result<Sample<N>, SamplingError<N>> {
         self.v = rot * self.v;
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(cur)?;
+        let cls = classifier.classify(&cur)?;
 
         self.angle += self.delta_angle;
 
-        Ok(Sample::new(cur, cls))
+        Ok(Sample::from_class(cur, cls))
     }
 }
 

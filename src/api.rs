@@ -1,10 +1,10 @@
+use crate::structs::SamplingError;
 use nalgebra::SVector;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::io::{self, Read};
 use std::net;
 
-use crate::adherer_core::SamplingError;
 use crate::structs::Domain;
 use crate::{structs::Classifier, utils::svector_to_array};
 
@@ -96,16 +96,13 @@ impl<const N: usize> From<io::Error> for SamplingError<N> {
 }
 
 impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
-    fn classify(
-        &mut self,
-        p: SVector<f64, N>,
-    ) -> Result<bool, crate::adherer_core::SamplingError<N>> {
-        if !self.domain.contains(&p) {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+        if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }
 
         // Send request
-        let v: Vec<f64> = svector_to_array(p).to_vec();
+        let v: Vec<f64> = svector_to_array(*p).to_vec();
         let r = ClassifierRequest { p: v };
         let json = serde_json::to_string(&r).expect("Invalid ClassifierRequest serialization?");
         self.stream
