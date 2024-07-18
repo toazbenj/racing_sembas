@@ -16,8 +16,6 @@ algorithm to find the next boundary point. This example explores a simple
 
 Look at the `examples/` folder to see how to use the crate.
 
-The main branch will track with the most stable version of SEMBAS. 
-
 ## Road Map to v0.3.0 (incomplete)
 
 - [ ] Add gradient descent or similar global search
