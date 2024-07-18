@@ -159,21 +159,20 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
         }
 
         let node = if let Some(ref mut adh) = self.adherer {
-            let next = adh.sample_next(classifier);
-            let sample = match next {
-                Ok(result) => *result,
-                Err(e) => return Err(e),
-            };
+            match adh.sample_next(classifier) {
+                Ok(result) => {
+                    let sample = *result;
 
-            let state = adh.get_state();
+                    if let AdhererState::FoundBoundary(hs) = adh.get_state() {
+                        self.boundary.push(hs);
+                        self.add_child(hs, Some(NodeIndex::new(self.current_parent)));
+                        self.adherer = None
+                    }
 
-            if let AdhererState::FoundBoundary(hs) = state {
-                self.boundary.push(hs);
-                self.add_child(hs, Some(NodeIndex::new(self.current_parent)));
-                self.adherer = None
+                    Ok(Some(sample))
+                }
+                Err(e) => Err(e),
             }
-
-            Ok(Some(sample))
         } else {
             // Ends exploration
             Ok(None)
