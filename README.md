@@ -23,7 +23,7 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
   - [x] MeshExplorer
 - [ ] Add examples
   - [ ] MeshExplorer for Sphere
-  - [ ] RemoteClassifier
+  - [x] RemoteClassifier
 - [x] Add description to all structs
   - [x] Domain
   - [x] Span
