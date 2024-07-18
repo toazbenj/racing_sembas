@@ -10,5 +10,9 @@ nalgebra = "0.33.0"
 petgraph = "0.6.5"
 rand = "0.8.5"
 rstar = "0.12.0"
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.120"
+serde = { version = "1.0.204", optional = true, features = ["derive"] }
+serde_json = { version = "1.0.120", optional = true }
+
+[features]
+default = []
+api = ["serde", "serde_json"]
