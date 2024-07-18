@@ -21,8 +21,8 @@ history) but the goal of v0.2.0 will to clear up any remaining design decisions.
 - [x] Add integration tests
   - [x] ConstantAdherer
   - [x] MeshExplorer
-- [ ] Add examples
-  - [ ] MeshExplorer for Sphere
+- [x] Add examples
+  - [x] MeshExplorer for Sphere
   - [x] RemoteClassifier
 - [x] Add description to all structs
   - [x] Domain
