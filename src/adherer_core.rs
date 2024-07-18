@@ -2,16 +2,7 @@ use core::fmt;
 
 use nalgebra::SVector;
 
-use crate::structs::{Classifier, Halfspace, Sample};
-
-/// An error that occurred from sampling an system under test's input space.
-#[derive(Clone, PartialEq)]
-pub enum SamplingError<const N: usize> {
-    BoundaryLost,
-    OutOfBounds,
-    MaxSamplesExceeded,
-    InvalidClassifierResponse(String),
-}
+use crate::structs::{Classifier, Halfspace, Sample, SamplingError};
 
 /// A valid state of an adherer.
 #[derive(Debug, Clone, Copy, PartialEq)]

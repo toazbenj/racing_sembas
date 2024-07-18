@@ -1,7 +1,7 @@
 use nalgebra::SVector;
 
 use crate::{
-    adherer_core::SamplingError,
+    structs::SamplingError,
     structs::{BoundaryPair, Classifier, Halfspace, WithinMode},
 };
 
@@ -51,9 +51,8 @@ pub fn binary_surface_search<const N: usize>(
 mod test_surfacer {
     use nalgebra::SVector;
 
-    use crate::{
-        adherer_core::SamplingError,
-        structs::{BoundaryPair, Classifier, Domain, OutOfMode, Sample, WithinMode},
+    use crate::structs::{
+        BoundaryPair, Classifier, Domain, OutOfMode, Sample, SamplingError, WithinMode,
     };
 
     use super::binary_surface_search;

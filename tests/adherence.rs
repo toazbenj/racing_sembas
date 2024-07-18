@@ -2,9 +2,9 @@ use core::panic;
 
 use nalgebra::{vector, SVector};
 use sembas::{
-    adherer_core::{Adherer, AdhererState, SamplingError},
+    adherer_core::{Adherer, AdhererState},
     adherers,
-    structs::{Classifier, Domain, Halfspace, WithinMode},
+    structs::{Classifier, Domain, Halfspace, SamplingError, WithinMode},
 };
 
 struct Cube<const N: usize> {
@@ -22,10 +22,7 @@ impl<const N: usize> Cube<N> {
 }
 
 impl<const N: usize> Classifier<N> for Cube<N> {
-    fn classify(
-        &mut self,
-        p: SVector<f64, N>,
-    ) -> Result<bool, sembas::adherer_core::SamplingError<N>> {
+    fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>> {
         if !self.domain.contains(&p) {
             return Err(SamplingError::OutOfBounds);
         }

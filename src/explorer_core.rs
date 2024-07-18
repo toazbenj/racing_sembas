@@ -1,6 +1,5 @@
 use crate::{
-    adherer_core::SamplingError,
-    structs::{Classifier, Halfspace, Sample},
+    structs::{Classifier, Halfspace, Sample, SamplingError},
     // structs::{Classifier, Halfspace, Sample},
 };
 

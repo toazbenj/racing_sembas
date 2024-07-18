@@ -2,11 +2,10 @@ use std::time::{Duration, Instant};
 
 use nalgebra::{vector, SVector};
 use sembas::{
-    adherer_core::SamplingError,
     adherers::const_adherer::ConstantAdhererFactory,
     explorer_core::Explorer,
     explorers::MeshExplorer,
-    structs::{Classifier, Domain, Halfspace, WithinMode},
+    structs::{Classifier, Domain, Halfspace, SamplingError, WithinMode},
 };
 
 const D: usize = 10;
@@ -23,10 +22,7 @@ struct Sphere<const N: usize> {
 }
 
 impl<const N: usize> Classifier<N> for Sphere<N> {
-    fn classify(
-        &mut self,
-        p: SVector<f64, N>,
-    ) -> Result<bool, sembas::adherer_core::SamplingError<N>> {
+    fn classify(&mut self, p: SVector<f64, N>) -> Result<bool, SamplingError<N>> {
         if !self.domain.contains(&p) {
             return Err(SamplingError::OutOfBounds);
         }

@@ -2,7 +2,7 @@ use std::{fmt, ops::Deref};
 
 use nalgebra::SVector;
 
-use crate::adherer_core::SamplingError;
+use crate::structs::SamplingError;
 
 /// A system under test whose output can be classified as "target" or "non-target"
 /// behavior. For example, safe/unsafe.

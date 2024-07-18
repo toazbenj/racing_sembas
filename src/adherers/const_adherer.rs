@@ -1,6 +1,6 @@
 use crate::{
-    adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
-    structs::{Classifier, Halfspace, Sample, Span},
+    adherer_core::{Adherer, AdhererFactory, AdhererState},
+    structs::{Classifier, Halfspace, Sample, SamplingError, Span},
 };
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;

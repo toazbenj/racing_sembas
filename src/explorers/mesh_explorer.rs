@@ -1,8 +1,8 @@
 use crate::{
-    adherer_core::{Adherer, AdhererFactory, AdhererState, SamplingError},
+    adherer_core::{Adherer, AdhererFactory, AdhererState},
     explorer_core::Explorer,
     extensions::Queue,
-    structs::{Classifier, Halfspace, Sample, Span},
+    structs::{Classifier, Halfspace, Sample, SamplingError, Span},
     utils::{array_distance, svector_to_array},
 };
 use nalgebra::{self, Const, OMatrix, SVector};
