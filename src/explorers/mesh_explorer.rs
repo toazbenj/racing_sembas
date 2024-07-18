@@ -163,7 +163,7 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
 
             // Clone needed, lifespan of sample attached to adherer. Adherer will be
             // dropped when boundary found.
-            let sample = sample.clone();
+            let sample = *sample;
             let state = adh.get_state();
 
             if let AdhererState::FoundBoundary(hs) = state {

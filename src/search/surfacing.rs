@@ -1,5 +1,3 @@
-use nalgebra::SVector;
-
 use crate::{
     structs::SamplingError,
     structs::{BoundaryPair, Classifier, Halfspace, WithinMode},
@@ -51,9 +49,7 @@ pub fn binary_surface_search<const N: usize>(
 mod test_surfacer {
     use nalgebra::SVector;
 
-    use crate::structs::{
-        BoundaryPair, Classifier, Domain, OutOfMode, Sample, SamplingError, WithinMode,
-    };
+    use crate::structs::{BoundaryPair, Classifier, Domain, OutOfMode, SamplingError, WithinMode};
 
     use super::binary_surface_search;
 
@@ -68,7 +64,7 @@ mod test_surfacer {
 
     impl<const N: usize> Classifier<N> for Sphere<N> {
         fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-            if !self.domain.contains(&p) {
+            if !self.domain.contains(p) {
                 return Err(SamplingError::OutOfBounds);
             }
 

@@ -97,12 +97,12 @@ impl<const N: usize> From<io::Error> for SamplingError<N> {
 
 impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
     fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-        if !self.domain.contains(&p) {
+        if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }
 
         // Send request
-        let v: Vec<f64> = svector_to_array(p.clone()).to_vec();
+        let v: Vec<f64> = svector_to_array(*p).to_vec();
         let r = ClassifierRequest { p: v };
         let json = serde_json::to_string(&r).expect("Invalid ClassifierRequest serialization?");
         self.stream

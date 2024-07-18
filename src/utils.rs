@@ -68,6 +68,6 @@ mod test {
     fn convert_empty_svector_to_array() {
         let v = vector![];
         let arr = svector_to_array(v);
-        assert!(arr.len() == 0, "Not zero?");
+        assert!(arr.is_empty(), "Not zero?");
     }
 }
