@@ -16,42 +16,7 @@ algorithm to find the next boundary point. This example explores a simple
 
 Look at the `examples/` folder to see how to use the crate.
 
-## State of v0.1.0
-
-Currently, the implementation is fairly unstable (which can be seen in the commit
-history) but the goal of v0.2.0 will to clear up any remaining design decisions.
-
-## Road Map to stable v0.2.0
-
-- [x] Add server to allow for external classifier.
-- [x] Add unit tests for search methods
-  - [x] Binary surface search
-  - [x] MonteCarlo global search
-- [x] Add unit tests for implemented traits
-  - [x] Domain
-  - [x] Span
-- [x] Add integration tests
-  - [x] ConstantAdherer
-  - [x] MeshExplorer
-- [x] Add examples
-  - [x] MeshExplorer for Sphere
-  - [x] RemoteClassifier
-- [x] Add description to all structs
-  - [x] Domain
-  - [x] Span
-  - [x] PointNode
-  - [x] Halfspace
-- [x] Add docs to all methods
-  - [x] Domain methods
-  - [x] Span methods
-  - [x] Adherer methods
-  - [x] Explorer methods
-  - [x] ConstantAdherer methods
-  - [x] MeshExplorer methods
-- [x] QAL
-  - [x] Allow for samples to be coerced to their inner content (SVector)
-  - [x] Compile-time error handling of target/nontarget samples.
-- [x] Improve MeshExplorer step() method
+The main branch will track with the most stable version of SEMBAS. 
 
 ## Road Map to v0.3.0 (incomplete)
 
