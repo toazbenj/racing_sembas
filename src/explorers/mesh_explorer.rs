@@ -94,7 +94,7 @@ impl<const N: usize> MeshExplorer<N> {
         self.path_queue
             .extend(self.get_next_paths_from(next_id.index()));
 
-        let b = svector_to_array(*hs.b);
+        let b: [f64; N] = hs.b.into();
 
         self.knn_index.insert(KnnNode::new(b, next_id.index()));
     }
