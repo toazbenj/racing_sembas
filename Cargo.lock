@@ -306,6 +306,7 @@ dependencies = [
  "nalgebra",
  "petgraph",
  "rand",
+ "rand_chacha",
  "rstar",
  "serde",
  "serde_json",
