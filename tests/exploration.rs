@@ -137,13 +137,20 @@ fn fully_explores_sphere() {
 
 #[test]
 fn oob_err_prunes_exploration_branch() {
-    struct TestClassifier<const N: usize> {}
+    struct TestClassifier<const N: usize> {
+        i: usize,
+    }
     impl<const N: usize> Classifier<N> for TestClassifier<N> {
         fn classify(&mut self, _: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-            Err(SamplingError::OutOfBounds)
+            if self.i > 2 {
+                Err(SamplingError::OutOfBounds)
+            } else {
+                self.i += 1;
+                Ok(true)
+            }
         }
     }
-    let mut classifier: Box<dyn Classifier<10>> = Box::new(TestClassifier {});
+    let mut classifier: Box<dyn Classifier<10>> = Box::new(TestClassifier { i: 0 });
 
     let b = WithinMode(SVector::from_fn(|_, _| 0.5));
     let mut n = SVector::zeros();
@@ -158,18 +165,15 @@ fn oob_err_prunes_exploration_branch() {
         Box::new(adherer_f),
     );
 
-    let mut is_exploring = false;
+    let mut is_exploring = true;
     let start = Instant::now();
     while is_exploring {
-        if let Ok(p) = expl.step(&mut classifier) {
-            match p {
-                Some(_) => panic!("Unexpected point sampled?"),
-                None => is_exploring = false,
-            }
+        if let Ok(None) = expl.step(&mut classifier) {
+            is_exploring = false;
         }
 
         if start.elapsed() > Duration::from_secs(5) {
-            panic!("Explorer hung due to out of bounds exceptions!")
+            panic!("Explorer hung due to out of bounds exceptions!");
         }
     }
 }
@@ -197,7 +201,7 @@ fn ble_err_prunes_exploration_branch() {
         Box::new(adherer_f),
     );
 
-    let mut is_exploring = false;
+    let mut is_exploring = true;
     let start = Instant::now();
     while is_exploring {
         if let Ok(None) = expl.step(&mut classifier) {
