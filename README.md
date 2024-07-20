@@ -15,13 +15,3 @@ algorithm to find the next boundary point. This example explores a simple
 3-Dimensional sphere, but SEMBAS can be applied to arbitrarily high dimensions.
 
 Look at the `examples/` folder to see how to use the crate.
-
-## Road Map to v0.3.0 (incomplete)
-
-- [ ] Add gradient descent or similar global search
-- [ ] Add ExponentialAdherer
-- [ ] Add integration tests
-  - [ ] ExponentialAdherer
-- [ ] Reorganize to break out complex structs into separate files
-- [ ] QAL
-  - [ ] Add preemble module to simplify common imports
