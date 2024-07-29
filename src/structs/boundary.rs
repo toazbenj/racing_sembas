@@ -30,3 +30,11 @@ impl<const N: usize> BoundaryPair<N> {
         &self.x
     }
 }
+
+pub mod backprop {
+    use petgraph::graph::NodeIndex;
+
+    pub trait Backpropegation<const N: usize> {
+        fn backprop(&mut self, id: NodeIndex, margin: f64);
+    }
+}

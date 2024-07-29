@@ -2,11 +2,11 @@ use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
     explorer_core::Explorer,
     extensions::Queue,
-    structs::{Classifier, Halfspace, Sample, SamplingError, Span},
+    structs::{backprop::Backpropegation, Classifier, Halfspace, Sample, SamplingError, Span},
     utils::{array_distance, svector_to_array},
 };
 use nalgebra::{self, Const, OMatrix, SVector};
-use petgraph::{graph::NodeIndex, Graph};
+use petgraph::{graph::NodeIndex, visit::EdgeRef, Direction::Incoming, Graph};
 use rstar::{primitives::GeomWithData, RTree};
 
 // const BASIS_VECTORS = nalgebra::OMatrix::<f64, Const<N>, Const<N>>::identity();
@@ -70,6 +70,10 @@ impl<const N: usize> MeshExplorer<N> {
         exp.add_child(root, None);
 
         exp
+    }
+
+    pub fn knn_index(&self) -> &RTree<GeomWithData<[f64; N], usize>> {
+        &self.knn_index
     }
 
     fn select_parent(&mut self) -> Option<(Halfspace<N>, NodeID, SVector<f64, N>)> {
@@ -144,6 +148,13 @@ impl<const N: usize> MeshExplorer<N> {
             false
         }
     }
+
+    fn get_parent(&self, id: NodeIndex) -> Option<NodeIndex> {
+        if let Some(edge) = self.tree.edges_directed(id, Incoming).next() {
+            return Some(edge.source());
+        }
+        None
+    }
 }
 
 impl<const N: usize> Explorer<N> for MeshExplorer<N> {
@@ -187,5 +198,39 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
 
     fn boundary_count(&self) -> usize {
         self.boundary.len()
+    }
+}
+
+impl<const N: usize> Backpropegation<N> for MeshExplorer<N> {
+    fn backprop(&mut self, child_id: NodeIndex, margin: f64) {
+        let parent_indx = if let Some(index) = self.get_parent(child_id) {
+            index
+        } else {
+            return; // root, nothing to backprop
+        };
+
+        let parent = self.boundary[parent_indx.index()];
+
+        let b: [f64; N] = parent.b.into();
+        let rtree = &self.knn_index;
+        let neighbors = rtree.nearest_neighbor_iter(&b);
+
+        let mut n = SVector::zeros();
+        let mut count = 0;
+
+        for node in neighbors {
+            if array_distance(&b, node.geom()) <= margin {
+                n += self.boundary[node.data].n;
+                count += 1;
+            } else {
+                break;
+            }
+        }
+
+        n /= count as f64;
+        self.boundary[parent_indx.index()] = Halfspace {
+            b: parent.b,
+            n: n.normalize(),
+        }
     }
 }
