@@ -1,11 +1,17 @@
-use std::time::{Duration, Instant};
+use std::{
+    f64::consts::PI,
+    time::{Duration, Instant},
+};
 
 use nalgebra::SVector;
+use petgraph::graph::NodeIndex;
 use sembas::{
     adherers::const_adherer::ConstantAdhererFactory,
     explorer_core::Explorer,
     explorers::MeshExplorer,
-    structs::{Classifier, Domain, Halfspace, SamplingError, WithinMode},
+    structs::{
+        backprop::Backpropegation, Classifier, Domain, Halfspace, SamplingError, WithinMode,
+    },
 };
 
 const D: usize = 10;
@@ -107,12 +113,84 @@ fn fully_explores_sphere() {
 
     let timeout = Duration::from_secs(5);
     let start_time = Instant::now();
+    let mut i = 0;
 
     while let Ok(Some(_)) = expl.step(&mut classifier) {
         if start_time.elapsed() > timeout {
             panic!("Test exceeded expected time to completion. Mesh explorer got stuck?");
         }
+
+        i += 1;
     }
+    // visualize2d(expl.boundary());
+
+    let osv_err: f64 = expl
+        .boundary()
+        .iter()
+        .map(|hs| (hs.b - center).angle(&hs.n) / PI)
+        .sum();
+
+    let osv_err = osv_err / expl.boundary_count() as f64;
+
+    println!(
+        //Effiency: 0.8857142857142857, osv err: 0.039949837402483444
+        "Effiency: {}, osv err: {osv_err}",
+        expl.boundary_count() as f64 / (i - expl.boundary_count()) as f64
+    );
+
+    // In order to know that we explored the sphere, we need to know it covered the
+    // full shape. To do this, we can find the average position and make sure it was
+    // close to the center.
+    let boundary_points = expl.boundary().iter().map(|x| *x.b).collect();
+    let center_of_mass = average_vectors(&boundary_points).expect("Empty boundary?");
+
+    let avg_dist_from_center = (center_of_mass - center).norm();
+    assert!(
+        avg_dist_from_center < radius / 2.0,
+        "Avg distance from center, {avg_dist_from_center}, was not less than 1/2 radius?"
+    );
+}
+
+#[test]
+fn backprop_fully_explores_sphere() {
+    let sphere = setup_sphere::<D>();
+    let center = sphere.center;
+    let radius = sphere.radius;
+    // let area = sphere_surface_area(&sphere);
+    let mut expl = setup_mesh_expl(&sphere);
+    let mut classifier = sphere_to_classifier(sphere);
+
+    let timeout = Duration::from_secs(5);
+    let start_time = Instant::now();
+    let mut i = 0;
+    let mut j = 0;
+
+    while let Ok(Some(_)) = expl.step(&mut classifier) {
+        if start_time.elapsed() > timeout {
+            panic!("Test exceeded expected time to completion. Mesh explorer got stuck?");
+        }
+
+        if j != expl.boundary_count() {
+            j = expl.boundary_count();
+            expl.backprop(NodeIndex::new(j - 1), JUMP_DISTANCE * 1.5);
+        }
+
+        i += 1;
+    }
+
+    let osv_err: f64 = expl
+        .boundary()
+        .iter()
+        .map(|hs| (hs.b - center).angle(&hs.n) / PI)
+        .sum();
+
+    let osv_err = osv_err / expl.boundary_count() as f64;
+
+    println!(
+        //Effiency: 0.8857142857142857, osv err: 0.039949837402483444
+        "Effiency: {}, osv err: {osv_err}",
+        expl.boundary_count() as f64 / (i - expl.boundary_count()) as f64
+    );
 
     // In order to know that we explored the sphere, we need to know it covered the
     // full shape. To do this, we can find the average position and make sure it was
