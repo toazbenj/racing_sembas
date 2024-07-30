@@ -7,5 +7,7 @@ pub mod search;
 pub mod structs;
 mod utils;
 
+pub mod preamble;
+
 #[cfg(feature = "api")]
 pub mod api;

@@ -1,3 +1,3 @@
 pub mod mesh_explorer;
 
-pub use mesh_explorer::MeshExplorer;
+pub use mesh_explorer::*;
