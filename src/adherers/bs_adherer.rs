@@ -52,6 +52,14 @@ impl<const N: usize> BinarySearchAdherer<N> {
         let cls = classifier.classify(&cur)?;
         self.prev_cls = Some(cls);
 
+        if cls {
+            self.t = Some(cur.into());
+        } else {
+            self.x = Some(cur.into());
+        }
+
+        self.n_iter -= 1;
+
         Ok(Sample::from_class(cur, cls))
     }
 
@@ -75,6 +83,8 @@ impl<const N: usize> BinarySearchAdherer<N> {
         } else {
             self.x = Some(cur.into());
         }
+
+        self.prev_cls = Some(cls);
 
         Ok(Sample::from_class(cur, cls))
     }
