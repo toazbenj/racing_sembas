@@ -65,7 +65,7 @@ polyhedra.
   in Target Performance. 
 - **Input, Point :** Both Input and Point refer to the same thing, the parameters to be
   passed into the FUT.
-- **Sample (verb) :** To execute the FUT with a given input, often to acquire it's
+- **Sample (verb) :** To execute the FUT with a given input to acquire it's
   classification. 
 - **Sample (noun) :** An input that has been executed by the FUT and classified.
 - **Envelope, Geometry, Hyper-Geometry :** A discrete region of the search space that
