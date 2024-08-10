@@ -32,7 +32,7 @@ impl<const N: usize> Classifier<N> for Cube<N> {
 }
 
 #[test]
-fn finds_boundary_when_near() {
+fn const_adh_finds_boundary_when_near() {
     let dist = 0.1;
 
     let b = WithinMode(vector![0.5, 0.5, 0.71]);
@@ -65,7 +65,7 @@ fn finds_boundary_when_near() {
 }
 
 #[test]
-fn loses_boundary_when_out_of_reach() {
+fn const_adh_loses_boundary_when_out_of_reach() {
     let dist = 0.1;
 
     let b = WithinMode(vector![0.5, 0.5, 0.5]);
@@ -99,5 +99,65 @@ fn loses_boundary_when_out_of_reach() {
             panic!("Failed to lose boundary, exceeded max steps without returning error!")
         }
         i += 1;
+    }
+}
+
+#[test]
+fn bs_adh_finds_boundary_when_near() {
+    let dist = 0.1;
+
+    let b = WithinMode(vector![0.5, 0.5, 0.71]);
+    let n = vector![0.0, 0.0, 1.0];
+    let pivot = Halfspace { b, n };
+    let v = dist * vector![1.0, 0.0, 0.0];
+    let initial_angle = 90.0f64.to_radians();
+    let n = 4;
+
+    let cube = Cube::new(0.25, vector![0.5, 0.5, 0.5], Domain::normalized());
+
+    let mut classifier: Box<dyn Classifier<3>> = Box::new(cube);
+
+    let mut adh = adherers::bs_adherer::BinarySearchAdherer::new(pivot, v, initial_angle, n);
+
+    let mut i = 0;
+
+    while let AdhererState::Searching = adh.get_state() {
+        adh.sample_next(&mut classifier)
+            .inspect_err(|e| println!("Unexpected sampling error? {e:?}"))
+            .unwrap();
+        i += 1;
+    }
+
+    assert_eq!(i, n, "Took too many samples!");
+}
+
+#[test]
+fn bs_adh_loses_boundary_when_out_of_reach() {
+    let dist = 0.1;
+
+    let b = WithinMode(vector![0.5, 0.5, 0.5]);
+    let n = vector![0.0, 0.0, 1.0];
+    let pivot = Halfspace { b, n };
+    let v = dist * vector![1.0, 0.0, 0.0];
+    let init_angle = 90.0f64.to_radians();
+    let n_iter = 4;
+
+    let mut classifier: Box<dyn Classifier<3>> = Box::new(Cube::new(
+        0.25,
+        vector![0.5, 0.5, 0.5],
+        Domain::normalized(),
+    ));
+
+    let mut adh = adherers::bs_adherer::BinarySearchAdherer::new(pivot, v, init_angle, n_iter);
+
+    while adh.get_state() == AdhererState::Searching {
+        if let Err(e) = adh.sample_next(&mut classifier) {
+            assert_eq!(
+                e,
+                SamplingError::BoundaryLost,
+                "Unexpected error type? Expected BSE got {e:?}"
+            );
+            return;
+        }
     }
 }

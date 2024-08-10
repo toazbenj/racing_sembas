@@ -24,6 +24,18 @@ impl<T> Queue<T> for Vec<T> {
     }
 }
 
+impl<const N: usize> From<SVector<f64, N>> for WithinMode<N> {
+    fn from(value: SVector<f64, N>) -> Self {
+        Self(value)
+    }
+}
+
+impl<const N: usize> From<SVector<f64, N>> for OutOfMode<N> {
+    fn from(value: SVector<f64, N>) -> Self {
+        Self(value)
+    }
+}
+
 impl<const N: usize> From<Sample<N>> for SVector<f64, N> {
     fn from(value: Sample<N>) -> Self {
         value.into_inner()

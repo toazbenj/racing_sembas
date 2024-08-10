@@ -1,6 +1,6 @@
 use nalgebra::SVector;
 
-use super::{OutOfMode, WithinMode};
+use super::{OutOfMode, Sample, WithinMode};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BoundaryPair<const N: usize> {
@@ -19,7 +19,18 @@ pub struct Halfspace<const N: usize> {
 
 impl<const N: usize> BoundaryPair<N> {
     pub fn new(t: WithinMode<N>, x: OutOfMode<N>) -> Self {
-        BoundaryPair { t, x }
+        Self { t, x }
+    }
+
+    pub fn from_samples(s1: Sample<N>, s2: Sample<N>) -> Option<BoundaryPair<N>> {
+        if let (Sample::WithinMode(t), Sample::OutOfMode(x))
+        | (Sample::OutOfMode(x), Sample::WithinMode(t)) = (s1, s2)
+        {
+            // unreadable mess omg keel over and die past me
+            Some(BoundaryPair { t, x })
+        } else {
+            None
+        }
     }
 
     pub fn t(&self) -> &WithinMode<N> {
