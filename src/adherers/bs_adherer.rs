@@ -68,21 +68,21 @@ impl<const N: usize> BinarySearchAdherer<N> {
         prev_cls: bool,
         classifier: &mut Box<dyn Classifier<N>>,
     ) -> Result<Sample<N>, SamplingError<N>> {
-        let cof = if prev_cls { 1.0 } else { -1.0 };
-        let rot = (self.rot_factory)(cof * self.angle);
+        let ccw = if prev_cls { 1.0 } else { -1.0 };
+        let rot = (self.rot_factory)(ccw * self.angle);
         self.v = rot * self.v;
 
         let cur = self.pivot.b + self.v;
         let cls = classifier.classify(&cur)?;
-
-        self.angle /= 2.0;
-        self.n_iter -= 1;
 
         if cls {
             self.t = Some(cur.into());
         } else {
             self.x = Some(cur.into());
         }
+
+        self.angle /= 2.0;
+        self.n_iter -= 1;
 
         self.prev_cls = Some(cls);
 
