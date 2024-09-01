@@ -81,10 +81,98 @@ impl<const N: usize> Deref for OutOfMode<N> {
 
 // Operators for samples
 
-impl<const N: usize> Add for WithinMode<N> {
+impl<const N: usize> Add<&WithinMode<N>> for &WithinMode<N> {
     type Output = SVector<f64, N>;
 
-    fn add(self, rhs: Self) -> Self::Output {
+    fn add(self, rhs: &WithinMode<N>) -> Self::Output {
+        self.0 + rhs.0
+    }
+}
+impl<const N: usize> Add<&OutOfMode<N>> for &WithinMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: &OutOfMode<N>) -> Self::Output {
+        self.0 + rhs.0
+    }
+}
+impl<const N: usize> Add<&SVector<f64, N>> for &WithinMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: &SVector<f64, N>) -> Self::Output {
+        self.0 + rhs
+    }
+}
+
+impl<const N: usize> Add<&OutOfMode<N>> for &OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: &OutOfMode<N>) -> Self::Output {
+        self.0 + rhs.0
+    }
+}
+impl<const N: usize> Add<&WithinMode<N>> for &OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: &WithinMode<N>) -> Self::Output {
+        self.0 + rhs.0
+    }
+}
+impl<const N: usize> Add<&SVector<f64, N>> for &OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: &SVector<f64, N>) -> Self::Output {
+        self.0 + rhs
+    }
+}
+
+impl<const N: usize> Sub<&WithinMode<N>> for &WithinMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: &WithinMode<N>) -> Self::Output {
+        self.0 - rhs.0
+    }
+}
+impl<const N: usize> Sub<&OutOfMode<N>> for &WithinMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: &OutOfMode<N>) -> Self::Output {
+        self.0 - rhs.0
+    }
+}
+impl<const N: usize> Sub<&SVector<f64, N>> for &WithinMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: &SVector<f64, N>) -> Self::Output {
+        self.0 - rhs
+    }
+}
+
+impl<const N: usize> Sub<&OutOfMode<N>> for &OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: &OutOfMode<N>) -> Self::Output {
+        self.0 - rhs.0
+    }
+}
+impl<const N: usize> Sub<&WithinMode<N>> for &OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: &WithinMode<N>) -> Self::Output {
+        self.0 - rhs.0
+    }
+}
+impl<const N: usize> Sub<&SVector<f64, N>> for &OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: &SVector<f64, N>) -> Self::Output {
+        self.0 - rhs
+    }
+}
+
+impl<const N: usize> Add<WithinMode<N>> for WithinMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: WithinMode<N>) -> Self::Output {
         self.0 + rhs.0
     }
 }
@@ -103,10 +191,32 @@ impl<const N: usize> Add<SVector<f64, N>> for WithinMode<N> {
     }
 }
 
-impl<const N: usize> Sub for WithinMode<N> {
+impl<const N: usize> Add<OutOfMode<N>> for OutOfMode<N> {
     type Output = SVector<f64, N>;
 
-    fn sub(self, rhs: Self) -> Self::Output {
+    fn add(self, rhs: OutOfMode<N>) -> Self::Output {
+        self.0 + rhs.0
+    }
+}
+impl<const N: usize> Add<WithinMode<N>> for OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: WithinMode<N>) -> Self::Output {
+        self.0 + rhs.0
+    }
+}
+impl<const N: usize> Add<SVector<f64, N>> for OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: SVector<f64, N>) -> Self::Output {
+        self.0 + rhs
+    }
+}
+
+impl<const N: usize> Sub<WithinMode<N>> for WithinMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: WithinMode<N>) -> Self::Output {
         self.0 - rhs.0
     }
 }
@@ -118,6 +228,28 @@ impl<const N: usize> Sub<OutOfMode<N>> for WithinMode<N> {
     }
 }
 impl<const N: usize> Sub<SVector<f64, N>> for WithinMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: SVector<f64, N>) -> Self::Output {
+        self.0 - rhs
+    }
+}
+
+impl<const N: usize> Sub<OutOfMode<N>> for OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: OutOfMode<N>) -> Self::Output {
+        self.0 - rhs.0
+    }
+}
+impl<const N: usize> Sub<WithinMode<N>> for OutOfMode<N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: WithinMode<N>) -> Self::Output {
+        self.0 - rhs.0
+    }
+}
+impl<const N: usize> Sub<SVector<f64, N>> for OutOfMode<N> {
     type Output = SVector<f64, N>;
 
     fn sub(self, rhs: SVector<f64, N>) -> Self::Output {

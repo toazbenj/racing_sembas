@@ -105,6 +105,7 @@ mod test_surfacer {
             sphere.classify(&hs.b).unwrap(),
             "Halfspace outside of geometry?"
         );
+
         assert!(
             !sphere.classify(&(hs.b + hs.n * d)).unwrap(),
             "Halfspace not on boundary?"
