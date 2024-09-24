@@ -116,6 +116,45 @@ impl<const N: usize> Domain<N> {
     ) -> SVector<f64, N> {
         ((p - from.low).component_div(&from.dimensions())).component_mul(&to.dimensions()) + to.low
     }
+
+    /// Finds the point that lies on the edge of the domain in the direction of the
+    /// provided vector. Useful for finding target/non-target samples on the extremes
+    /// of the input space.
+    /// * p: A point that the ray starts from
+    /// * v: The direction the ray travels
+    /// # Returns
+    /// * p': The point that lies on the edge of the domain, interesecting with
+    ///     p + vt
+    pub fn project_ray_to_edge(
+        &self,
+        p: &SVector<f64, N>,
+        v: &SVector<f64, N>,
+    ) -> Result<SVector<f64, N>, SamplingError<N>> {
+        let t_lower = (self.low - p).component_div(v);
+        let t_upper = (self.low - p).component_div(v);
+
+        let l = t_lower
+            .iter()
+            .filter(|&&xi| xi >= 0.0)
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .cloned();
+
+        let u = t_upper
+            .iter()
+            .filter(|&&xi| xi >= 0.0)
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .cloned();
+
+        let t = match (l, u) {
+            (None, Some(t)) => t,
+            (Some(t), None) => t,
+            (Some(tl), Some(tu)) => tl.min(tu),
+            // OOB due to point falling outside of domain
+            _ => return Err(SamplingError::OutOfBounds),
+        };
+
+        Ok(p + v * t)
+    }
 }
 
 impl<const N: usize> fmt::Display for Span<N> {
