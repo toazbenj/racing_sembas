@@ -117,19 +117,19 @@ impl<const N: usize> Domain<N> {
         ((p - from.low).component_div(&from.dimensions())).component_mul(&to.dimensions()) + to.low
     }
 
-    /// Finds the point that lies on the edge of the domain in the direction of the
-    /// provided vector. Useful for finding target/non-target samples on the extremes
-    /// of the input space.
+    /// Finds the distance between the edge of the domain from a point in the
+    /// direction of the provided vector. Useful for finding target/non-target
+    /// samples on the extremes of the input space.
     /// * p: A point that the ray starts from
     /// * v: The direction the ray travels
     /// # Returns
-    /// * p': The point that lies on the edge of the domain, interesecting with
-    ///     p + vt
-    pub fn project_ray_to_edge(
+    /// * t: The linear distance between p and the edge of the domain in the
+    ///   direction v
+    pub fn distance_to_edge(
         &self,
         p: &SVector<f64, N>,
         v: &SVector<f64, N>,
-    ) -> Result<SVector<f64, N>, SamplingError<N>> {
+    ) -> Result<f64, SamplingError<N>> {
         let t_lower = (self.low - p).component_div(v);
         let t_upper = (self.low - p).component_div(v);
 
@@ -153,7 +153,7 @@ impl<const N: usize> Domain<N> {
             _ => return Err(SamplingError::OutOfBounds),
         };
 
-        Ok(p + v * t)
+        Ok(t)
     }
 }
 
