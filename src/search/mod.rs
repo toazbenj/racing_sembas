@@ -1,6 +1,6 @@
 use nalgebra::SVector;
 
-use crate::structs::Classifier;
+use crate::{extensions::Queue, structs::Classifier};
 
 #[cfg(feature = "global_search")]
 pub mod global_search;
@@ -31,8 +31,8 @@ pub fn binary_search_between<const N: usize>(
 
     for _ in 0..max_samples {
         let (p1, p2) = pairs
-            .pop()
-            .expect("Error: Unexpectedly ran out of pairs to explore during search?");
+            .dequeue()
+            .expect("Unexpectedly ran out of pairs to explore during search?");
         let s = p2 - p1;
         let mid = p1 + s / 2.0;
         let cls = classifier.classify(&mid).expect(
@@ -42,8 +42,8 @@ pub fn binary_search_between<const N: usize>(
             return Some(mid);
         }
 
-        pairs.push((p1, mid));
-        pairs.push((mid, p2));
+        pairs.enqueue((p1, mid));
+        pairs.enqueue((mid, p2));
     }
 
     None
