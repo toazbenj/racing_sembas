@@ -8,6 +8,11 @@ pub mod global_search;
 #[cfg(feature = "surfacing")]
 pub mod surfacing;
 
+pub enum SearchMode {
+    Full,
+    Nearest,
+}
+
 /// Searches the space between two points for a specific performance mode.
 /// # Arguments
 /// * target_clas : The performance mode (in-mode or out-of-mode) to search for.
@@ -21,6 +26,7 @@ pub mod surfacing;
 ///   classifier.classify(p) == target_cls
 /// * None : No target_cls points were found within max_samples number of iterations.
 pub fn binary_search_between<const N: usize>(
+    mode: SearchMode,
     target_cls: bool,
     max_samples: u32,
     p1: SVector<f64, N>,
@@ -42,8 +48,13 @@ pub fn binary_search_between<const N: usize>(
             return Some(mid);
         }
 
-        pairs.enqueue((p1, mid));
-        pairs.enqueue((mid, p2));
+        match mode {
+            SearchMode::Full => {
+                pairs.enqueue((p1, mid));
+                pairs.enqueue((mid, p2));
+            }
+            SearchMode::Nearest => pairs.enqueue((p1, mid)),
+        }
     }
 
     None
