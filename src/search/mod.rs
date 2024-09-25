@@ -22,7 +22,7 @@ pub mod surfacing;
 /// * None : No target_cls points were found within max_samples number of iterations.
 pub fn binary_search_between<const N: usize>(
     target_cls: bool,
-    max_samples: i32,
+    max_samples: u32,
     p1: SVector<f64, N>,
     p2: SVector<f64, N>,
     classifier: &mut Box<dyn Classifier<N>>,
