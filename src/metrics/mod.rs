@@ -59,4 +59,75 @@ pub fn find_diameter<const N: usize>(
     Ok(result)
 }
 
+// fn calculate_diameter_from_boundary()
+
+#[cfg(test)]
+mod find_diameter {
+    use nalgebra::SVector;
+
+    use crate::structs::{OutOfMode, WithinMode};
+
+    use super::*;
+
+    const RADIUS: f64 = 0.25;
+
+    struct Sphere<const N: usize> {
+        c: SVector<f64, N>,
+        r: f64,
+        domain: Domain<N>,
+    }
+
+    impl<const N: usize> Sphere<N> {
+        fn new(c: SVector<f64, N>, r: f64) -> Box<Sphere<N>> {
+            Box::new(Sphere {
+                c,
+                r,
+                domain: Domain::normalized(),
+            })
+        }
+    }
+
+    impl<const N: usize> Classifier<N> for Sphere<N> {
+        fn classify(
+            &mut self,
+            p: &SVector<f64, N>,
+        ) -> Result<bool, crate::prelude::SamplingError<N>> {
+            if !self.domain.contains(p) {
+                Err(crate::structs::SamplingError::OutOfBounds)
+            } else {
+                Ok((p - self.c).magnitude() < self.r)
+            }
+        }
+    }
+
+    fn create_sphere<const N: usize>() -> Box<dyn Classifier<N>> {
+        let c: SVector<f64, N> = SVector::from_fn(|_, _| 0.5);
+
+        Sphere::new(c, RADIUS)
+    }
+
+    #[test]
+    fn finds_the_diameter_of_sphere() {
+        let d = 0.01;
+
+        let domain = Domain::normalized();
+        let mut classifier = create_sphere::<10>();
+        let t: SVector<f64, 10> =
+            SVector::from_fn(|i, _| if i == 0 { 0.5 - RADIUS + d * 0.75 } else { 0.5 });
+        let x = SVector::zeros();
+
+        let diameters = find_diameter(
+            d,
+            &BoundaryPair::new(WithinMode(t), OutOfMode(x)),
+            10,
+            domain,
+            &mut classifier,
+        )
+        .expect("Unexpected error from find_diameter.");
+
+        assert!(
+            diameters.iter().all(|x| x - 2.0 * RADIUS <= 2.0 * d),
+            "One or more diameters had excessive error."
+        )
+    }
 }
