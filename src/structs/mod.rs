@@ -131,7 +131,7 @@ impl<const N: usize> Domain<N> {
         v: &SVector<f64, N>,
     ) -> Result<f64, SamplingError<N>> {
         let t_lower = (self.low - p).component_div(v);
-        let t_upper = (self.low - p).component_div(v);
+        let t_upper = (self.high - p).component_div(v);
 
         let l = t_lower
             .iter()
