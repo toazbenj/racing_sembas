@@ -63,6 +63,79 @@ pub fn binary_search_between<const N: usize>(
 
     None
 }
+
+/// Finds a boundary point on the opposite side of an envelope given a starting
+/// boundary point and directional vector of the chord between these boundary points.
+/// **Note: If there is no Out-of-Mode samples between @b and the edge of the domain,
+/// the point lying on the edge of the domain will be returned.**
+/// # Arguments
+/// * d : The maximum allowable distance from the boundary for the opposing boundary
+///   point.
+/// * b : A point that lies on the boundary of the envelope whose diameter is being
+///   measured.
+/// * v : A unit vector describing the direction of the chord. Note: v must point
+///   TOWARDS the envelope, not away. i.e. its dot product with the OSV should be
+///   negative, n.dot(v) < 0,
+/// * domain : The domain to constrain exploration to be within.
+/// * classifier : The classifier for the FUT.
+/// # Returns (Ok)
+/// * Ok(b2) : The point within the envelope opposite that of @b.
+/// # Error (Err)
+/// * Err(SamplingError) : Failed to find any target performance samples in the
+///   direction @v. Often caused by an invalid v, n.dot(v) > 0, or insufficient
+///   @max_samples.
+pub fn find_opposing_boundary<const N: usize>(
+    d: f64,
+    b: SVector<f64, N>,
+    v: SVector<f64, N>,
+    domain: Domain<N>,
+    classifier: &mut Box<dyn Classifier<N>>,
+    num_checks: u32,
+    num_iter: u32,
+) -> Result<WithinMode<N>, SamplingError<N>> {
+    let dist = domain.distance_to_edge(&b, &v)? * 0.999;
+    let p = b + v * dist;
+
+    let cls = classifier.classify(&p).expect(
+        "A point that was supposed to be on the edge of the domain (yet inside) fell outside of the classifier's domain. Incorrect @domain?");
+
+    let (mut t, mut x) = if cls {
+        (p, None)
+    } else {
+        // Find next target hit
+        let t = binary_search_between(SearchMode::Nearest, true, num_checks, b, p, classifier)
+            .expect("@num_checks is too small, was unable to re-acquire envelope.");
+        (t, Some(p))
+    };
+
+    // While there are gaps, explore towards envelope from @b
+    while let Some(gap) =
+        binary_search_between(SearchMode::Full, false, num_checks, t, b, classifier)
+    {
+        t = binary_search_between(
+            SearchMode::Nearest,
+            true,
+            num_checks,
+            b,
+            gap,
+            classifier,
+        ).expect("Fatal error. Although able to find envelope originally, envelope was lost while eleminating intermediate envelopes?");
+        x = Some(gap);
+    }
+
+    let b2 = match x {
+        Some(x) => binary_surface_search(
+            d,
+            &BoundaryPair::new(WithinMode(t), OutOfMode(x)),
+            num_iter,
+            classifier,
+        ).expect("Unexpected sampling error during final binary surface search of opposing boundary point.").b,
+        None => WithinMode(p),
+    };
+
+    Ok(b2)
+}
+
 #[cfg(test)]
 mod binary_search_between {
     use super::binary_search_between;
