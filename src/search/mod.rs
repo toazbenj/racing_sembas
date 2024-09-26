@@ -100,8 +100,7 @@ pub fn find_opposing_boundary<const N: usize>(
     let dist = domain.distance_to_edge(&b, &v)? * 0.999;
     let p = b + v * dist;
 
-    let cls = classifier.classify(&p).expect(
-        "A point that was supposed to be on the edge of the domain (yet inside) fell outside of the classifier's domain. Incorrect @domain?");
+    let cls = classifier.classify(&p).unwrap_or_else(|_| panic!("A point that was supposed to be on the edge of the domain (yet inside) fell outside of the classifier's domain. Incorrect @domain? p = {p:?}, v = {v:?}"));
 
     let (mut t, mut x) = if cls {
         (p, None)
