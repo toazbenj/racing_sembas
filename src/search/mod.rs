@@ -92,7 +92,7 @@ pub fn find_opposing_boundary<const N: usize>(
     d: f64,
     b: SVector<f64, N>,
     v: SVector<f64, N>,
-    domain: Domain<N>,
+    domain: &Domain<N>,
     classifier: &mut Box<dyn Classifier<N>>,
     num_checks: u32,
     num_iter: u32,
@@ -142,7 +142,7 @@ pub fn find_opposing_boundary<const N: usize>(
 
 #[cfg(test)]
 mod search_tests {
-    use super::{binary_search_between, SearchMode};
+    use super::*;
     use crate::structs::{Classifier, Domain};
     use nalgebra::SVector;
 
@@ -293,8 +293,6 @@ mod search_tests {
 
     #[cfg(test)]
     mod find_opposing_boundary {
-        use crate::metrics::find_opposing_boundary;
-
         use super::*;
 
         #[test]
@@ -308,7 +306,7 @@ mod search_tests {
 
             let v: SVector<f64, 10> = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
-            let b2 = find_opposing_boundary(0.01, b, v, domain, &mut classifier, 10, 10)
+            let b2 = find_opposing_boundary(0.01, b, v, &domain, &mut classifier, 10, 10)
                 .expect("Unexpected error on sampling a constant location?");
 
             assert!(
@@ -337,7 +335,7 @@ mod search_tests {
 
             let v: SVector<f64, 10> = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
-            let b2 = find_opposing_boundary(0.01, b, v, domain, &mut classifier, 10, 10)
+            let b2 = find_opposing_boundary(0.01, b, v, &domain, &mut classifier, 10, 10)
                 .expect("Unexpected error on sampling a constant location?");
 
             assert!(
@@ -371,7 +369,7 @@ mod search_tests {
             let invalid_v: SVector<f64, 10> =
                 -SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
-            let b2 = find_opposing_boundary(0.01, b, invalid_v, domain, &mut classifier, 10, 10)
+            let b2 = find_opposing_boundary(0.01, b, invalid_v, &domain, &mut classifier, 10, 10)
                 .expect("Expected panic but got error?");
             println!("Error: Expected panic but Ok(b2) returned. {b2:?}")
         }
@@ -398,7 +396,7 @@ mod search_tests {
                 "b was not within mode"
             );
 
-            let b2 = find_opposing_boundary(0.01, b, v, domain, &mut classifier, 10, 10)
+            let b2 = find_opposing_boundary(0.01, b, v, &domain, &mut classifier, 10, 10)
                 .expect("Unexpected error on sampling a constant location?");
 
             assert!(
