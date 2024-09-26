@@ -84,6 +84,10 @@ pub fn binary_search_between<const N: usize>(
 /// * Err(SamplingError) : Failed to find any target performance samples in the
 ///   direction @v. Often caused by an invalid v, n.dot(v) > 0, or insufficient
 ///   @max_samples.
+/// # Warning
+/// * If @v is not facing the geometry, it may still return a boundary point with a
+///   sufficiently large @num_checks or innaccurate @b. This is because it will
+///   converge upon the same side of the geometry as @b.
 pub fn find_opposing_boundary<const N: usize>(
     d: f64,
     b: SVector<f64, N>,
@@ -104,7 +108,7 @@ pub fn find_opposing_boundary<const N: usize>(
     } else {
         // Find next target hit
         let t = binary_search_between(SearchMode::Nearest, true, num_checks, b, p, classifier)
-            .expect("@num_checks is too small, was unable to re-acquire envelope.");
+            .expect("@num_checks is too small or invalid @v, was unable to re-acquire envelope. ");
         (t, Some(p))
     };
 
@@ -137,10 +141,12 @@ pub fn find_opposing_boundary<const N: usize>(
 }
 
 #[cfg(test)]
-mod binary_search_between {
-    use super::binary_search_between;
+mod search_tests {
+    use super::{binary_search_between, SearchMode};
     use crate::structs::{Classifier, Domain};
     use nalgebra::SVector;
+
+    const RADIUS: f64 = 0.25;
 
     struct EmptyClassifier<const N: usize> {}
     impl<const N: usize> Classifier<N> for EmptyClassifier<N> {
@@ -181,79 +187,231 @@ mod binary_search_between {
         }
     }
 
+    struct SphereCluster<const N: usize> {
+        spheres: Vec<Sphere<N>>,
+    }
+
+    impl<const N: usize> SphereCluster<N> {
+        fn new(spheres: Vec<Sphere<N>>) -> Box<SphereCluster<N>> {
+            Box::new(SphereCluster { spheres })
+        }
+    }
+
+    impl<const N: usize> Classifier<N> for SphereCluster<N> {
+        fn classify(
+            &mut self,
+            p: &SVector<f64, N>,
+        ) -> Result<bool, crate::prelude::SamplingError<N>> {
+            for sphere in self.spheres.iter_mut() {
+                let result = sphere.classify(p)?;
+                if result {
+                    return Ok(true);
+                }
+            }
+
+            Ok(false)
+        }
+    }
+
     fn create_sphere<const N: usize>() -> Box<dyn Classifier<N>> {
         let c: SVector<f64, N> = SVector::from_fn(|_, _| 0.5);
-        let r = 0.25;
 
-        Sphere::new(c, r)
+        Sphere::new(c, RADIUS)
+    }
+    mod binary_search_between {
+        use super::*;
+
+        #[test]
+        fn finds_sphere() {
+            let mut classifier = create_sphere::<10>();
+            let p1: SVector<f64, 10> = SVector::zeros();
+            let p2 = SVector::from_fn(|_, _| 1.0);
+
+            let r = binary_search_between(SearchMode::Full, true, 10, p1, p2, &mut classifier)
+                .expect("Failed to find sphere when it should have?");
+
+            assert!(
+                classifier
+                    .classify(&r)
+                    .expect("Unexpected out of bounds sample from BSB result?"),
+                "Returned non-target (incorrect) sample?"
+            )
+        }
+
+        #[test]
+        fn returns_none_when_no_envelope_exists() {
+            let p1: SVector<f64, 10> = SVector::zeros();
+            let p2 = SVector::from_fn(|_, _| 1.0);
+            let mut classifier: Box<dyn Classifier<10>> = Box::new(EmptyClassifier {});
+
+            let r = binary_search_between(SearchMode::Full, true, 10, p1, p2, &mut classifier);
+
+            assert_eq!(r, None, "Somehow found an envelope when none existed?")
+        }
+
+        #[test]
+        fn returns_none_with_insufficient_max_samples() {
+            let p1: SVector<f64, 10> = SVector::zeros();
+            let p2 = SVector::from_fn(|_, _| 1.0);
+
+            let c = p2 / 8.0;
+            let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, 0.1);
+            let num_steps_to_find = 4;
+
+            let r = binary_search_between(
+                SearchMode::Full,
+                true,
+                num_steps_to_find - 1,
+                p1,
+                p2,
+                &mut classifier,
+            );
+
+            assert_eq!(r, None, "Found the envelope when it shouldn't have.");
+        }
+
+        #[test]
+        fn finds_sphere_with_exact_max_samples() {
+            let p1: SVector<f64, 10> = SVector::zeros();
+            let p2 = SVector::from_fn(|_, _| 1.0);
+
+            let c = p2 / 8.0;
+            let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, 0.1);
+            let num_steps_to_find = 4;
+
+            binary_search_between(
+                SearchMode::Full,
+                true,
+                num_steps_to_find,
+                p1,
+                p2,
+                &mut classifier,
+            )
+            .expect("Failed to find envelope with the correct max_samples.");
+        }
     }
 
-    #[test]
-    fn finds_sphere() {
-        let mut classifier = create_sphere::<10>();
-        let p1: SVector<f64, 10> = SVector::zeros();
-        let p2 = SVector::from_fn(|_, _| 1.0);
+    #[cfg(test)]
+    mod find_opposing_boundary {
+        use crate::metrics::find_opposing_boundary;
 
-        let r = binary_search_between(super::SearchMode::Full, true, 10, p1, p2, &mut classifier)
-            .expect("Failed to find sphere when it should have?");
+        use super::*;
 
-        assert!(
-            classifier
-                .classify(&r)
-                .expect("Unexpected out of bounds sample from BSB result?"),
-            "Returned non-target (incorrect) sample?"
-        )
-    }
+        #[test]
+        fn finds_opposing_boundary_of_sphere() {
+            let d = 0.01;
 
-    #[test]
-    fn returns_none_when_no_envelope_exists() {
-        let p1: SVector<f64, 10> = SVector::zeros();
-        let p2 = SVector::from_fn(|_, _| 1.0);
-        let mut classifier: Box<dyn Classifier<10>> = Box::new(EmptyClassifier {});
+            let domain = Domain::normalized();
+            let mut classifier = create_sphere::<10>();
+            let b: SVector<f64, 10> =
+                SVector::from_fn(|i, _| if i == 0 { 0.5 - RADIUS + d * 0.75 } else { 0.5 });
 
-        let r = binary_search_between(super::SearchMode::Full, true, 10, p1, p2, &mut classifier);
+            let v: SVector<f64, 10> = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
-        assert_eq!(r, None, "Somehow found an envelope when none existed?")
-    }
+            let b2 = find_opposing_boundary(0.01, b, v, domain, &mut classifier, 10, 10)
+                .expect("Unexpected error on sampling a constant location?");
 
-    #[test]
-    fn returns_none_with_insufficient_max_samples() {
-        let p1: SVector<f64, 10> = SVector::zeros();
-        let p2 = SVector::from_fn(|_, _| 1.0);
+            assert!(
+                classifier
+                    .classify(&b2.into())
+                    .expect("Unexpected out of bounds sample for opposing boundary sample?"),
+                "Returned non-target (incorrect) sample?"
+            );
 
-        let c = p2 / 8.0;
-        let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, 0.1);
-        let num_steps_to_find = 4;
+            assert!(
+                ((b2 - b).magnitude() - 2.0 * RADIUS) <= 2.0 * d,
+                "Resulting boundary point was not on opposite side of sphere?"
+            );
+        }
 
-        let r = binary_search_between(
-            super::SearchMode::Full,
-            true,
-            num_steps_to_find - 1,
-            p1,
-            p2,
-            &mut classifier,
-        );
+        #[test]
+        fn returns_domain_edge_when_boundary_outside_of_domain() {
+            let d = 0.01;
+            let domain = Domain::normalized();
 
-        assert_eq!(r, None, "Found the envelope when it shouldn't have.");
-    }
+            let c = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.5 });
+            let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, RADIUS);
 
-    #[test]
-    fn finds_sphere_with_exact_max_samples() {
-        let p1: SVector<f64, 10> = SVector::zeros();
-        let p2 = SVector::from_fn(|_, _| 1.0);
+            let b: SVector<f64, 10> =
+                SVector::from_fn(|i, _| if i == 0 { 1.0 - RADIUS + d * 0.75 } else { 0.5 });
 
-        let c = p2 / 8.0;
-        let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, 0.1);
-        let num_steps_to_find = 4;
+            let v: SVector<f64, 10> = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
-        binary_search_between(
-            super::SearchMode::Full,
-            true,
-            num_steps_to_find,
-            p1,
-            p2,
-            &mut classifier,
-        )
-        .expect("Failed to find envelope with the correct max_samples.");
+            let b2 = find_opposing_boundary(0.01, b, v, domain, &mut classifier, 10, 10)
+                .expect("Unexpected error on sampling a constant location?");
+
+            assert!(
+                classifier
+                    .classify(&b2.into())
+                    .expect("Unexpected out of bounds sample for opposing boundary sample?"),
+                "Returned non-target (incorrect) sample?"
+            );
+
+            assert!(
+                ((b2 - b).magnitude() - RADIUS) <= d,
+                "Resulting boundary point was not on the domain's edge?"
+            );
+        }
+
+        #[test]
+        #[should_panic]
+        fn panics_with_invalid_v() {
+            let d = 0.01;
+
+            let domain = Domain::normalized();
+            let mut classifier = create_sphere::<10>();
+            let b: SVector<f64, 10> = SVector::from_fn(|i, _| {
+                if i == 0 {
+                    0.5 - RADIUS + d * 0.001
+                } else {
+                    0.5
+                }
+            });
+
+            let invalid_v: SVector<f64, 10> =
+                -SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
+
+            let b2 = find_opposing_boundary(0.01, b, invalid_v, domain, &mut classifier, 10, 10)
+                .expect("Expected panic but got error?");
+            println!("Error: Expected panic but Ok(b2) returned. {b2:?}")
+        }
+
+        #[test]
+        fn returns_correct_envelope_boundary_when_multiple_envelopes_exist() {
+            let d = 0.01;
+            let domain = Domain::normalized();
+            let radius = 0.15;
+
+            let c1 = SVector::from_fn(|_, _| 0.15);
+            let c2 = SVector::from_fn(|_, _| 0.5);
+            let sphere1 = Sphere::new(c1, radius);
+            let sphere2 = Sphere::new(c2, radius);
+
+            let mut classifier: Box<dyn Classifier<10>> =
+                SphereCluster::new(vec![*sphere1, *sphere2]);
+
+            let v = SVector::<f64, 10>::from_fn(|_, _| 1.0).normalize();
+            let b = c1 - v * (radius - d * 0.9);
+
+            assert!(
+                classifier.classify(&b).expect("Bug with invalid b."),
+                "b was not within mode"
+            );
+
+            let b2 = find_opposing_boundary(0.01, b, v, domain, &mut classifier, 10, 10)
+                .expect("Unexpected error on sampling a constant location?");
+
+            assert!(
+                classifier
+                    .classify(&b2.into())
+                    .expect("Unexpected out of bounds sample for opposing boundary sample?"),
+                "Returned non-target (incorrect) sample?"
+            );
+
+            assert!(
+                ((b2 - b).magnitude() - 2.0 * radius) <= 2.0 * d,
+                "Resulting boundary point was not on opposite side of sphere?"
+            );
+        }
     }
 }
