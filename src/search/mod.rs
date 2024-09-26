@@ -63,3 +63,124 @@ pub fn binary_search_between<const N: usize>(
 
     None
 }
+#[cfg(test)]
+mod binary_search_between {
+    use super::binary_search_between;
+    use crate::structs::{Classifier, Domain};
+    use nalgebra::SVector;
+
+    struct EmptyClassifier<const N: usize> {}
+    impl<const N: usize> Classifier<N> for EmptyClassifier<N> {
+        fn classify(
+            &mut self,
+            _: &SVector<f64, N>,
+        ) -> Result<bool, crate::prelude::SamplingError<N>> {
+            Ok(false)
+        }
+    }
+
+    struct Sphere<const N: usize> {
+        c: SVector<f64, N>,
+        r: f64,
+        domain: Domain<N>,
+    }
+
+    impl<const N: usize> Sphere<N> {
+        fn new(c: SVector<f64, N>, r: f64) -> Box<Sphere<N>> {
+            Box::new(Sphere {
+                c,
+                r,
+                domain: Domain::normalized(),
+            })
+        }
+    }
+
+    impl<const N: usize> Classifier<N> for Sphere<N> {
+        fn classify(
+            &mut self,
+            p: &SVector<f64, N>,
+        ) -> Result<bool, crate::prelude::SamplingError<N>> {
+            if !self.domain.contains(p) {
+                Err(crate::structs::SamplingError::OutOfBounds)
+            } else {
+                Ok((p - self.c).magnitude() < self.r)
+            }
+        }
+    }
+
+    fn create_sphere<const N: usize>() -> Box<dyn Classifier<N>> {
+        let c: SVector<f64, N> = SVector::from_fn(|_, _| 0.5);
+        let r = 0.25;
+
+        Sphere::new(c, r)
+    }
+
+    #[test]
+    fn finds_sphere() {
+        let mut classifier = create_sphere::<10>();
+        let p1: SVector<f64, 10> = SVector::zeros();
+        let p2 = SVector::from_fn(|_, _| 1.0);
+
+        let r = binary_search_between(super::SearchMode::Full, true, 10, p1, p2, &mut classifier)
+            .expect("Failed to find sphere when it should have?");
+
+        assert!(
+            classifier
+                .classify(&r)
+                .expect("Unexpected out of bounds sample from BSB result?"),
+            "Returned non-target (incorrect) sample?"
+        )
+    }
+
+    #[test]
+    fn returns_none_when_no_envelope_exists() {
+        let p1: SVector<f64, 10> = SVector::zeros();
+        let p2 = SVector::from_fn(|_, _| 1.0);
+        let mut classifier: Box<dyn Classifier<10>> = Box::new(EmptyClassifier {});
+
+        let r = binary_search_between(super::SearchMode::Full, true, 10, p1, p2, &mut classifier);
+
+        assert_eq!(r, None, "Somehow found an envelope when none existed?")
+    }
+
+    #[test]
+    fn returns_none_with_insufficient_max_samples() {
+        let p1: SVector<f64, 10> = SVector::zeros();
+        let p2 = SVector::from_fn(|_, _| 1.0);
+
+        let c = p2 / 8.0;
+        let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, 0.1);
+        let num_steps_to_find = 4;
+
+        let r = binary_search_between(
+            super::SearchMode::Full,
+            true,
+            num_steps_to_find - 1,
+            p1,
+            p2,
+            &mut classifier,
+        );
+
+        assert_eq!(r, None, "Found the envelope when it shouldn't have.");
+    }
+
+    #[test]
+    fn finds_sphere_with_exact_max_samples() {
+        let p1: SVector<f64, 10> = SVector::zeros();
+        let p2 = SVector::from_fn(|_, _| 1.0);
+
+        let c = p2 / 8.0;
+        let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, 0.1);
+        let num_steps_to_find = 4;
+
+        binary_search_between(
+            super::SearchMode::Full,
+            true,
+            num_steps_to_find,
+            p1,
+            p2,
+            &mut classifier,
+        )
+        .expect("Failed to find envelope with the correct max_samples.");
+    }
+}
