@@ -150,7 +150,7 @@ impl<const N: usize> Domain<N> {
             (Some(t), None) => t,
             (Some(tl), Some(tu)) => tl.min(tu),
             // OOB due to point falling outside of domain
-            _ => return Err(SamplingError::OutOfBounds),
+            (None, None) => return Err(SamplingError::OutOfBounds),
         };
 
         Ok(t)
