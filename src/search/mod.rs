@@ -1,6 +1,10 @@
 use nalgebra::SVector;
+use surfacing::binary_surface_search;
 
-use crate::{extensions::Queue, structs::Classifier};
+use crate::{
+    extensions::Queue,
+    structs::{BoundaryPair, Classifier, Domain, OutOfMode, SamplingError, WithinMode},
+};
 
 #[cfg(feature = "global_search")]
 pub mod global_search;
