@@ -5,6 +5,7 @@ use crate::{
     structs::{BoundaryPair, Classifier, Domain, SamplingError, Span},
 };
 
+pub mod boundary_metrics;
 pub mod bs_adherer_metrics;
 pub mod const_adherer_metrics;
 
