@@ -1,5 +1,3 @@
-use nalgebra::ComplexField;
-
 /// Provides suggested jump distance and angle for constant adherers.
 /// # Arguments
 /// * axes : A subset of lengths for each axis of the envelope. Not providing all
@@ -9,8 +7,8 @@ use nalgebra::ComplexField;
 ///   samples are. A value of 1 is the most possible, 0 is the least possible, but
 ///   you cannot use a value of 0.
 /// # Return (tuple)
-/// * d : Jump distance between samples
-/// * initial_angle : The first angle to rotate the displacement by
+/// * d : Jump distance between samples.
+/// * initial_angle : The first angle to rotate the displacement by.
 /// * n : The number of samples to take for each boundary point to reach desired
 ///   error.
 pub fn get_bs_params_by_envelope_size(
