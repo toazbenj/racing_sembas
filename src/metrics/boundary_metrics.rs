@@ -63,7 +63,7 @@ fn mean_direction<const N: usize>(boundary: &[Halfspace<N>]) -> SVector<f64, N> 
 /// # Arguments
 /// * boundary : The set of halfspaces describing the boundary.
 /// # Returns
-/// * std_dev : The standard deviation of the
+/// * std_dev : The standard deviation of the boundary point cloud.
 fn boundary_std_dev<const N: usize>(boundary: &[Halfspace<N>]) -> OMatrix<f64, Const<N>, Const<N>> {
     let com = center_of_mass(boundary);
 
@@ -77,4 +77,21 @@ fn boundary_std_dev<const N: usize>(boundary: &[Halfspace<N>]) -> OMatrix<f64, C
     }
 
     cov / count
+}
+
+/// Calculates the radius of the boundary.
+/// # Arguments
+/// * boundary : The set of halfspaces describing the boundary.
+/// # Returns
+/// * radius : The maximum distance from the CoM
+fn boundary_radius<const N: usize>(boundary: &[Halfspace<N>]) -> f64 {
+    let com = center_of_mass(boundary);
+    boundary
+        .iter()
+        .map(|hs| (hs.b - com).norm())
+        .min_by(|a, b| {
+            a.partial_cmp(b)
+                .expect("Unexpected NaN while finding min(dist from com).")
+        })
+        .expect("Must provide a non-empty boundary!")
 }
