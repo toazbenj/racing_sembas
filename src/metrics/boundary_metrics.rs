@@ -95,3 +95,65 @@ fn boundary_radius<const N: usize>(boundary: &[Halfspace<N>]) -> f64 {
         })
         .expect("Must provide a non-empty boundary!")
 }
+
+#[cfg(test)]
+mod test_metrics {
+    use nalgebra::SVector;
+
+    use crate::{
+        metrics::boundary_metrics::curvature,
+        prelude::{Halfspace, WithinMode},
+    };
+
+    use super::{boundary_radius, center_of_mass, mean_direction};
+
+    fn get_simple_line<const N: usize>(n: u32, d: f64) -> Vec<Halfspace<N>> {
+        let mut boundary = vec![];
+
+        let offset = -d * (n - 1) as f64 / 2.0;
+        let direction = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
+
+        let axis_mask = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
+
+        for i in 0..n {
+            boundary.push(Halfspace {
+                b: WithinMode(axis_mask * (offset + d * i as f64)),
+                n: direction,
+            });
+        }
+
+        boundary
+    }
+
+    #[test]
+    fn average_direction_is_one_for_plane() {
+        let boundary = get_simple_line::<10>(10, 0.1);
+        let n = mean_direction(&boundary);
+        assert!(n.norm() - 1.0 < 1e-10, "Incorrect mean direction.")
+    }
+
+    #[test]
+    fn com_is_zero_for_plane() {
+        let boundary = get_simple_line::<10>(10, 0.1);
+        let com = center_of_mass(&boundary);
+        assert!(com.norm() <= 1e-10, "Center of mass in incorrect location.")
+    }
+
+    #[test]
+    fn correct_radius() {
+        let n_points = 10;
+        let d = 0.1;
+        let correct_radius = d * n_points as f64 / 2.0;
+        let boundary = get_simple_line::<10>(n_points, d);
+        let r = boundary_radius(&boundary);
+
+        assert!(r - correct_radius <= 1e-10, "Incorrect radius?");
+    }
+
+    #[test]
+    fn curvature_is_zero_for_plane() {
+        let boundary = get_simple_line::<10>(10, 0.1);
+        let k = curvature(&boundary);
+        assert!(k <= 1e-10, "Curvature was not 0 for a plane.")
+    }
+}
