@@ -5,6 +5,9 @@ use crate::{
     structs::{BoundaryPair, Classifier, Domain, SamplingError, Span},
 };
 
+pub mod bs_adherer_metrics;
+pub mod const_adherer_metrics;
+
 /// Finds the diameter for ndim number of dimensions. 1 <= ndim <= N
 /// # Arguments
 /// * d : The maximum error (distance) allowed for the diameter to have from the
