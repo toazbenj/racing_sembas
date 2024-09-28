@@ -16,6 +16,8 @@ serde_json = { version = "1.0.120", optional = true }
 
 [features]
 default = ["global_search", "surfacing"]
+all = ["default", "api", "sps"]
 api = ["serde", "serde_json"]
 global_search = ["rand", "rand_chacha"]
 surfacing = []
+sps = []

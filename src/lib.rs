@@ -11,3 +11,6 @@ pub mod prelude;
 
 #[cfg(feature = "api")]
 pub mod api;
+
+#[cfg(feature = "sps")]
+pub mod sps;
