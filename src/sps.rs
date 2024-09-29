@@ -1,5 +1,4 @@
 use nalgebra::SVector;
-use rand_chacha::rand_core::le;
 
 use crate::structs::{Classifier, Domain};
 
@@ -70,7 +69,7 @@ impl<const N: usize> Classifier<N> for Cube<N> {
     }
 }
 
-struct SphereCluster<const N: usize> {
+pub struct SphereCluster<const N: usize> {
     spheres: Vec<Sphere<N>>,
     domain: Option<Domain<N>>,
 }
