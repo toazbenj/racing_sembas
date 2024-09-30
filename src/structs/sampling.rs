@@ -13,6 +13,35 @@ pub trait Classifier<const N: usize> {
     fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>>;
 }
 
+pub struct FunctionClassifier<F, const N: usize>
+where
+    F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError<N>>,
+{
+    fut: F,
+}
+
+impl<F, const N: usize> FunctionClassifier<F, N>
+where
+    F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError<N>>,
+{
+    pub fn new(fut: F) -> Self {
+        Self { fut }
+    }
+
+    pub fn boxed(fut: F) -> Box<Self> {
+        Box::new(Self { fut })
+    }
+}
+
+impl<F, const N: usize> Classifier<N> for FunctionClassifier<F, N>
+where
+    F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError<N>>,
+{
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+        (self.fut)(p)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct WithinMode<const N: usize>(pub SVector<f64, N>);
 #[derive(Debug, Clone, Copy, PartialEq)]
