@@ -1,6 +1,5 @@
 # SEMBAS
-
-State space Exploration using Boundary Adherence Strategies (SEMBAS) is a technique
+State space Exploration of Multidimemsional Boundaries using Adherence Strategies (SEMBAS) is a technique
 for finding phase transitions in performance for a given search space. The boundary
 between performance modes can provide useful insight into the characteristics of the
 system. For example, if the target performance mode is "Safety" (which may be defined
