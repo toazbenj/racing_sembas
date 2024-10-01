@@ -68,6 +68,13 @@ impl<const N: usize> Cube<N> {
         Cube { shape, domain }
     }
 
+    pub fn from_size(size: f64, center: SVector<f64, N>, domain: Option<Domain<N>>) -> Self {
+        let low = center - SVector::from_fn(|_, _| size / 2.0);
+        let high = center + SVector::from_fn(|_, _| size / 2.0);
+        let shape = Domain::new(low, high);
+        Cube { shape, domain }
+    }
+
     pub fn shape(&self) -> &Domain<N> {
         &self.shape
     }
