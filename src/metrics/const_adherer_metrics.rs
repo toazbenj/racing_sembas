@@ -1,3 +1,5 @@
+use nalgebra::ComplexField;
+
 /// Provides suggested jump distance and angle for constant adherers.
 /// # Arguments
 /// * axes : A subset of lengths for each axis of the envelope. Not providing all
@@ -23,5 +25,5 @@ pub fn get_const_params_by_envelope_size(
         .min_by(|a, b| a.total_cmp(b))
         .expect("Must provide a non-empty list of axis lengths!")
         * resolution;
-    (d, max_err / d)
+    (d, (max_err / d).asin())
 }
