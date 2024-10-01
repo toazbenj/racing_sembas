@@ -1,35 +1,12 @@
 use core::panic;
 
-use nalgebra::{vector, SVector};
+use nalgebra::vector;
 use sembas::{
     adherer_core::{Adherer, AdhererState},
     adherers,
+    sps::Cube,
     structs::{Classifier, Domain, Halfspace, SamplingError, WithinMode},
 };
-
-struct Cube<const N: usize> {
-    pub domain: Domain<N>,
-    pub shape: Domain<N>,
-}
-
-impl<const N: usize> Cube<N> {
-    pub fn new(size: f64, center: SVector<f64, N>, domain: Domain<N>) -> Self {
-        let low = center - SVector::from_fn(|_, _| size / 2.0);
-        let high = center + SVector::from_fn(|_, _| size / 2.0);
-        let shape = Domain::new(low, high);
-        Cube { shape, domain }
-    }
-}
-
-impl<const N: usize> Classifier<N> for Cube<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-        if !self.domain.contains(p) {
-            return Err(SamplingError::OutOfBounds);
-        }
-
-        Ok(self.shape.contains(p))
-    }
-}
 
 #[test]
 fn const_adh_finds_boundary_when_near() {
@@ -42,9 +19,9 @@ fn const_adh_finds_boundary_when_near() {
     let delta_angle = 15.0f64.to_radians();
     let max_rotation = 180.0f64.to_radians();
 
-    let cube = Cube::new(0.25, vector![0.5, 0.5, 0.5], Domain::normalized());
+    let cube = Cube::from_size(0.25, vector![0.5, 0.5, 0.5], Some(Domain::normalized()));
 
-    let z_dist = (*b - cube.shape.high())[2];
+    let z_dist = (*b - cube.shape().high())[2];
     let angle_to_boundary = (z_dist / dist).asin();
     let n_steps_to_boundary = (angle_to_boundary / delta_angle).ceil() as i32;
 
@@ -76,10 +53,10 @@ fn const_adh_loses_boundary_when_out_of_reach() {
     let max_rotation = 180.0f64.to_radians();
     let max_steps = (max_rotation / delta_angle).ceil() as i32;
 
-    let mut classifier: Box<dyn Classifier<3>> = Box::new(Cube::new(
+    let mut classifier: Box<dyn Classifier<3>> = Box::new(Cube::from_size(
         0.25,
         vector![0.5, 0.5, 0.5],
-        Domain::normalized(),
+        Some(Domain::normalized()),
     ));
 
     let mut adh = adherers::ConstantAdherer::new(pivot, v, delta_angle, Some(max_rotation));
@@ -113,7 +90,7 @@ fn bs_adh_finds_boundary_when_near() {
     let initial_angle = 90.0f64.to_radians();
     let n = 4;
 
-    let cube = Cube::new(0.25, vector![0.5, 0.5, 0.5], Domain::normalized());
+    let cube = Cube::from_size(0.25, vector![0.5, 0.5, 0.5], Some(Domain::normalized()));
 
     let mut classifier: Box<dyn Classifier<3>> = Box::new(cube);
 
@@ -142,10 +119,10 @@ fn bs_adh_loses_boundary_when_out_of_reach() {
     let init_angle = 90.0f64.to_radians();
     let n_iter = 4;
 
-    let mut classifier: Box<dyn Classifier<3>> = Box::new(Cube::new(
+    let mut classifier: Box<dyn Classifier<3>> = Box::new(Cube::from_size(
         0.25,
         vector![0.5, 0.5, 0.5],
-        Domain::normalized(),
+        Some(Domain::normalized()),
     ));
 
     let mut adh = adherers::bs_adherer::BinarySearchAdherer::new(pivot, v, init_angle, n_iter);

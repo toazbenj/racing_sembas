@@ -13,3 +13,5 @@ pub mod api;
 
 #[cfg(feature = "metrics")]
 pub mod metrics;
+#[cfg(feature = "sps")]
+pub mod sps;
