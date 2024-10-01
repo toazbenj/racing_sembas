@@ -28,6 +28,18 @@ impl<const N: usize> Sphere<N> {
             domain,
         }
     }
+
+    pub fn center(&self) -> &SVector<f64, N> {
+        &self.center
+    }
+
+    pub fn radius(&self) -> f64 {
+        self.radius
+    }
+
+    pub fn domain(&self) -> Option<&Domain<N>> {
+        self.domain.as_ref()
+    }
 }
 
 impl<const N: usize> Classifier<N> for Sphere<N> {
@@ -55,6 +67,14 @@ impl<const N: usize> Cube<N> {
     pub fn new(shape: Domain<N>, domain: Option<Domain<N>>) -> Cube<N> {
         Cube { shape, domain }
     }
+
+    pub fn shape(&self) -> &Domain<N> {
+        &self.shape
+    }
+
+    pub fn domain(&self) -> Option<&Domain<N>> {
+        self.domain.as_ref()
+    }
 }
 
 impl<const N: usize> Classifier<N> for Cube<N> {
@@ -81,6 +101,14 @@ impl<const N: usize> SphereCluster<N> {
 
     pub fn new(spheres: Vec<Sphere<N>>, domain: Option<Domain<N>>) -> Self {
         SphereCluster { spheres, domain }
+    }
+
+    pub fn spheres(&self) -> &[Sphere<N>] {
+        &self.spheres
+    }
+
+    pub fn domain(&self) -> Option<&Domain<N>> {
+        self.domain.as_ref()
     }
 }
 
