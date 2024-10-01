@@ -49,39 +49,22 @@ pub fn binary_surface_search<const N: usize>(
 mod test_surfacer {
     use nalgebra::SVector;
 
-    use crate::structs::{BoundaryPair, Classifier, Domain, OutOfMode, SamplingError, WithinMode};
+    use crate::{
+        sps::Sphere,
+        structs::{BoundaryPair, Classifier, Domain, OutOfMode, SamplingError, WithinMode},
+    };
 
     use super::binary_surface_search;
 
     const RADIUS: f64 = 0.25;
     const DIAMETER: f64 = 2.0 * RADIUS;
 
-    struct Sphere<const N: usize> {
-        pub radius: f64,
-        pub center: SVector<f64, N>,
-        pub domain: Domain<N>,
-    }
-
-    impl<const N: usize> Classifier<N> for Sphere<N> {
-        fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-            if !self.domain.contains(p) {
-                return Err(SamplingError::OutOfBounds);
-            }
-
-            Ok((p - self.center).norm() <= self.radius)
-        }
-    }
-
     fn setup_sphere<const N: usize>() -> Box<dyn Classifier<N>> {
         let radius = 0.25;
         let center = SVector::from_fn(|_, _| 0.5);
         let domain = Domain::normalized();
 
-        Box::new(Sphere {
-            radius,
-            center,
-            domain,
-        })
+        Sphere::boxed(center, radius, Some(domain))
     }
 
     #[test]

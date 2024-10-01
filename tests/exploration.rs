@@ -9,6 +9,7 @@ use sembas::{
     adherers::const_adherer::ConstantAdhererFactory,
     explorer_core::Explorer,
     explorers::MeshExplorer,
+    sps::Sphere,
     structs::{
         backprop::Backpropegation, Classifier, Domain, Halfspace, SamplingError, WithinMode,
     },
@@ -21,26 +22,10 @@ const ADH_MAX_ANGLE: f64 = std::f64::consts::PI;
 
 // const ATOL: f64 = 1e-10;
 
-struct Sphere<const N: usize> {
-    pub radius: f64,
-    pub center: SVector<f64, N>,
-    pub domain: Domain<N>,
-}
-
-impl<const N: usize> Classifier<N> for Sphere<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-        if !self.domain.contains(p) {
-            return Err(SamplingError::OutOfBounds);
-        }
-
-        Ok((p - self.center).norm() <= self.radius)
-    }
-}
-
 fn setup_mesh_expl<const N: usize>(sphere: &Sphere<N>) -> MeshExplorer<N> {
     let b = WithinMode(SVector::from_fn(|i, _| {
         if i == 0 {
-            0.49 + sphere.radius
+            0.49 + sphere.radius()
         } else {
             0.5
         }
@@ -63,11 +48,7 @@ fn setup_sphere<const N: usize>() -> Sphere<N> {
     let center = SVector::from_fn(|_, _| 0.5);
     let domain = Domain::normalized();
 
-    Sphere {
-        radius,
-        center,
-        domain,
-    }
+    Sphere::new(center, radius, Some(domain))
 }
 
 fn sphere_to_classifier<const N: usize>(sphere: Sphere<N>) -> Box<dyn Classifier<N>> {
@@ -105,8 +86,8 @@ fn average_vectors<const N: usize>(vectors: &Vec<SVector<f64, N>>) -> Option<SVe
 #[test]
 fn fully_explores_sphere() {
     let sphere = setup_sphere::<D>();
-    let center = sphere.center;
-    let radius = sphere.radius;
+    let center = *sphere.center();
+    let radius = sphere.radius();
     // let area = sphere_surface_area(&sphere);
     let mut expl = setup_mesh_expl(&sphere);
     let mut classifier = sphere_to_classifier(sphere);
@@ -154,8 +135,8 @@ fn fully_explores_sphere() {
 #[test]
 fn backprop_fully_explores_sphere() {
     let sphere = setup_sphere::<D>();
-    let center = sphere.center;
-    let radius = sphere.radius;
+    let center = *sphere.center();
+    let radius = sphere.radius();
     // let area = sphere_surface_area(&sphere);
     let mut expl = setup_mesh_expl(&sphere);
     let mut classifier = sphere_to_classifier(sphere);
