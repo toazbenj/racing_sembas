@@ -1,6 +1,5 @@
 # SEMBAS
-
-State space Exploration using Boundary Adherence Strategies (SEMBAS) is a technique
+State space Exploration of Multidimemsional Boundaries using Adherence Strategies (SEMBAS) is a technique
 for finding phase transitions in performance for a given search space. The boundary
 between performance modes can provide useful insight into the characteristics of the
 system. For example, if the target performance mode is "Safety" (which may be defined
@@ -55,22 +54,14 @@ hyper-dimensional polyhedra, where each halfspace represents a face of that
 polyhedra. 
 
 ## Terminology 
-- **Function Under Test, FUT :** The system that is being tested / explored / executed.
-- **Input Space, Search Space :** The subregion of possible parameters into the FUT
-  which is being explored and therefore executed by the FUT.
-- **Target Performance :** The FUT behavior that is being explored. Examples: Unsafe,
-  Exceptional, Undesired, or otherwise interesting. 
-- **Performance Class, Sample Class, Classification :** A boolean value, `true` or
-  `false`, where `true` means that the given point when executed by the FUT resulted
-  in Target Performance. 
-- **Input, Point :** Both Input and Point refer to the same thing, the parameters to be
-  passed into the FUT.
-- **Sample (verb) :** To execute the FUT with a given input to acquire it's
-  classification. 
-- **Sample (noun) :** An input that has been executed by the FUT and classified.
-- **Envelope, Geometry, Hyper-Geometry :** A discrete region of the search space that
-  results in target performance. Two envelopes are said to be the same if they
-  intersect eachother. 
+| Term / Acronym / Synonyms                                     | Description                                                                                                                                                       |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Function Under Test, FUT**                        | The system that is being tested / explored / executed.which is being explored and therefore executed by the FUT.Exceptional, Undesired, or otherwise interesting. |
+| **Performance Class, Sample Class, Classification** | A boolean value, `true` or `false`, where `true` means that the given point when executed by the FUT resulted in Target Performance.                              |
+| **Input, Point**                                    | Both Input and Point refer to the same thing, the parameters to be  passed into the FUT.                                                                          |
+| **Sample (verb)**                                   | To execute the FUT with a given input to acquire it's classification.                                                                                             |
+| **Sample (noun)**                                   | An input that has been executed by the FUT and classified.                                                                                                        |
+| **Envelope, Geometry, Hyper-Geometry**              | A discrete region of the search space that results in target performance. Two envelopes are said to be the same if they intersect each other.                     |
 
 # Crate Overview
 This crate has the goal of providing all the tools necessary for exploring boundaries
