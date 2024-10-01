@@ -69,45 +69,19 @@ pub fn find_diameter<const N: usize>(
 mod find_diameter {
     use nalgebra::SVector;
 
-    use crate::structs::{OutOfMode, WithinMode};
+    use crate::{
+        sps::Sphere,
+        structs::{OutOfMode, WithinMode},
+    };
 
     use super::*;
 
     const RADIUS: f64 = 0.25;
 
-    struct Sphere<const N: usize> {
-        c: SVector<f64, N>,
-        r: f64,
-        domain: Domain<N>,
-    }
-
-    impl<const N: usize> Sphere<N> {
-        fn new(c: SVector<f64, N>, r: f64) -> Box<Sphere<N>> {
-            Box::new(Sphere {
-                c,
-                r,
-                domain: Domain::normalized(),
-            })
-        }
-    }
-
-    impl<const N: usize> Classifier<N> for Sphere<N> {
-        fn classify(
-            &mut self,
-            p: &SVector<f64, N>,
-        ) -> Result<bool, crate::prelude::SamplingError<N>> {
-            if !self.domain.contains(p) {
-                Err(crate::structs::SamplingError::OutOfBounds)
-            } else {
-                Ok((p - self.c).magnitude() < self.r)
-            }
-        }
-    }
-
     fn create_sphere<const N: usize>() -> Box<dyn Classifier<N>> {
         let c: SVector<f64, N> = SVector::from_fn(|_, _| 0.5);
 
-        Sphere::new(c, RADIUS)
+        Sphere::boxed(c, RADIUS, Some(Domain::normalized()))
     }
 
     #[test]

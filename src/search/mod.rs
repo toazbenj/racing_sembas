@@ -142,7 +142,10 @@ pub fn find_opposing_boundary<const N: usize>(
 #[cfg(test)]
 mod search_tests {
     use super::*;
-    use crate::structs::{Classifier, Domain};
+    use crate::{
+        sps::Sphere,
+        structs::{Classifier, Domain},
+    };
     use nalgebra::SVector;
 
     const RADIUS: f64 = 0.25;
@@ -157,65 +160,10 @@ mod search_tests {
         }
     }
 
-    struct Sphere<const N: usize> {
-        c: SVector<f64, N>,
-        r: f64,
-        domain: Domain<N>,
-    }
-
-    impl<const N: usize> Sphere<N> {
-        fn new(c: SVector<f64, N>, r: f64) -> Box<Sphere<N>> {
-            Box::new(Sphere {
-                c,
-                r,
-                domain: Domain::normalized(),
-            })
-        }
-    }
-
-    impl<const N: usize> Classifier<N> for Sphere<N> {
-        fn classify(
-            &mut self,
-            p: &SVector<f64, N>,
-        ) -> Result<bool, crate::prelude::SamplingError<N>> {
-            if !self.domain.contains(p) {
-                Err(crate::structs::SamplingError::OutOfBounds)
-            } else {
-                Ok((p - self.c).magnitude() < self.r)
-            }
-        }
-    }
-
-    struct SphereCluster<const N: usize> {
-        spheres: Vec<Sphere<N>>,
-    }
-
-    impl<const N: usize> SphereCluster<N> {
-        fn new(spheres: Vec<Sphere<N>>) -> Box<SphereCluster<N>> {
-            Box::new(SphereCluster { spheres })
-        }
-    }
-
-    impl<const N: usize> Classifier<N> for SphereCluster<N> {
-        fn classify(
-            &mut self,
-            p: &SVector<f64, N>,
-        ) -> Result<bool, crate::prelude::SamplingError<N>> {
-            for sphere in self.spheres.iter_mut() {
-                let result = sphere.classify(p)?;
-                if result {
-                    return Ok(true);
-                }
-            }
-
-            Ok(false)
-        }
-    }
-
     fn create_sphere<const N: usize>() -> Box<dyn Classifier<N>> {
         let c: SVector<f64, N> = SVector::from_fn(|_, _| 0.5);
 
-        Sphere::new(c, RADIUS)
+        Sphere::boxed(c, RADIUS, Some(Domain::normalized()))
     }
     mod binary_search_between {
         use super::*;
@@ -254,7 +202,8 @@ mod search_tests {
             let p2 = SVector::from_fn(|_, _| 1.0);
 
             let c = p2 / 8.0;
-            let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, 0.1);
+            let mut classifier: Box<dyn Classifier<10>> =
+                Sphere::boxed(c, 0.1, Some(Domain::normalized()));
             let num_steps_to_find = 4;
 
             let r = binary_search_between(
@@ -275,7 +224,8 @@ mod search_tests {
             let p2 = SVector::from_fn(|_, _| 1.0);
 
             let c = p2 / 8.0;
-            let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, 0.1);
+            let mut classifier: Box<dyn Classifier<10>> =
+                Sphere::boxed(c, 0.1, Some(Domain::normalized()));
             let num_steps_to_find = 4;
 
             binary_search_between(
@@ -292,6 +242,8 @@ mod search_tests {
 
     #[cfg(test)]
     mod find_opposing_boundary {
+        use crate::sps::SphereCluster;
+
         use super::*;
 
         #[test]
@@ -327,7 +279,8 @@ mod search_tests {
             let domain = Domain::normalized();
 
             let c = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.5 });
-            let mut classifier: Box<dyn Classifier<10>> = Sphere::new(c, RADIUS);
+            let mut classifier: Box<dyn Classifier<10>> =
+                Sphere::boxed(c, RADIUS, Some(Domain::normalized()));
 
             let b: SVector<f64, 10> =
                 SVector::from_fn(|i, _| if i == 0 { 1.0 - RADIUS + d * 0.75 } else { 0.5 });
@@ -381,11 +334,11 @@ mod search_tests {
 
             let c1 = SVector::from_fn(|_, _| 0.15);
             let c2 = SVector::from_fn(|_, _| 0.5);
-            let sphere1 = Sphere::new(c1, radius);
-            let sphere2 = Sphere::new(c2, radius);
+            let sphere1 = Sphere::boxed(c1, radius, Some(Domain::normalized()));
+            let sphere2 = Sphere::boxed(c2, radius, Some(Domain::normalized()));
 
             let mut classifier: Box<dyn Classifier<10>> =
-                SphereCluster::new(vec![*sphere1, *sphere2]);
+                SphereCluster::boxed(vec![*sphere1, *sphere2], Some(Domain::normalized()));
 
             let v = SVector::<f64, 10>::from_fn(|_, _| 1.0).normalize();
             let b = c1 - v * (radius - d * 0.9);
