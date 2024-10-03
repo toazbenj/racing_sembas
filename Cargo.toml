@@ -11,13 +11,12 @@ petgraph = "0.6.5"
 rand = { version = "0.8.5", optional = true }
 rand_chacha = { version = "0.3.1", optional = true }
 rstar = "0.12.0"
-serde = { version = "1.0.204", optional = true, features = ["derive"] }
-serde_json = { version = "1.0.120", optional = true }
+bytemuck = { version = "1.18.0", optional = true }
 
 [features]
 all = ["default", "api", "sps"]
 default = ["global_search", "surfacing"]
-api = ["serde", "serde_json"]
+api = ["bytemuck"]
 global_search = ["rand", "rand_chacha"]
 surfacing = []
 sps = []
