@@ -1,6 +1,7 @@
 use nalgebra::{Const, OMatrix};
 
 use crate::{
+    prelude::WithinMode,
     search::find_opposing_boundary,
     structs::{BoundaryPair, Classifier, Domain, SamplingError, Span},
 };
@@ -44,8 +45,8 @@ pub fn find_diameter<const N: usize>(
     let basis_vectors = rot * basis_vectors;
     let v0 = s.normalize();
 
-    let p1 = find_opposing_boundary(d, **initial_pair.t(), v0, &domain, classifier, 10, 10)?;
-    let p2 = find_opposing_boundary(d, **initial_pair.t(), -v0, &domain, classifier, 10, 10)?;
+    let p1 = find_opposing_boundary(d, *initial_pair.t(), v0, &domain, classifier, 10, 10)?;
+    let p2 = find_opposing_boundary(d, *initial_pair.t(), -v0, &domain, classifier, 10, 10)?;
 
     let mid = p1 + (p2 - p1) / 2.0;
     let mut result = vec![(p2 - p1).magnitude()];
@@ -53,9 +54,9 @@ pub fn find_diameter<const N: usize>(
     for i in 1..ndim {
         let vi = basis_vectors.column(i).into_owned();
 
-        let b1 = find_opposing_boundary(d, mid, vi, &domain, classifier, 10, 10)?;
+        let b1 = find_opposing_boundary(d, WithinMode(mid), vi, &domain, classifier, 10, 10)?;
 
-        let b2 = find_opposing_boundary(d, mid, -vi, &domain, classifier, 10, 10)?;
+        let b2 = find_opposing_boundary(d, WithinMode(mid), -vi, &domain, classifier, 10, 10)?;
 
         result.push((b2 - b1).magnitude());
     }

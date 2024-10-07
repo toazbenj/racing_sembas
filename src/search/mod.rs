@@ -90,53 +90,60 @@ pub fn binary_search_between<const N: usize>(
 ///   converge upon the same side of the geometry as @b.
 pub fn find_opposing_boundary<const N: usize>(
     d: f64,
-    b: SVector<f64, N>,
+    t0: WithinMode<N>,
     v: SVector<f64, N>,
     domain: &Domain<N>,
     classifier: &mut Box<dyn Classifier<N>>,
     num_checks: u32,
     num_iter: u32,
 ) -> Result<WithinMode<N>, SamplingError<N>> {
-    let dist = domain.distance_to_edge(&b, &v)? * 0.999;
-    let p = b + v * dist;
+    let dist = domain.distance_to_edge(&t0, &v)? * 0.999;
+    let p = t0 + v * dist;
 
     let cls = classifier.classify(&p).unwrap_or_else(|_| panic!("A point that was supposed to be on the edge of the domain (yet inside) fell outside of the classifier's domain. Incorrect @domain? p = {p:?}, v = {v:?}"));
 
     let (mut t, mut x) = if cls {
-        (p, None)
+        (Some(p), None)
     } else {
         // Find next target hit
-        let t = binary_search_between(SearchMode::Nearest, true, num_checks, b, p, classifier)
-            .expect("@num_checks is too small or invalid @v, was unable to re-acquire envelope. ");
+        let t = binary_search_between(SearchMode::Nearest, true, num_checks, *t0, p, classifier);
+
         (t, Some(p))
     };
 
     // While there are gaps, explore towards envelope from @b
-    while let Some(gap) =
-        binary_search_between(SearchMode::Full, false, num_checks, t, b, classifier)
-    {
-        t = binary_search_between(
-            SearchMode::Nearest,
-            true,
-            num_checks,
-            b,
-            gap,
-            classifier,
-        ).expect("Fatal error. Although able to find envelope originally, envelope was lost while eleminating intermediate envelopes?");
-        x = Some(gap);
+    if let Some(mut t1) = t {
+        while let Some(gap) =
+            binary_search_between(SearchMode::Full, false, num_checks, t1, *t0, classifier)
+        {
+            x = Some(gap);
+            match binary_search_between(SearchMode::Nearest, true, num_checks, *t0, gap, classifier)
+            {
+                Some(p) => {
+                    t = Some(p);
+                    t1 = p;
+                }
+                None => {
+                    t = Some(*t0);
+                    break;
+                }
+            };
+        }
     }
 
-    let b2 = match x {
-        Some(x) => binary_surface_search(
+    let b = match (t, x) {
+        (None, None) => panic!("[Invalid state] Failed to find either a gap or any envelope. This shouldn't be possible."),
+        (None, Some(_)) => t0,
+        (Some(t), None) => WithinMode(t),
+        (Some(t), Some(x)) => binary_surface_search(
             d,
             &BoundaryPair::new(WithinMode(t), OutOfMode(x)),
             num_iter,
             classifier,
         ).expect("Unexpected sampling error during final binary surface search of opposing boundary point.").b,
-        None => WithinMode(p),
     };
 
-    Ok(b2)
+    Ok(b)
 }
 
 #[cfg(test)]
@@ -257,8 +264,9 @@ mod search_tests {
 
             let v: SVector<f64, 10> = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
-            let b2 = find_opposing_boundary(0.01, b, v, &domain, &mut classifier, 10, 10)
-                .expect("Unexpected error on sampling a constant location?");
+            let b2 =
+                find_opposing_boundary(0.01, WithinMode(b), v, &domain, &mut classifier, 10, 10)
+                    .expect("Unexpected error on sampling a constant location?");
 
             assert!(
                 classifier
@@ -287,8 +295,9 @@ mod search_tests {
 
             let v: SVector<f64, 10> = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
-            let b2 = find_opposing_boundary(0.01, b, v, &domain, &mut classifier, 10, 10)
-                .expect("Unexpected error on sampling a constant location?");
+            let b2 =
+                find_opposing_boundary(0.01, WithinMode(b), v, &domain, &mut classifier, 10, 10)
+                    .expect("Unexpected error on sampling a constant location?");
 
             assert!(
                 classifier
@@ -321,8 +330,16 @@ mod search_tests {
             let invalid_v: SVector<f64, 10> =
                 -SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
-            let b2 = find_opposing_boundary(0.01, b, invalid_v, &domain, &mut classifier, 10, 10)
-                .expect("Expected panic but got error?");
+            let b2 = find_opposing_boundary(
+                0.01,
+                WithinMode(b),
+                invalid_v,
+                &domain,
+                &mut classifier,
+                10,
+                10,
+            )
+            .expect("Expected panic but got error?");
             println!("Error: Expected panic but Ok(b2) returned. {b2:?}")
         }
 
@@ -348,8 +365,9 @@ mod search_tests {
                 "b was not within mode"
             );
 
-            let b2 = find_opposing_boundary(0.01, b, v, &domain, &mut classifier, 10, 10)
-                .expect("Unexpected error on sampling a constant location?");
+            let b2 =
+                find_opposing_boundary(0.01, WithinMode(b), v, &domain, &mut classifier, 10, 10)
+                    .expect("Unexpected error on sampling a constant location?");
 
             assert!(
                 classifier
