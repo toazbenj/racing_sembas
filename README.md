@@ -1,6 +1,7 @@
-<img src="https://github.com/user-attachments/assets/2052d51a-6b3f-4302-a329-2791e654a5fa" width=50%>
 
-State space Exploration of Multidimemsional Boundaries using Adherence Strategies (SEMBAS) is a technique
+![sembas_logo](https://github.com/user-attachments/assets/1296357d-e22f-42b4-83fa-06f93388c92f)
+
+**State space Exploration of Multidimemsional Boundaries using Adherence Strategies (SEMBAS)** is a technique
 for finding phase transitions in performance for a given search space. The boundary
 between performance modes can provide useful insight into the characteristics of the
 system. For example, if the target performance mode is "Safety" (which may be defined
