@@ -313,13 +313,12 @@ mod search_tests {
         }
 
         #[test]
-        #[should_panic]
-        fn panics_with_invalid_v() {
+        fn returns_t0_when_on_boundary_in_v_direction() {
             let d = 0.01;
 
             let domain = Domain::normalized();
             let mut classifier = create_sphere::<10>();
-            let b: SVector<f64, 10> = SVector::from_fn(|i, _| {
+            let t0: SVector<f64, 10> = SVector::from_fn(|i, _| {
                 if i == 0 {
                     0.5 - RADIUS + d * 0.001
                 } else {
@@ -330,17 +329,22 @@ mod search_tests {
             let invalid_v: SVector<f64, 10> =
                 -SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
-            let b2 = find_opposing_boundary(
+            let b = find_opposing_boundary(
                 0.01,
-                WithinMode(b),
+                WithinMode(t0),
                 invalid_v,
                 &domain,
                 &mut classifier,
                 10,
                 10,
             )
-            .expect("Expected panic but got error?");
-            println!("Error: Expected panic but Ok(b2) returned. {b2:?}")
+            .expect("Expected valid boundary but got error?");
+
+            assert_eq!(
+                (b - t0).norm(),
+                0.0,
+                "Expected b == t0, but found new boundary?"
+            )
         }
 
         #[test]
