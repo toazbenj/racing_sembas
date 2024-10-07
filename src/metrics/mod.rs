@@ -28,7 +28,7 @@ pub fn find_diameter<const N: usize>(
     d: f64,
     initial_pair: &BoundaryPair<N>,
     ndim: usize,
-    domain: Domain<N>,
+    domain: &Domain<N>,
     classifier: &mut Box<dyn Classifier<N>>,
 ) -> Result<Vec<f64>, SamplingError<N>> {
     let basis_vectors = OMatrix::<f64, Const<N>, Const<N>>::identity();
@@ -45,8 +45,8 @@ pub fn find_diameter<const N: usize>(
     let basis_vectors = rot * basis_vectors;
     let v0 = s.normalize();
 
-    let p1 = find_opposing_boundary(d, *initial_pair.t(), v0, &domain, classifier, 10, 10)?;
-    let p2 = find_opposing_boundary(d, *initial_pair.t(), -v0, &domain, classifier, 10, 10)?;
+    let p1 = find_opposing_boundary(d, *initial_pair.t(), v0, domain, classifier, 10, 10)?;
+    let p2 = find_opposing_boundary(d, *initial_pair.t(), -v0, domain, classifier, 10, 10)?;
 
     let mid = p1 + (p2 - p1) / 2.0;
     let mut result = vec![(p2 - p1).magnitude()];
@@ -54,9 +54,9 @@ pub fn find_diameter<const N: usize>(
     for i in 1..ndim {
         let vi = basis_vectors.column(i).into_owned();
 
-        let b1 = find_opposing_boundary(d, WithinMode(mid), vi, &domain, classifier, 10, 10)?;
+        let b1 = find_opposing_boundary(d, WithinMode(mid), vi, domain, classifier, 10, 10)?;
 
-        let b2 = find_opposing_boundary(d, WithinMode(mid), -vi, &domain, classifier, 10, 10)?;
+        let b2 = find_opposing_boundary(d, WithinMode(mid), -vi, domain, classifier, 10, 10)?;
 
         result.push((b2 - b1).magnitude());
     }
@@ -99,7 +99,7 @@ mod find_diameter {
             d,
             &BoundaryPair::new(WithinMode(t), OutOfMode(x)),
             10,
-            domain,
+            &domain,
             &mut classifier,
         )
         .expect("Unexpected error from find_diameter.");
