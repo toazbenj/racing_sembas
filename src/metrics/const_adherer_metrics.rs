@@ -1,5 +1,3 @@
-use nalgebra::ComplexField;
-
 /// Provides suggested jump distance and angle for constant adherers.
 /// # Arguments
 /// * axes : A subset of lengths for each axis of the envelope. Not providing all
