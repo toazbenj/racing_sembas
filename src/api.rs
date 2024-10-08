@@ -26,9 +26,9 @@ impl<const N: usize> RemoteClassifier<N> {
     /// 1. RemoteClassifier binds to TcpListener.
     /// 2. FUT connects to socket.
     /// 3. RemoteClassifier accepts connection.
-    /// 4. FUT sends config containing num_params config info
-    /// 5. RemoteClassifier accepts configuration, throwing error if N != num_params
-    /// 6. RemoteClassifier returns OK
+    /// 4. FUT sends config containing number of params info
+    /// 5. RemoteClassifier accepts configuration, throwing error if N != num params
+    /// 6. RemoteClassifier sends back 'OK\n'
     /// 7. RemoteClassifier setup complete, ready to classify.
     pub fn bind(addr: String) -> Result<Self, io::Error> {
         let listener = net::TcpListener::bind(addr)?;
@@ -48,10 +48,7 @@ impl<const N: usize> RemoteClassifier<N> {
 
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                format!(
-                    "Invalid number of param names! Expected {N}, Got {}",
-                    num_params
-                ),
+                format!("Invalid number of param names! Expected {N}, Got {num_params}"),
             ));
         }
 
@@ -104,19 +101,3 @@ impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
         }
     }
 }
-
-// #[cfg(test)]
-// mod temporary {
-//     use nalgebra::vector;
-
-//     use super::*;
-
-//     #[test]
-//     fn manual_remote() {
-//         let mut classifier = RemoteClassifier::<6>::bind("127.0.0.1:2000".to_string()).unwrap();
-//         let r = classifier
-//             .classify(vector![0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-//             .unwrap();
-//         println!("Got: {r}");
-//     }
-// }
