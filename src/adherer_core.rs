@@ -28,7 +28,7 @@ pub trait Adherer<const N: usize> {
 
 /// Builds an Adherer and returns it. Provides a means of decoupling Explorers from
 /// Adherers, such that any Explorer can use any Adherer.
-pub trait AdhererFactory<const N: usize> {
+pub trait AdhererFactory<const N: usize>: Copy + Clone {
     type TargetAdherer: Adherer<N>;
     /// Constructs an Adherer that will find a boundary halfspace neighboring the
     /// given @hs halfspace in the given direction @v.

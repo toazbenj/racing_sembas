@@ -1,7 +1,10 @@
+use std::{any::type_name, collections::HashMap};
+
 use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
     explorer_core::Explorer,
     extensions::Queue,
+    prelude::report::ExplorationStatus,
     structs::{backprop::Backpropagation, Classifier, Halfspace, Result, Sample, Span},
     utils::{array_distance, svector_to_array},
 };
@@ -148,7 +151,7 @@ impl<const N: usize, F: AdhererFactory<N>> MeshExplorer<N, F> {
     }
 }
 
-impl<const N: usize, F: AdhererFactory<N>> Explorer<N> for MeshExplorer<N, F> {
+impl<const N: usize, F: AdhererFactory<N>> Explorer<N, F> for MeshExplorer<N, F> {
     fn step(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<Option<Sample<N>>> {
         if self.adherer.is_none() {
             if let Some((hs, id, v)) = self.select_parent() {
@@ -186,6 +189,21 @@ impl<const N: usize, F: AdhererFactory<N>> Explorer<N> for MeshExplorer<N, F> {
 
     fn boundary_count(&self) -> usize {
         self.boundary.len()
+    }
+
+    fn describe(&self) -> ExplorationStatus<N, F> {
+        let mut expl_params = HashMap::new();
+        expl_params.insert("d".to_string(), self.d);
+        expl_params.insert("margin".to_string(), self.margin);
+
+        ExplorationStatus::new(
+            "Mesh Explorer",
+            type_name::<F>(),
+            expl_params,
+            self.adherer_f,
+            &self.boundary,
+            None,
+        )
     }
 }
 
