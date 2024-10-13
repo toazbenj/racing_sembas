@@ -22,7 +22,9 @@ const JUMP_DISTANCE: f64 = 0.2;
 const ADH_DELTA_ANGLE: f64 = 0.261799;
 const ADH_MAX_ANGLE: f64 = std::f64::consts::PI;
 
-fn setup_mesh_expl<const N: usize>(sphere: &Sphere<N>) -> MeshExplorer<N> {
+fn setup_mesh_expl<const N: usize>(
+    sphere: &Sphere<N>,
+) -> MeshExplorer<N, ConstantAdhererFactory<N>> {
     let b = WithinMode(SVector::from_fn(|i, _| {
         if i == 0 {
             0.49 + sphere.radius()
@@ -35,12 +37,7 @@ fn setup_mesh_expl<const N: usize>(sphere: &Sphere<N>) -> MeshExplorer<N> {
     let root = Halfspace { b, n };
     let adherer_f = ConstantAdhererFactory::new(ADH_DELTA_ANGLE, Some(ADH_MAX_ANGLE));
 
-    MeshExplorer::new(
-        JUMP_DISTANCE,
-        root,
-        JUMP_DISTANCE * 0.85,
-        Box::new(adherer_f),
-    )
+    MeshExplorer::new(JUMP_DISTANCE, root, JUMP_DISTANCE * 0.85, adherer_f)
 }
 
 fn setup_sphere<const N: usize>() -> Sphere<N> {
@@ -197,12 +194,7 @@ fn oob_err_prunes_exploration_branch() {
     let root = Halfspace { b, n };
     let adherer_f = ConstantAdhererFactory::new(ADH_DELTA_ANGLE, Some(ADH_MAX_ANGLE));
 
-    let mut expl = MeshExplorer::new(
-        JUMP_DISTANCE,
-        root,
-        JUMP_DISTANCE * 0.85,
-        Box::new(adherer_f),
-    );
+    let mut expl = MeshExplorer::new(JUMP_DISTANCE, root, JUMP_DISTANCE * 0.85, adherer_f);
 
     let mut is_exploring = true;
     let start = Instant::now();
@@ -233,12 +225,7 @@ fn ble_err_prunes_exploration_branch() {
     let root = Halfspace { b, n };
     let adherer_f = ConstantAdhererFactory::new(ADH_DELTA_ANGLE, Some(ADH_MAX_ANGLE));
 
-    let mut expl = MeshExplorer::new(
-        JUMP_DISTANCE,
-        root,
-        JUMP_DISTANCE * 0.85,
-        Box::new(adherer_f),
-    );
+    let mut expl = MeshExplorer::new(JUMP_DISTANCE, root, JUMP_DISTANCE * 0.85, adherer_f);
 
     let mut is_exploring = true;
     let start = Instant::now();

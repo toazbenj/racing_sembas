@@ -32,6 +32,7 @@ pub trait Adherer<const N: usize> {
 /// Builds an Adherer and returns it. Provides a means of decoupling Explorers from
 /// Adherers, such that any Explorer can use any Adherer.
 pub trait AdhererFactory<const N: usize> {
+    type TargetAdherer: Adherer<N>;
     /// Constructs an Adherer that will find a boundary halfspace neighboring the
     /// given @hs halfspace in the given direction @v.
     /// ## Arguments
@@ -40,7 +41,7 @@ pub trait AdhererFactory<const N: usize> {
     /// * v: A displacement vector that is orthogonal to @hs. Warning: If this vector
     ///   is too large it can miss the envelope, resulting in
     ///   SamplingError:BoundaryLost.
-    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Box<dyn Adherer<N>>;
+    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Self::TargetAdherer;
 }
 
 impl<const N: usize> fmt::Debug for SamplingError<N> {

@@ -147,12 +147,8 @@ impl<const N: usize> ConstantAdhererFactory<N> {
 }
 
 impl<const N: usize> AdhererFactory<N> for ConstantAdhererFactory<N> {
-    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Box<dyn Adherer<N>> {
-        Box::new(ConstantAdherer::new(
-            hs,
-            v,
-            self.delta_angle,
-            self.max_rotation,
-        ))
+    type TargetAdherer = ConstantAdherer<N>;
+    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> ConstantAdherer<N> {
+        ConstantAdherer::new(hs, v, self.delta_angle, self.max_rotation)
     }
 }

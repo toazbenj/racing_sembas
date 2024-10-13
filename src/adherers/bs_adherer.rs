@@ -148,12 +148,8 @@ impl<const N: usize> BinarySearchAdhererFactory<N> {
 }
 
 impl<const N: usize> AdhererFactory<N> for BinarySearchAdhererFactory<N> {
-    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Box<dyn Adherer<N>> {
-        Box::new(BinarySearchAdherer::new(
-            hs,
-            v,
-            self.init_angle,
-            self.n_iter,
-        ))
+    type TargetAdherer = BinarySearchAdherer<N>;
+    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> BinarySearchAdherer<N> {
+        BinarySearchAdherer::new(hs, v, self.init_angle, self.n_iter)
     }
 }
