@@ -3,6 +3,8 @@ use crate::{
     structs::{Classifier, Halfspace, OutOfMode, Sample, SamplingError, Span, WithinMode},
 };
 use nalgebra::{Const, OMatrix, SVector};
+#[cfg(feature = "io")]
+use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
 /// Pivots around a known boundary halfspace by taking fixed-angle rotations until
@@ -21,6 +23,8 @@ pub struct BinarySearchAdherer<const N: usize> {
 }
 
 /// Builds a ConstantAdherer instance.
+#[cfg(feature = "io")]
+#[derive(Serialize, Deserialize)]
 pub struct BinarySearchAdhererFactory<const N: usize> {
     init_angle: f64,
     n_iter: u32,

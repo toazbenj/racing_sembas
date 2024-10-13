@@ -1,6 +1,7 @@
 pub mod boundary;
 pub mod error;
 pub mod sampling;
+pub mod summary;
 
 pub use boundary::*;
 pub use error::*;

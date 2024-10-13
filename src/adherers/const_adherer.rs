@@ -3,6 +3,8 @@ use crate::{
     structs::{Classifier, Halfspace, Sample, SamplingError, Span},
 };
 use nalgebra::{Const, OMatrix, SVector};
+#[cfg(feature = "io")]
+use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
 /// Pivots around a known boundary halfspace by taking fixed-angle rotations until
@@ -21,6 +23,8 @@ pub struct ConstantAdherer<const N: usize> {
 }
 
 /// Builds a ConstantAdherer instance.
+#[cfg(feature = "io")]
+#[derive(Serialize, Deserialize)]
 pub struct ConstantAdhererFactory<const N: usize> {
     delta_angle: f64,
     max_rotation: Option<f64>,
