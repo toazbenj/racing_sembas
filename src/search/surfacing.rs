@@ -1,39 +1,43 @@
 use crate::{
-    structs::SamplingError,
-    structs::{BoundaryPair, Classifier, Halfspace, WithinMode},
+    prelude::Sample,
+    structs::{BoundaryPair, Classifier, Halfspace, Result, SamplingError, WithinMode},
 };
 
 /// Finds the surface of an envelope, i.e. the initial halfspace for beginning
 /// surface exploration by iteratively splitting the space in half until a desireable
 /// distance from the boundary has been reached.
-/// # Arguments
-/// * `d` The desired maximum distance from the boundary.
+/// ## Arguments
+/// * `max_err` The desired maximum distance from the boundary.
 /// * `t0` A target sample
 /// * `x0` A non-target sample
 /// * `max_samples` The maximum number of samples before the failing the process.
 pub fn binary_surface_search<const N: usize>(
-    d: f64,
+    max_err: f64,
     b_pair: &BoundaryPair<N>,
     max_samples: u32,
     classifier: &mut Box<dyn Classifier<N>>,
-) -> Result<Halfspace<N>, SamplingError<N>> {
+) -> Result<Halfspace<N>> {
     let mut p_t = b_pair.t().0;
     let mut p_x = b_pair.x().0;
     let mut s = (p_x - p_t) / 2.0;
     let mut i = 0;
 
-    while s.norm() > d && i < max_samples {
-        if classifier.classify(&(p_t + s))? {
-            p_t += s;
-        } else {
-            p_x -= s;
+    while s.norm() > max_err && i < max_samples {
+        match classifier.classify(&(p_t + s))? {
+            Sample::WithinMode(_) => p_t += s,
+            Sample::OutOfMode(_) => p_x -= s,
         }
+        // if classifier.classify(&(p_t + s))? {
+        //     p_t += s;
+        // } else {
+        //     p_x -= s;
+        // }
 
         s = (p_x - p_t) / 2.0;
         i += 1
     }
 
-    if i >= max_samples && s.norm() > d {
+    if i >= max_samples && s.norm() > max_err {
         return Err(SamplingError::MaxSamplesExceeded);
     }
 
@@ -45,7 +49,7 @@ pub fn binary_surface_search<const N: usize>(
     })
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "sps"))]
 mod test_surfacer {
     use nalgebra::SVector;
 
@@ -85,12 +89,12 @@ mod test_surfacer {
             .expect("Failed to find boundary?");
 
         assert!(
-            sphere.classify(&hs.b).unwrap(),
+            sphere.classify(&hs.b).unwrap().class(),
             "Halfspace outside of geometry?"
         );
 
         assert!(
-            !sphere.classify(&(hs.b + hs.n * d)).unwrap(),
+            !sphere.classify(&(hs.b + hs.n * d)).unwrap().class(),
             "Halfspace not on boundary?"
         );
     }
@@ -114,11 +118,11 @@ mod test_surfacer {
             .expect("Failed to find boundary within the maximum number of samples ({max_samples})");
 
         assert!(
-            sphere.classify(&hs.b).unwrap(),
+            sphere.classify(&hs.b).unwrap().class(),
             "Halfspace outside of geometry?"
         );
         assert!(
-            !sphere.classify(&(hs.b + hs.n * d)).unwrap(),
+            !sphere.classify(&(hs.b + hs.n * d)).unwrap().class(),
             "Halfspace not on boundary?"
         );
     }
@@ -138,7 +142,7 @@ mod test_surfacer {
         let x = OutOfMode(x);
         let minimum_sample_count = (RADIUS / d).log2().ceil() as u32;
 
-        let err: SamplingError<10> = binary_surface_search(
+        let err: SamplingError = binary_surface_search(
             d,
             &BoundaryPair::new(t, x),
             minimum_sample_count - 1,

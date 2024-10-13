@@ -1,15 +1,17 @@
+use crate::prelude::Sample;
 use crate::structs::SamplingError;
 use nalgebra::SVector;
 use std::io::Write;
 use std::io::{self, Read};
 use std::net;
 
+use crate::structs::error;
 use crate::structs::Classifier;
 use crate::structs::Domain;
 
 const BUFFER_CONFIG_SIZE: usize = 8;
 
-/// A means to allow an external function under test to connect to SEMBAS and request
+/// Allows an external function under test to connect to SEMBAS and request
 /// where to sample next. The classifier can then be called just like any other
 /// classifier.
 pub struct RemoteClassifier<const N: usize> {
@@ -22,7 +24,7 @@ impl<const N: usize> RemoteClassifier<N> {
     /// Once a connection is established, the RemoteClassifier will send the points
     /// to the FUT to be classified, and the FUT will return the resulting class
     /// (bool).
-    /// # Connection Sequence
+    /// ## Connection Sequence
     /// 1. RemoteClassifier binds to TcpListener.
     /// 2. FUT connects to socket.
     /// 3. RemoteClassifier accepts connection.
@@ -30,7 +32,7 @@ impl<const N: usize> RemoteClassifier<N> {
     /// 5. RemoteClassifier accepts configuration, throwing error if N != num params
     /// 6. RemoteClassifier sends back 'OK\n'
     /// 7. RemoteClassifier setup complete, ready to classify.
-    pub fn bind(addr: String) -> Result<Self, io::Error> {
+    pub fn bind(addr: String) -> io::Result<Self> {
         let listener = net::TcpListener::bind(addr)?;
         println!("Listening for client connection...");
         let (mut stream, _) = listener.accept()?;
@@ -72,7 +74,7 @@ impl<const N: usize> Drop for RemoteClassifier<N> {
     }
 }
 
-impl<const N: usize> From<io::Error> for SamplingError<N> {
+impl From<io::Error> for SamplingError {
     fn from(value: io::Error) -> Self {
         SamplingError::InvalidClassifierResponse(format!(
             "Invalid client response message. IO Error: {value}"
@@ -81,7 +83,7 @@ impl<const N: usize> From<io::Error> for SamplingError<N> {
 }
 
 impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> error::Result<Sample<N>> {
         if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }
@@ -97,7 +99,7 @@ impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
                 "Remote Classifier received non-bool response?".to_string(),
             ))
         } else {
-            Ok(buffer[0] == 1)
+            Ok(Sample::from_class(*p, buffer[0] == 1))
         }
     }
 }

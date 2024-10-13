@@ -116,7 +116,10 @@ fn setup_remote<const N: usize>() -> JoinHandle<()> {
                     .expect("Incorrect byte size or alignment"),
             );
 
-            let cls = classifier.classify(&p).unwrap_or(false) as u8;
+            let cls = classifier
+                .classify(&p)
+                .unwrap_or(sembas::structs::Sample::OutOfMode(p.into()))
+                .class() as u8;
 
             socket.write_all(&[cls]).unwrap();
         }

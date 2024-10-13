@@ -2,21 +2,19 @@ use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
     explorer_core::Explorer,
     extensions::Queue,
-    structs::{backprop::Backpropegation, Classifier, Halfspace, Sample, SamplingError, Span},
+    structs::{backprop::Backpropagation, Classifier, Halfspace, Result, Sample, Span},
     utils::{array_distance, svector_to_array},
 };
 use nalgebra::{self, Const, OMatrix, SVector};
 use petgraph::{graph::NodeIndex, visit::EdgeRef, Direction::Incoming, Graph};
 use rstar::{primitives::GeomWithData, RTree};
 
-// const BASIS_VECTORS = nalgebra::OMatrix::<f64, Const<N>, Const<N>>::identity();
-
 type NodeID = usize;
 type Path<const N: usize> = (NodeID, SVector<f64, N>);
 type KnnNode<const N: usize> = GeomWithData<[f64; N], NodeID>;
 
 /// Explores a surface uniformly by using a grid-search approach.
-pub struct MeshExplorer<const N: usize> {
+pub struct MeshExplorer<const N: usize, F: AdhererFactory<N>> {
     d: f64,
     boundary: Vec<Halfspace<N>>,
     margin: f64,
@@ -25,13 +23,11 @@ pub struct MeshExplorer<const N: usize> {
     current_parent: NodeID,
     tree: Graph<Halfspace<N>, ()>,
     knn_index: RTree<KnnNode<N>>,
-    // next_id: usize,
-    // prev_id: usize,
-    adherer: Option<Box<dyn Adherer<N>>>,
-    adherer_f: Box<dyn AdhererFactory<N>>,
+    adherer: Option<F::TargetAdherer>,
+    adherer_f: F,
 }
 
-impl<const N: usize> MeshExplorer<N> {
+impl<const N: usize, F: AdhererFactory<N>> MeshExplorer<N, F> {
     /// Creates a MeshExplorer instance.
     /// ## Arguments
     /// * d: The jump distance between boundary points. Describes how far apart the
@@ -41,12 +37,7 @@ impl<const N: usize> MeshExplorer<N> {
     ///   halfspace before a path along a cardinal direction is rejected.
     ///   Values that are closer to d improve efficiency at the cost of coverage.
     ///   If uncertain of what value to use, try 0.9 * d to start.
-    pub fn new(
-        d: f64,
-        root: Halfspace<N>,
-        margin: f64,
-        adherer_f: Box<dyn AdhererFactory<N>>,
-    ) -> Self {
+    pub fn new(d: f64, root: Halfspace<N>, margin: f64, adherer_f: F) -> Self {
         let boundary = vec![root];
         let basis_vectors = OMatrix::<f64, Const<N>, Const<N>>::identity();
         let path_queue = vec![];
@@ -105,7 +96,7 @@ impl<const N: usize> MeshExplorer<N> {
 
     fn get_next_paths_from(&self, id: NodeID) -> Vec<Path<N>> {
         let hs = &self.boundary[id];
-        let next_paths = MeshExplorer::create_cardinals(hs.n, self.basis_vectors)
+        let next_paths = Self::create_cardinals(hs.n, self.basis_vectors)
             .iter()
             .map(|&v| (id, v))
             .collect();
@@ -157,11 +148,8 @@ impl<const N: usize> MeshExplorer<N> {
     }
 }
 
-impl<const N: usize> Explorer<N> for MeshExplorer<N> {
-    fn step(
-        &mut self,
-        classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Option<Sample<N>>, SamplingError<N>> {
+impl<const N: usize, F: AdhererFactory<N>> Explorer<N> for MeshExplorer<N, F> {
+    fn step(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<Option<Sample<N>>> {
         if self.adherer.is_none() {
             if let Some((hs, id, v)) = self.select_parent() {
                 self.current_parent = id;
@@ -201,7 +189,7 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
     }
 }
 
-impl<const N: usize> Backpropegation<N> for MeshExplorer<N> {
+impl<const N: usize, F: AdhererFactory<N>> Backpropagation<N> for MeshExplorer<N, F> {
     fn backprop(&mut self, child_id: NodeIndex, margin: f64) {
         let parent_indx = if let Some(index) = self.get_parent(child_id) {
             index

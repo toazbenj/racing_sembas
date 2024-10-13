@@ -15,6 +15,14 @@ Red dots are the explored boundary and blue dots are the samples taken by the
 adherence algorithm to find the next boundary point. This example explores a simple
 3-Dimensional sphere, but SEMBAS can be applied to arbitrarily high dimensions.
 
+## Running Examples
+Some of the examples require certain features to be enabled. A common feature is
+`sps` (synthetic parameter space) which are used to create mock functions under test.
+You can easily run any example, however, by using the below command:
+```
+cargo run --example <example-name> --features all
+```
+
 ## Adherence
 An Adherence strategy is the process of finding a neighboring boundary point. This
 requires both an initial boundary point, which acts as a pivot to rotate around, and
@@ -95,7 +103,7 @@ fn find_initial_boundary_pair<const N: usize>(
     classifier: &mut Box<dyn Classifier<N>>,
     domain::Domain<N>,
     max_samples: i32,
-) -> Result<BoundaryPair<N>, SamplingError<N>> {
+) -> Result<BoundaryPair<N>> {
     let mut search = MonteCarloSearch::new(domain, 1);
 
     // Shorthand for creating a sample and classifying it:
@@ -193,7 +201,7 @@ struct Sphere<const N: usize> {
 }
 
 impl<const N: usize> Classifier<N> for Sphere<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool> {
         if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }

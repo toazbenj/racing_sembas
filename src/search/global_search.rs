@@ -4,11 +4,14 @@ use rand_chacha::ChaCha20Rng;
 
 use crate::structs::Domain;
 
+/// Random exploration of the search domain.
 pub struct MonteCarloSearch<const N: usize> {
     rng: ChaCha20Rng,
     domain: Domain<N>,
 }
 
+/// A system that produces points to be sampled for the purpose of exploring a
+/// domain, also referred to as global search.
 pub trait SearchFactory<const N: usize> {
     fn sample(&mut self) -> SVector<f64, N>;
     fn get_domain(&self) -> &Domain<N>;

@@ -1,12 +1,12 @@
 /// Provides suggested jump distance and angle for constant adherers.
-/// # Arguments
+/// ## Arguments
 /// * axes : A subset of lengths for each axis of the envelope. Not providing all
 ///   axes is allowed, although risks overshooting the envelope at lower resolutions.
 /// * max_err : The desired error from the boundary.
 /// * resolution : A scalar value, 0 < r <= 1, which measures how densely pact the
 ///   samples are. A value of 1 is the most possible, 0 is the least possible, but
 ///   you cannot use a value of 0.
-/// # Return (tuple)
+/// ## Return (tuple)
 /// * d : Jump distance between samples.
 /// * initial_angle : The first angle to rotate the displacement by.
 /// * n : The number of samples to take for each boundary point to reach desired

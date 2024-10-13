@@ -1,6 +1,6 @@
 use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
-    structs::{Classifier, Halfspace, Sample, SamplingError, Span},
+    structs::{Classifier, Halfspace, Result, Sample, SamplingError, Span},
 };
 use nalgebra::{Const, OMatrix, SVector};
 #[cfg(feature = "io")]
@@ -31,6 +31,20 @@ pub struct ConstantAdhererFactory<const N: usize> {
 }
 
 impl<const N: usize> ConstantAdherer<N> {
+    /// Creates a ConstantAdherer.
+    /// ## Arguments
+    /// * pivot : The halfspace to rotate around for finding a neighboring halfspace.
+    /// * v : The vector of travel, the direction along the surface to explore in.
+    ///     The length of this vector determines how far to travel.
+    /// * delta_angle : The fixed-angle to rotate the displacement vector by to cross
+    ///   and find the neighboring boundary.
+    /// * max_rotation : The maximum total angle in radians to rotate by. Defaults to
+    ///   180 degress.
+    /// ## Characteristics
+    /// * Boundary Sampling Efficiency (BSE): 0 <= BSE <= 1
+    ///     * BSE varies with delta_angle, v.norm(), and the shape of the envelope.
+    /// * Boundary Error: 0 <= err <= v.norm() * sin(delta_angle)
+    ///     * Average case will be v.norm() * sin(delta_angle) / 2
     pub fn new(
         pivot: Halfspace<N>,
         v: SVector<f64, N>,
@@ -57,9 +71,10 @@ impl<const N: usize> ConstantAdherer<N> {
     fn take_initial_sample(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Sample<N>, SamplingError<N>> {
+    ) -> Result<Sample<N>> {
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(&cur)?;
+        let sample = classifier.classify(&cur)?;
+        let cls = sample.class();
         let delta_angle = if cls {
             self.delta_angle
         } else {
@@ -73,14 +88,13 @@ impl<const N: usize> ConstantAdherer<N> {
         &mut self,
         rot: OMatrix<f64, Const<N>, Const<N>>,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Sample<N>, SamplingError<N>> {
+    ) -> Result<Sample<N>> {
         self.v = rot * self.v;
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(&cur)?;
-
         self.angle += self.delta_angle;
 
-        Ok(Sample::from_class(cur, cls))
+        // let sample = classifier.classify(&cur)?;
+        classifier.classify(&cur)
     }
 }
 
@@ -89,10 +103,7 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
         self.state
     }
 
-    fn sample_next(
-        &mut self,
-        classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<&Sample<N>, SamplingError<N>> {
+    fn sample_next(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<&Sample<N>> {
         let cur = if let Some(rot) = self.rot {
             self.take_sample(rot, classifier)?
         } else {
@@ -137,12 +148,8 @@ impl<const N: usize> ConstantAdhererFactory<N> {
 }
 
 impl<const N: usize> AdhererFactory<N> for ConstantAdhererFactory<N> {
-    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Box<dyn Adherer<N>> {
-        Box::new(ConstantAdherer::new(
-            hs,
-            v,
-            self.delta_angle,
-            self.max_rotation,
-        ))
+    type TargetAdherer = ConstantAdherer<N>;
+    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> ConstantAdherer<N> {
+        ConstantAdherer::new(hs, v, self.delta_angle, self.max_rotation)
     }
 }

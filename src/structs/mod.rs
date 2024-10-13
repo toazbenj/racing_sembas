@@ -22,7 +22,8 @@ pub struct Span<const N: usize> {
 }
 
 /// An N-dimensional hyperrectangle that is defined by an lower and upper bound (low
-/// and high). Ex. a valid input region to sample from for a system under test.
+/// and high). Used to define a valid input region to sample from for a system under
+/// test.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Domain<const N: usize> {
     low: SVector<f64, N>,
@@ -30,6 +31,9 @@ pub struct Domain<const N: usize> {
 }
 
 impl<const N: usize> Span<N> {
+    /// Constructs a Span across @u and @v. @u and @v are orthonormalized, where @v
+    /// is forced to be orthogonal to @u, and @u retains its directionality. Uses
+    /// Gramm Schmidt Orthonormalization
     pub fn new(u: SVector<f64, N>, v: SVector<f64, N>) -> Self {
         let u = u.normalize();
         let v = v.normalize();
@@ -65,6 +69,15 @@ impl<const N: usize> Domain<N> {
         Domain { low, high }
     }
 
+    /// Returns a domain with the provided bounds.
+    /// ## Safety
+    /// This function is unsafe because it doesn't do any checks to ensure that for
+    /// all dimensions, low < high. If this condition is not met, the Domain's
+    /// operations behavior is undefined.
+    pub unsafe fn new_from_bounds(low: SVector<f64, N>, high: SVector<f64, N>) -> Self {
+        Domain { low, high }
+    }
+
     /// Returns a Domain bounded between 0 and 1 for all dimensions.
     pub fn normalized() -> Self {
         let low = SVector::<f64, N>::zeros();
@@ -73,13 +86,13 @@ impl<const N: usize> Domain<N> {
     }
 
     /// The lower bound of the domain.
-    pub fn low(&self) -> SVector<f64, N> {
-        self.low
+    pub fn low(&self) -> &SVector<f64, N> {
+        &self.low
     }
 
     /// The upper bound of the domain.
-    pub fn high(&self) -> SVector<f64, N> {
-        self.high
+    pub fn high(&self) -> &SVector<f64, N> {
+        &self.high
     }
 
     /// Checks if the given vector is within the domain.
@@ -123,14 +136,10 @@ impl<const N: usize> Domain<N> {
     /// samples on the extremes of the input space.
     /// * p: A point that the ray starts from
     /// * v: The direction the ray travels
-    /// # Returns
+    ////// ## Returns
     /// * t: The linear distance between p and the edge of the domain in the
     ///   direction v
-    pub fn distance_to_edge(
-        &self,
-        p: &SVector<f64, N>,
-        v: &SVector<f64, N>,
-    ) -> Result<f64, SamplingError<N>> {
+    pub fn distance_to_edge(&self, p: &SVector<f64, N>, v: &SVector<f64, N>) -> Result<f64> {
         let t_lower = (self.low - p).component_div(v);
         let t_upper = (self.high - p).component_div(v);
 
@@ -162,7 +171,7 @@ impl<const N: usize> fmt::Display for Span<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Span({}, {})",
+            "Span({:?}, {:?})",
             vector_to_string(&self.u),
             vector_to_string(&self.v)
         )
@@ -249,9 +258,9 @@ mod domain_tests {
         let dst = Domain::<3>::new(vector![1.0, 2.5, 3.5], vector![4.0, 5.0, 6.0]);
 
         let p0 = src.low();
-        let p1 = Domain::project_point_domains(&p0, &src, &dst);
+        let p1 = Domain::project_point_domains(p0, &src, &dst);
 
-        assert!(is_near(&p1, &dst.low(), ATOL))
+        assert!(is_near(&p1, dst.low(), ATOL))
     }
 
     #[test]
@@ -260,9 +269,9 @@ mod domain_tests {
         let dst = Domain::<3>::new(vector![1.0, 2.5, 3.5], vector![4.0, 5.0, 6.0]);
 
         let p0 = src.high();
-        let p1 = Domain::project_point_domains(&p0, &src, &dst);
+        let p1 = Domain::project_point_domains(p0, &src, &dst);
 
-        assert!(is_near(&p1, &dst.high(), ATOL))
+        assert!(is_near(&p1, dst.high(), ATOL))
     }
 
     #[test]
@@ -299,7 +308,7 @@ mod domain_tests {
         let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
         let p = d.low();
 
-        assert!(d.contains(&p))
+        assert!(d.contains(p))
     }
 
     #[test]
@@ -315,6 +324,6 @@ mod domain_tests {
         let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
         let p = d.high();
 
-        assert!(d.contains(&p))
+        assert!(d.contains(p))
     }
 }

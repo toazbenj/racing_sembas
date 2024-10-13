@@ -1,3 +1,4 @@
+#![cfg(feature = "sps")]
 use core::panic;
 
 use nalgebra::vector;

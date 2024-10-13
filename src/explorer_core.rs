@@ -1,7 +1,4 @@
-use crate::{
-    structs::{Classifier, Halfspace, Sample, SamplingError},
-    // structs::{Classifier, Halfspace, Sample},
-};
+use crate::structs::{Classifier, Halfspace, Result, Sample};
 
 /// The system responsible for the full boundary exploration process. Leverages
 /// Adherers to find neighboring boundary points.
@@ -12,10 +9,7 @@ pub trait Explorer<const N: usize> {
     ///   being explored.
     /// ## Returns
     /// * sample: A PointNode or SamplingError.
-    fn step(
-        &mut self,
-        classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Option<Sample<N>>, SamplingError<N>>;
+    fn step(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<Option<Sample<N>>>;
 
     /// Gets the current state of the explored boundary.
     /// ## Returns
