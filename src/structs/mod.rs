@@ -85,13 +85,13 @@ impl<const N: usize> Domain<N> {
     }
 
     /// The lower bound of the domain.
-    pub fn low(&self) -> SVector<f64, N> {
-        self.low
+    pub fn low(&self) -> &SVector<f64, N> {
+        &self.low
     }
 
     /// The upper bound of the domain.
-    pub fn high(&self) -> SVector<f64, N> {
-        self.high
+    pub fn high(&self) -> &SVector<f64, N> {
+        &self.high
     }
 
     /// Checks if the given vector is within the domain.
