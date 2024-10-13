@@ -31,7 +31,7 @@ pub fn find_diameter<const N: usize>(
     ndim: usize,
     domain: &Domain<N>,
     classifier: &mut Box<dyn Classifier<N>>,
-) -> Result<Vec<f64>, SamplingError<N>> {
+) -> Result<Vec<f64>, SamplingError> {
     assert!(
         ndim > 1,
         "Invalid number for ndim, must be positive non-zero! Got: {ndim}"

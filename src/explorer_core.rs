@@ -12,7 +12,7 @@ pub trait Explorer<const N: usize> {
     fn step(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Option<Sample<N>>, SamplingError<N>>;
+    ) -> Result<Option<Sample<N>>, SamplingError>;
 
     /// Gets the current state of the explored boundary.
     /// ## Returns

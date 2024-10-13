@@ -10,20 +10,20 @@ use crate::structs::SamplingError;
 /// A system under test whose output can be classified as "target" or "non-target"
 /// behavior. For example, safe/unsafe.
 pub trait Classifier<const N: usize> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>>;
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError>;
 }
 
 /// A Classifier defined by a function (p: SVector) -> Result<bool>
 pub struct FunctionClassifier<F, const N: usize>
 where
-    F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError<N>>,
+    F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError>,
 {
     fut: F,
 }
 
 impl<F, const N: usize> FunctionClassifier<F, N>
 where
-    F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError<N>>,
+    F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError>,
 {
     pub fn new(fut: F) -> Self {
         Self { fut }
@@ -36,9 +36,9 @@ where
 
 impl<F, const N: usize> Classifier<N> for FunctionClassifier<F, N>
 where
-    F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError<N>>,
+    F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError>,
 {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError> {
         (self.fut)(p)
     }
 }

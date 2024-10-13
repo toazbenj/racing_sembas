@@ -16,7 +16,7 @@ pub fn binary_surface_search<const N: usize>(
     b_pair: &BoundaryPair<N>,
     max_samples: u32,
     classifier: &mut Box<dyn Classifier<N>>,
-) -> Result<Halfspace<N>, SamplingError<N>> {
+) -> Result<Halfspace<N>, SamplingError> {
     let mut p_t = b_pair.t().0;
     let mut p_x = b_pair.x().0;
     let mut s = (p_x - p_t) / 2.0;
@@ -138,7 +138,7 @@ mod test_surfacer {
         let x = OutOfMode(x);
         let minimum_sample_count = (RADIUS / d).log2().ceil() as u32;
 
-        let err: SamplingError<10> = binary_surface_search(
+        let err: SamplingError = binary_surface_search(
             d,
             &BoundaryPair::new(t, x),
             minimum_sample_count - 1,

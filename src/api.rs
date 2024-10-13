@@ -72,7 +72,7 @@ impl<const N: usize> Drop for RemoteClassifier<N> {
     }
 }
 
-impl<const N: usize> From<io::Error> for SamplingError<N> {
+impl From<io::Error> for SamplingError {
     fn from(value: io::Error) -> Self {
         SamplingError::InvalidClassifierResponse(format!(
             "Invalid client response message. IO Error: {value}"
@@ -81,7 +81,7 @@ impl<const N: usize> From<io::Error> for SamplingError<N> {
 }
 
 impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError> {
         if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }

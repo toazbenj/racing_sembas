@@ -43,7 +43,7 @@ impl<const N: usize> Sphere<N> {
 }
 
 impl<const N: usize> Classifier<N> for Sphere<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError> {
         if let Some(domain) = &self.domain {
             if !domain.contains(p) {
                 return Err(crate::structs::SamplingError::OutOfBounds);
@@ -85,7 +85,7 @@ impl<const N: usize> Cube<N> {
 }
 
 impl<const N: usize> Classifier<N> for Cube<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError> {
         if let Some(domain) = &self.domain {
             if !domain.contains(p) {
                 return Err(crate::structs::SamplingError::OutOfBounds);
@@ -120,7 +120,7 @@ impl<const N: usize> SphereCluster<N> {
 }
 
 impl<const N: usize> Classifier<N> for SphereCluster<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError> {
         if let Some(domain) = &self.domain {
             if !domain.contains(p) {
                 return Err(crate::structs::SamplingError::OutOfBounds);

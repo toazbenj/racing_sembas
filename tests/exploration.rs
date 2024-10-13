@@ -177,7 +177,7 @@ fn oob_err_prunes_exploration_branch() {
         i: usize,
     }
     impl<const N: usize> Classifier<N> for TestClassifier<N> {
-        fn classify(&mut self, _: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+        fn classify(&mut self, _: &SVector<f64, N>) -> Result<bool, SamplingError> {
             if self.i > 2 {
                 Err(SamplingError::OutOfBounds)
             } else {
@@ -213,7 +213,7 @@ fn oob_err_prunes_exploration_branch() {
 fn ble_err_prunes_exploration_branch() {
     struct TestClassifier<const N: usize> {}
     impl<const N: usize> Classifier<N> for TestClassifier<N> {
-        fn classify(&mut self, _: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+        fn classify(&mut self, _: &SVector<f64, N>) -> Result<bool, SamplingError> {
             Ok(true)
         }
     }

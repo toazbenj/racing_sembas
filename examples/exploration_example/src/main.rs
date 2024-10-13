@@ -17,7 +17,7 @@ struct Sphere<const N: usize> {
 }
 
 impl<const N: usize> Classifier<N> for Sphere<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError> {
         if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }
@@ -93,7 +93,7 @@ fn find_initial_boundary_pair<const N: usize>(
     classifier: &mut Box<dyn Classifier<N>>,
     history: &mut Vec<Sample<N>>,
     max_samples: i32,
-) -> Result<BoundaryPair<N>, SamplingError<N>> {
+) -> Result<BoundaryPair<N>, SamplingError> {
     let mut search = MonteCarloSearch::new(Domain::normalized(), 1);
     let mut take_sample = move || {
         let p = search.sample();

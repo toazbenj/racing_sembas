@@ -22,7 +22,7 @@ pub trait Adherer<const N: usize> {
     fn sample_next(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<&Sample<N>, SamplingError<N>>;
+    ) -> Result<&Sample<N>, SamplingError>;
 
     /// Returns the current state of the adherer, either Searching or
     /// FoundBoundary(hs) where hs is the resulting halfspace.
@@ -44,7 +44,7 @@ pub trait AdhererFactory<const N: usize> {
     fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Self::TargetAdherer;
 }
 
-impl<const N: usize> fmt::Debug for SamplingError<N> {
+impl fmt::Debug for SamplingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             SamplingError::BoundaryLost => write!(f, "Boundary lost during adherence."),
