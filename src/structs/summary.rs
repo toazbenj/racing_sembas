@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::File,
     io::{BufWriter, Write},
 };
@@ -8,65 +9,56 @@ use serde::{Deserialize, Serialize};
 
 use crate::prelude::AdhererFactory;
 
-use super::{Halfspace, Sample, WithinMode};
+use super::{Halfspace, WithinMode};
 
 #[cfg_attr(feature = "io", derive(Serialize, Deserialize))]
-pub struct ExplorationSummary<const N: usize, F>
+pub struct ExplorationStatus<const N: usize, F>
 where
     F: AdhererFactory<N>,
 {
-    title: String,
+    explorer_type: String,
     adherer_type: String,
+    explorer_parameters: HashMap<String, f64>,
     adherer_parameters: F,
     b_count: usize,
-    nonb_count: usize,
     boundary_points: Vec<Vec<f64>>,
     boundary_surface: Vec<Vec<f64>>,
-    all_points: Vec<(Vec<f64>, bool)>,
     notes: Option<String>,
 }
 
-impl<const N: usize, A> ExplorationSummary<N, A>
+impl<const N: usize, A> ExplorationStatus<N, A>
 where
     A: AdhererFactory<N>,
 {
     pub fn new(
-        title: &str,
+        explorer_type: &str,
         adherer_type: &str,
+        explorer_parameters: HashMap<String, f64>,
         adherer_parameters: A,
         boundary: &[Halfspace<N>],
-        all_points: &[Sample<N>],
         notes: Option<&str>,
     ) -> Self {
         let mut b_points: Vec<Vec<f64>> = vec![];
         let mut n_points: Vec<Vec<f64>> = vec![];
-        let nonb_points: Vec<(Vec<f64>, bool)> = all_points
-            .iter()
-            .map(|s| match s {
-                Sample::WithinMode(p) => (p.iter().copied().collect(), true),
-                Sample::OutOfMode(p) => (p.iter().copied().collect(), false),
-            })
-            .collect();
 
         for hs in boundary {
             b_points.push(hs.b.iter().copied().collect());
             n_points.push(hs.n.iter().copied().collect());
         }
 
-        ExplorationSummary {
-            title: title.to_string(),
+        ExplorationStatus {
+            explorer_type: explorer_type.to_string(),
             adherer_type: adherer_type.to_string(),
+            explorer_parameters,
             adherer_parameters,
             b_count: b_points.len(),
-            nonb_count: nonb_points.len() - b_points.len(),
             boundary_points: b_points,
             boundary_surface: n_points,
-            all_points: nonb_points,
             notes: notes.map(|s| s.to_string()),
         }
     }
 
-    pub fn as_state(self) -> (Vec<Halfspace<N>>, Vec<Sample<N>>, A) {
+    pub fn as_state(self) -> (Vec<Halfspace<N>>, A) {
         let boundary = self
             .boundary_points
             .iter()
@@ -77,17 +69,11 @@ where
             })
             .collect();
 
-        let non_bsamples = self
-            .all_points
-            .iter()
-            .map(|(p, cls)| Sample::from_class(SVector::from_column_slice(p), *cls))
-            .collect();
-
-        (boundary, non_bsamples, self.adherer_parameters)
+        (boundary, self.adherer_parameters)
     }
 
     pub fn title(&self) -> &str {
-        &self.title
+        &self.explorer_type
     }
 
     pub fn adherer_type(&self) -> &str {
@@ -106,17 +92,13 @@ where
         &self.boundary_surface
     }
 
-    pub fn non_boundary_points(&self) -> &[(Vec<f64>, bool)] {
-        &self.all_points
-    }
-
     pub fn notes(&self) -> Option<&String> {
         self.notes.as_ref()
     }
 }
 
 #[cfg(feature = "io")]
-impl<const N: usize, A> ExplorationSummary<N, A>
+impl<const N: usize, A> ExplorationStatus<N, A>
 where
     A: AdhererFactory<N> + Serialize + for<'a> Deserialize<'a>,
 {

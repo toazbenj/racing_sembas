@@ -24,6 +24,7 @@ pub struct ConstantAdherer<const N: usize> {
 
 /// Builds a ConstantAdherer instance.
 #[cfg_attr(feature = "io", derive(Serialize, Deserialize))]
+#[derive(Debug, Copy, Clone)]
 pub struct ConstantAdhererFactory<const N: usize> {
     delta_angle: f64,
     max_rotation: Option<f64>,
