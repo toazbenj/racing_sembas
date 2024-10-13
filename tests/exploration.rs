@@ -120,6 +120,53 @@ fn fully_explores_sphere() {
     );
 }
 
+#[cfg(feature = "io")]
+#[test]
+fn saves_and_loads_results_correctly() {
+    use sembas::structs::report::ExplorationStatus;
+
+    let sphere = setup_sphere::<D>();
+    // let area = sphere_surface_area(&sphere);
+    let mut expl = setup_mesh_expl(&sphere);
+    let mut classifier = sphere_to_classifier(sphere);
+
+    let timeout = Duration::from_secs(5);
+    let start_time = Instant::now();
+
+    while let Ok(Some(_)) = expl.step(&mut classifier) {
+        if start_time.elapsed() > timeout {
+            panic!("Test exceeded expected time to completion. Mesh explorer got stuck?");
+        }
+    }
+
+    const PATH: &str = ".data/tmp.json";
+    let status = expl.describe();
+    status.save(PATH).unwrap();
+
+    let loaded_status: ExplorationStatus<10, ConstantAdhererFactory<10>> =
+        ExplorationStatus::load(PATH).unwrap();
+
+    assert!(
+        loaded_status
+            .boundary_points()
+            .iter()
+            .zip(expl.boundary().iter())
+            .all(|(p, hs)| { SVector::<f64, 10>::from_column_slice(p) == *hs.b }),
+        "One or more boundary points were incorrectly stored in json?"
+    );
+
+    assert!(
+        loaded_status
+            .boundary_surface()
+            .iter()
+            .zip(expl.boundary().iter())
+            .all(|(n, hs)| { SVector::<f64, 10>::from_column_slice(n) == hs.n }),
+        "One or more boundary points were incorrectly stored in json?"
+    );
+
+    std::fs::remove_file(PATH).unwrap();
+}
+
 #[test]
 fn backprop_fully_explores_sphere() {
     let sphere = setup_sphere::<D>();
