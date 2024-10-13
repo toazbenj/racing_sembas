@@ -18,9 +18,11 @@ where
     title: String,
     adherer_type: String,
     adherer_parameters: F,
+    b_count: usize,
+    nonb_count: usize,
     boundary_points: Vec<Vec<f64>>,
     boundary_surface: Vec<Vec<f64>>,
-    non_boundary_points: Vec<(Vec<f64>, bool)>,
+    all_points: Vec<(Vec<f64>, bool)>,
     notes: Option<String>,
 }
 
@@ -33,12 +35,12 @@ where
         adherer_type: &str,
         adherer_parameters: A,
         boundary: &[Halfspace<N>],
-        non_boundary_points: &[Sample<N>],
+        all_points: &[Sample<N>],
         notes: Option<&str>,
     ) -> Self {
         let mut b_points: Vec<Vec<f64>> = vec![];
         let mut n_points: Vec<Vec<f64>> = vec![];
-        let nonb_points: Vec<(Vec<f64>, bool)> = non_boundary_points
+        let nonb_points: Vec<(Vec<f64>, bool)> = all_points
             .iter()
             .map(|s| match s {
                 Sample::WithinMode(p) => (p.iter().copied().collect(), true),
@@ -55,9 +57,11 @@ where
             title: title.to_string(),
             adherer_type: adherer_type.to_string(),
             adherer_parameters,
+            b_count: b_points.len(),
+            nonb_count: nonb_points.len() - b_points.len(),
             boundary_points: b_points,
             boundary_surface: n_points,
-            non_boundary_points: nonb_points,
+            all_points: nonb_points,
             notes: notes.map(|s| s.to_string()),
         }
     }
@@ -74,7 +78,7 @@ where
             .collect();
 
         let non_bsamples = self
-            .non_boundary_points
+            .all_points
             .iter()
             .map(|(p, cls)| Sample::from_class(SVector::from_column_slice(p), *cls))
             .collect();
@@ -103,7 +107,7 @@ where
     }
 
     pub fn non_boundary_points(&self) -> &[(Vec<f64>, bool)] {
-        &self.non_boundary_points
+        &self.all_points
     }
 
     pub fn notes(&self) -> Option<&String> {
