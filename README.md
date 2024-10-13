@@ -15,6 +15,14 @@ Red dots are the explored boundary and blue dots are the samples taken by the
 adherence algorithm to find the next boundary point. This example explores a simple
 3-Dimensional sphere, but SEMBAS can be applied to arbitrarily high dimensions.
 
+## Running Examples
+Some of the examples require certain features to be enabled. A common feature is
+`sps` (synthetic parameter space) which are used to create mock functions under test.
+You can easily run any example, however, by using the below command:
+```
+cargo run example [example-name] --features all
+```
+
 ## Adherence
 An Adherence strategy is the process of finding a neighboring boundary point. This
 requires both an initial boundary point, which acts as a pivot to rotate around, and
