@@ -76,7 +76,7 @@ pub fn binary_search_between<const N: usize>(
 /// **Note: If there is no Out-of-Mode samples between @b and the edge of the domain,
 /// the point lying on the edge of the domain will be returned.**
 /// ## Arguments
-/// * d : The maximum allowable distance from the boundary for the opposing boundary
+/// * max_err : The maximum allowable distance from the boundary.
 ///   point.
 /// * b : A point that lies on the boundary of the envelope whose diameter is being
 ///   measured.
@@ -96,7 +96,7 @@ pub fn binary_search_between<const N: usize>(
 ///   sufficiently large @num_checks or innaccurate @b. This is because it will
 ///   converge upon the same side of the geometry as @b.
 pub fn find_opposing_boundary<const N: usize>(
-    d: f64,
+    max_err: f64,
     t0: WithinMode<N>,
     v: SVector<f64, N>,
     domain: &Domain<N>,
@@ -143,7 +143,7 @@ pub fn find_opposing_boundary<const N: usize>(
         (None, Some(_)) => t0,
         (Some(t), None) => WithinMode(t),
         (Some(t), Some(x)) => binary_surface_search(
-            d,
+            max_err,
             &BoundaryPair::new(WithinMode(t), OutOfMode(x)),
             num_iter,
             classifier,

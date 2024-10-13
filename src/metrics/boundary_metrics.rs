@@ -114,17 +114,17 @@ mod test_metrics {
 
     use super::{boundary_radius, center_of_mass, mean_direction};
 
-    fn get_simple_line<const N: usize>(n: u32, d: f64) -> Vec<Halfspace<N>> {
+    fn get_simple_line<const N: usize>(n: u32, max_err: f64) -> Vec<Halfspace<N>> {
         let mut boundary = vec![];
 
-        let offset = -d * (n - 1) as f64 / 2.0;
+        let offset = -max_err * (n - 1) as f64 / 2.0;
         let direction = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
         let axis_mask = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
 
         for i in 0..n {
             boundary.push(Halfspace {
-                b: WithinMode(axis_mask * (offset + d * i as f64)),
+                b: WithinMode(axis_mask * (offset + max_err * i as f64)),
                 n: direction,
             });
         }
