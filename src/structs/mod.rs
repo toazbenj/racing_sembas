@@ -261,9 +261,9 @@ mod domain_tests {
         let dst = Domain::<3>::new(vector![1.0, 2.5, 3.5], vector![4.0, 5.0, 6.0]);
 
         let p0 = src.low();
-        let p1 = Domain::project_point_domains(&p0, &src, &dst);
+        let p1 = Domain::project_point_domains(p0, &src, &dst);
 
-        assert!(is_near(&p1, &dst.low(), ATOL))
+        assert!(is_near(&p1, dst.low(), ATOL))
     }
 
     #[test]
@@ -272,9 +272,9 @@ mod domain_tests {
         let dst = Domain::<3>::new(vector![1.0, 2.5, 3.5], vector![4.0, 5.0, 6.0]);
 
         let p0 = src.high();
-        let p1 = Domain::project_point_domains(&p0, &src, &dst);
+        let p1 = Domain::project_point_domains(p0, &src, &dst);
 
-        assert!(is_near(&p1, &dst.high(), ATOL))
+        assert!(is_near(&p1, dst.high(), ATOL))
     }
 
     #[test]
@@ -311,7 +311,7 @@ mod domain_tests {
         let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
         let p = d.low();
 
-        assert!(d.contains(&p))
+        assert!(d.contains(p))
     }
 
     #[test]
@@ -327,6 +327,6 @@ mod domain_tests {
         let d = Domain::<3>::new(vector![4.0, 2.5, 6.0], vector![1.0, 5.0, 3.5]);
         let p = d.high();
 
-        assert!(d.contains(&p))
+        assert!(d.contains(p))
     }
 }
