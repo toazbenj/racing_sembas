@@ -11,13 +11,13 @@ use crate::prelude::AdhererFactory;
 use super::{Halfspace, Sample, WithinMode};
 
 #[cfg_attr(feature = "io", derive(Serialize, Deserialize))]
-pub struct ExplorationSummary<const N: usize, A>
+pub struct ExplorationSummary<const N: usize, F>
 where
-    A: AdhererFactory<N>,
+    F: AdhererFactory<N>,
 {
     title: String,
     adherer_type: String,
-    adherer_parameters: A,
+    adherer_parameters: F,
     boundary_points: Vec<Vec<f64>>,
     boundary_surface: Vec<Vec<f64>>,
     non_boundary_points: Vec<(Vec<f64>, bool)>,
