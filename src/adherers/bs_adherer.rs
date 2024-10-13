@@ -27,6 +27,21 @@ pub struct BinarySearchAdhererFactory<const N: usize> {
 }
 
 impl<const N: usize> BinarySearchAdherer<N> {
+    /// Creates a BinarySearchAdherer
+    /// ## Arguments
+    /// * pivot : The halfspace to rotate around for finding a neighboring halfspace.
+    /// * v : The vector of travel, the direction along the surface to explore in.
+    ///     The length of this vector determines how far to travel.
+    /// * init_angle : The initial angle to rotate by. Recommended values fall
+    ///   between 90 and 120 degrees.
+    /// * n_iter : The number of iterations to take before returning the acquired
+    ///   halfspace.
+    /// ## Characteristics
+    /// * Boundary Sampling Efficiency (BSE): 0 <= BSE <= 1 / (n_iter - 1)
+    ///     * BSE will be equal to the upper bound unless boundary lost / out of
+    ///       bounds errors occur
+    /// * Boundary Error: 0 <= err <= v.norm() * sin(init_angle / 2^(n_iter - 1))
+    ///     * Average case will be v.norm() * sin(init_angle / 2^(n_iter))
     pub fn new(pivot: Halfspace<N>, v: SVector<f64, N>, init_angle: f64, n_iter: u32) -> Self {
         let rot_factory = Span::new(pivot.n, v).get_rotater();
 

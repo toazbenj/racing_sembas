@@ -11,8 +11,7 @@ pub enum AdhererState<const N: usize> {
     FoundBoundary(Halfspace<N>),
 }
 
-/// Is responsible for acquiring a boundary halfspace relative to an adjacent and
-/// known halfspace.
+/// An Adherer acquires a boundary halfspace relative to a known adjacent halfspace.
 pub trait Adherer<const N: usize> {
     /// Takes a step in the adherence process.
     /// ## Arguments

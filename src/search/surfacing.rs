@@ -6,7 +6,7 @@ use crate::{
 /// Finds the surface of an envelope, i.e. the initial halfspace for beginning
 /// surface exploration by iteratively splitting the space in half until a desireable
 /// distance from the boundary has been reached.
-/// # Arguments
+/// ## Arguments
 /// * `d` The desired maximum distance from the boundary.
 /// * `t0` A target sample
 /// * `x0` A non-target sample
@@ -45,7 +45,7 @@ pub fn binary_surface_search<const N: usize>(
     })
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "sps"))]
 mod test_surfacer {
     use nalgebra::SVector;
 

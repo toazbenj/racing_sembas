@@ -13,6 +13,7 @@ pub trait Classifier<const N: usize> {
     fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>>;
 }
 
+/// A Classifier defined by a function (p: SVector) -> Result<bool>
 pub struct FunctionClassifier<F, const N: usize>
 where
     F: FnMut(&SVector<f64, N>) -> Result<bool, SamplingError<N>>,
@@ -42,8 +43,13 @@ where
     }
 }
 
+/// A point that falls within the target performance mode, i.e. when classifying this
+/// point results in true classification.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct WithinMode<const N: usize>(pub SVector<f64, N>);
+
+/// A point that falls outside the target performance mode, i.e. when classifying
+/// this point results in false classification.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct OutOfMode<const N: usize>(pub SVector<f64, N>);
 
@@ -64,6 +70,7 @@ impl<const N: usize> Sample<N> {
         }
     }
 
+    /// Strips the point of the semantics, returning the raw SVector
     pub fn into_inner(self) -> SVector<f64, N> {
         match self {
             Sample::WithinMode(WithinMode(p)) => p,
@@ -75,8 +82,8 @@ impl<const N: usize> Sample<N> {
 impl<const N: usize> fmt::Display for Sample<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
-            Sample::WithinMode(t) => write!(f, "Target(p: {:?})", t),
-            Sample::OutOfMode(x) => write!(f, "Non-Target(p: {:?})", x),
+            Sample::WithinMode(t) => write!(f, "WithinMode(p: {:?})", t),
+            Sample::OutOfMode(x) => write!(f, "OutOfMode(p: {:?})", x),
         }
     }
 }

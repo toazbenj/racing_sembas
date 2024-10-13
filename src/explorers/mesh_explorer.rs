@@ -2,14 +2,12 @@ use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
     explorer_core::Explorer,
     extensions::Queue,
-    structs::{backprop::Backpropegation, Classifier, Halfspace, Sample, SamplingError, Span},
+    structs::{backprop::Backpropagation, Classifier, Halfspace, Sample, SamplingError, Span},
     utils::{array_distance, svector_to_array},
 };
 use nalgebra::{self, Const, OMatrix, SVector};
 use petgraph::{graph::NodeIndex, visit::EdgeRef, Direction::Incoming, Graph};
 use rstar::{primitives::GeomWithData, RTree};
-
-// const BASIS_VECTORS = nalgebra::OMatrix::<f64, Const<N>, Const<N>>::identity();
 
 type NodeID = usize;
 type Path<const N: usize> = (NodeID, SVector<f64, N>);
@@ -25,8 +23,6 @@ pub struct MeshExplorer<const N: usize> {
     current_parent: NodeID,
     tree: Graph<Halfspace<N>, ()>,
     knn_index: RTree<KnnNode<N>>,
-    // next_id: usize,
-    // prev_id: usize,
     adherer: Option<Box<dyn Adherer<N>>>,
     adherer_f: Box<dyn AdhererFactory<N>>,
 }
@@ -201,7 +197,7 @@ impl<const N: usize> Explorer<N> for MeshExplorer<N> {
     }
 }
 
-impl<const N: usize> Backpropegation<N> for MeshExplorer<N> {
+impl<const N: usize> Backpropagation<N> for MeshExplorer<N> {
     fn backprop(&mut self, child_id: NodeIndex, margin: f64) {
         let parent_indx = if let Some(index) = self.get_parent(child_id) {
             index

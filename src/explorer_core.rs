@@ -1,7 +1,4 @@
-use crate::{
-    structs::{Classifier, Halfspace, Sample, SamplingError},
-    // structs::{Classifier, Halfspace, Sample},
-};
+use crate::structs::{Classifier, Halfspace, Sample, SamplingError};
 
 /// The system responsible for the full boundary exploration process. Leverages
 /// Adherers to find neighboring boundary points.

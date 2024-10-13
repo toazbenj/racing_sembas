@@ -12,20 +12,27 @@ pub mod global_search;
 #[cfg(feature = "surfacing")]
 pub mod surfacing;
 
+/// SearchMode defines how binary search is executed.
+/// * Full : Searches every recurrent mid-point between a and b.
+/// * Nearest : Searches the points closer to a from the midpoint between a and b,
+///   ignoring the points that fall closer to b.
+///     Efficient when you are trying to re-acquire the same performance space as point
+///     a, since the space beyond the first mid-point will be ignored entirely.
 pub enum SearchMode {
     Full,
     Nearest,
 }
 
 /// Searches the space between two points for a specific performance mode.
-/// # Arguments
-/// * target_clas : The performance mode (in-mode or out-of-mode) to search for.
+/// ## Arguments
+/// * mode : The search mode to use while looking for the target class.
+/// * target_class : The performance mode (in-mode or out-of-mode) to search for.
 ///   Function termins which target class is found.
 /// * max_samples : A limit on how many samples are taken before terminating. Returns
 ///   None if max samples is reached before finding the @target_cls.
 /// * p1, p2 : The two points to search between.
 /// * classifier : The FUT.
-/// # Returns
+////// ## Returns
 /// * Some(p) : The point that is classified as target_cls, i.e.
 ///   classifier.classify(p) == target_cls
 /// * None : No target_cls points were found within max_samples number of iterations.
@@ -68,7 +75,7 @@ pub fn binary_search_between<const N: usize>(
 /// boundary point and directional vector of the chord between these boundary points.
 /// **Note: If there is no Out-of-Mode samples between @b and the edge of the domain,
 /// the point lying on the edge of the domain will be returned.**
-/// # Arguments
+/// ## Arguments
 /// * d : The maximum allowable distance from the boundary for the opposing boundary
 ///   point.
 /// * b : A point that lies on the boundary of the envelope whose diameter is being
@@ -78,13 +85,13 @@ pub fn binary_search_between<const N: usize>(
 ///   negative, n.dot(v) < 0,
 /// * domain : The domain to constrain exploration to be within.
 /// * classifier : The classifier for the FUT.
-/// # Returns (Ok)
+////// ## Returns (Ok)
 /// * Ok(b2) : The point within the envelope opposite that of @b.
-/// # Error (Err)
+/// ## Error (Err)
 /// * Err(SamplingError) : Failed to find any target performance samples in the
 ///   direction @v. Often caused by an invalid v, n.dot(v) > 0, or insufficient
 ///   @max_samples.
-/// # Warning
+/// ## Warning
 /// * If @v is not facing the geometry, it may still return a boundary point with a
 ///   sufficiently large @num_checks or innaccurate @b. This is because it will
 ///   converge upon the same side of the geometry as @b.
@@ -146,7 +153,7 @@ pub fn find_opposing_boundary<const N: usize>(
     Ok(b)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "sps"))]
 mod search_tests {
     use super::*;
     use crate::{

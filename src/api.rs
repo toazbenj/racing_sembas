@@ -9,7 +9,7 @@ use crate::structs::Domain;
 
 const BUFFER_CONFIG_SIZE: usize = 8;
 
-/// A means to allow an external function under test to connect to SEMBAS and request
+/// Allows an external function under test to connect to SEMBAS and request
 /// where to sample next. The classifier can then be called just like any other
 /// classifier.
 pub struct RemoteClassifier<const N: usize> {
@@ -22,7 +22,7 @@ impl<const N: usize> RemoteClassifier<N> {
     /// Once a connection is established, the RemoteClassifier will send the points
     /// to the FUT to be classified, and the FUT will return the resulting class
     /// (bool).
-    /// # Connection Sequence
+    /// ## Connection Sequence
     /// 1. RemoteClassifier binds to TcpListener.
     /// 2. FUT connects to socket.
     /// 3. RemoteClassifier accepts connection.

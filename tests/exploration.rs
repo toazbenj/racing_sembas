@@ -1,3 +1,5 @@
+#![cfg(feature = "sps")]
+
 use std::{
     f64::consts::PI,
     time::{Duration, Instant},
@@ -11,7 +13,7 @@ use sembas::{
     explorers::MeshExplorer,
     sps::Sphere,
     structs::{
-        backprop::Backpropegation, Classifier, Domain, Halfspace, SamplingError, WithinMode,
+        backprop::Backpropagation, Classifier, Domain, Halfspace, SamplingError, WithinMode,
     },
 };
 
@@ -19,8 +21,6 @@ const D: usize = 10;
 const JUMP_DISTANCE: f64 = 0.2;
 const ADH_DELTA_ANGLE: f64 = 0.261799;
 const ADH_MAX_ANGLE: f64 = std::f64::consts::PI;
-
-// const ATOL: f64 = 1e-10;
 
 fn setup_mesh_expl<const N: usize>(sphere: &Sphere<N>) -> MeshExplorer<N> {
     let b = WithinMode(SVector::from_fn(|i, _| {
@@ -75,14 +75,6 @@ fn average_vectors<const N: usize>(vectors: &Vec<SVector<f64, N>>) -> Option<SVe
     Some(average_vector)
 }
 
-// fn sphere_surface_area(sphere: &Sphere<10>) -> f64 {
-//     (2.0 * std::f64::consts::PI.powf(5.0)) / (120.0) * sphere.radius.powf(5.0)
-// }
-
-// fn approx(a: f64, b: f64, atol: f64) -> bool {
-//     (a - b).abs() < atol
-// }
-
 #[test]
 fn fully_explores_sphere() {
     let sphere = setup_sphere::<D>();
@@ -103,7 +95,6 @@ fn fully_explores_sphere() {
 
         i += 1;
     }
-    // visualize2d(expl.boundary());
 
     let osv_err: f64 = expl
         .boundary()
@@ -114,7 +105,6 @@ fn fully_explores_sphere() {
     let osv_err = osv_err / expl.boundary_count() as f64;
 
     println!(
-        //Effiency: 0.8857142857142857, osv err: 0.039949837402483444
         "Effiency: {}, osv err: {osv_err}",
         expl.boundary_count() as f64 / (i - expl.boundary_count()) as f64
     );
@@ -137,7 +127,6 @@ fn backprop_fully_explores_sphere() {
     let sphere = setup_sphere::<D>();
     let center = *sphere.center();
     let radius = sphere.radius();
-    // let area = sphere_surface_area(&sphere);
     let mut expl = setup_mesh_expl(&sphere);
     let mut classifier = sphere_to_classifier(sphere);
 
@@ -168,7 +157,6 @@ fn backprop_fully_explores_sphere() {
     let osv_err = osv_err / expl.boundary_count() as f64;
 
     println!(
-        //Effiency: 0.8857142857142857, osv err: 0.039949837402483444
         "Effiency: {}, osv err: {osv_err}",
         expl.boundary_count() as f64 / (i - expl.boundary_count()) as f64
     );
@@ -184,14 +172,6 @@ fn backprop_fully_explores_sphere() {
         avg_dist_from_center < radius / 2.0,
         "Avg distance from center, {avg_dist_from_center}, was not less than 1/2 radius?"
     );
-
-    // let ideal_points_per_area = 1.0 / JUMP_DISTANCE.powf((D - 1) as f64);
-    // let measured_points_per_area = expl.boundary_count() as f64 / area;
-    // assert!(
-    //     ((measured_points_per_area - ideal_points_per_area) / ideal_points_per_area).abs() < 0.1,
-    //     "Exceeded 10% error from ideal surface coverage? Ideal p/A: {ideal_points_per_area}, Actual p/A: {measured_points_per_area}"
-    // );
-    // println!("{measured_points_per_area} - {ideal_points_per_area} = {}", measured_points_per_area - ideal_points_per_area);
 }
 
 #[test]

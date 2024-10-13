@@ -2,18 +2,23 @@ use nalgebra::{Const, OMatrix, SVector};
 
 use crate::prelude::Halfspace;
 
-/// Calculates a metric that describes how the surface is curved relative to the CoM,
-/// -1 <= K <= 1.
-/// A value of 1 means a concave sphere.
-/// A value -1 means a convex sphere.
-/// A value of 0 means a flat plane.
-/// # Arguments
+/// Calculates K, a metric that describes how the surface is curved relative to the
+/// CoM. Where -1 <= K <= 1.
+/// ## Caveats
+/// * If the CoM falls outside of the envelope, values close to 0 are incorrect due
+///   to near and far boundaries canceling out and indicates a closed concave
+///   topology for those dimensions.
+/// * If CoM falls outside of the envelope, values far from zero indicate an open
+///  concave topology for those dimensions.
+/// ## Values
+/// A value of 1 means a concave sphere. A value -1 means a convex sphere. A value of
+/// 0 means a flat plane.
+/// ## Arguments
 /// * boundary : The set of halfspaces describing the boundary.
-/// # Returns
+/// ## Returns
 /// * K : The curvature metric that describes how the surface is curved.
 pub fn curvature<const N: usize>(boundary: &[Halfspace<N>]) -> f64 {
     let com = center_of_mass(boundary);
-    // mean ( s . n )
     let mut total = 0.0;
     let mut count = 0.0;
     for hs in boundary.iter() {
@@ -26,9 +31,9 @@ pub fn curvature<const N: usize>(boundary: &[Halfspace<N>]) -> f64 {
 }
 
 /// Calculates the center of the geometry.
-/// # Arguments
+/// ## Arguments
 /// * boundary : The set of halfspaces describing the boundary.
-/// # Returns
+/// ## Returns
 /// * com : The mean position of the boundary.
 pub fn center_of_mass<const N: usize>(boundary: &[Halfspace<N>]) -> SVector<f64, N> {
     let mut total = SVector::zeros();
@@ -44,9 +49,9 @@ pub fn center_of_mass<const N: usize>(boundary: &[Halfspace<N>]) -> SVector<f64,
 /// Calculates the average direction that the boundary is facing, 0 <= v.norm() <= 1.
 /// A magnitude of 0 suggests a perfect sphere, whereas a value of 1 suggests a
 /// perfect plane.
-/// # Arguments
+/// ## Arguments
 /// * boundary : The set of halfspaces describing the boundary.
-/// # Returns
+/// ## Returns
 /// * v : The mean direction of the surface.
 pub fn mean_direction<const N: usize>(boundary: &[Halfspace<N>]) -> SVector<f64, N> {
     let mut total = SVector::zeros();
@@ -60,9 +65,9 @@ pub fn mean_direction<const N: usize>(boundary: &[Halfspace<N>]) -> SVector<f64,
 }
 
 /// Calculates how spread out the boundary is.
-/// # Arguments
+/// ## Arguments
 /// * boundary : The set of halfspaces describing the boundary.
-/// # Returns
+/// ## Returns
 /// * std_dev : The standard deviation of the boundary point cloud.
 pub fn boundary_std_dev<const N: usize>(
     boundary: &[Halfspace<N>],
@@ -82,9 +87,9 @@ pub fn boundary_std_dev<const N: usize>(
 }
 
 /// Calculates the radius of the boundary.
-/// # Arguments
+/// ## Arguments
 /// * boundary : The set of halfspaces describing the boundary.
-/// # Returns
+/// ## Returns
 /// * radius : The maximum distance from the CoM
 pub fn boundary_radius<const N: usize>(boundary: &[Halfspace<N>]) -> f64 {
     let com = center_of_mass(boundary);

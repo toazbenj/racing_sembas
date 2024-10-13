@@ -27,6 +27,20 @@ pub struct ConstantAdhererFactory<const N: usize> {
 }
 
 impl<const N: usize> ConstantAdherer<N> {
+    /// Creates a ConstantAdherer.
+    /// ## Arguments
+    /// * pivot : The halfspace to rotate around for finding a neighboring halfspace.
+    /// * v : The vector of travel, the direction along the surface to explore in.
+    ///     The length of this vector determines how far to travel.
+    /// * delta_angle : The fixed-angle to rotate the displacement vector by to cross
+    ///   and find the neighboring boundary.
+    /// * max_rotation : The maximum total angle in radians to rotate by. Defaults to
+    ///   180 degress.
+    /// ## Characteristics
+    /// * Boundary Sampling Efficiency (BSE): 0 <= BSE <= 1
+    ///     * BSE varies with delta_angle, v.norm(), and the shape of the envelope.
+    /// * Boundary Error: 0 <= err <= v.norm() * sin(delta_angle)
+    ///     * Average case will be v.norm() * sin(delta_angle) / 2
     pub fn new(
         pivot: Halfspace<N>,
         v: SVector<f64, N>,

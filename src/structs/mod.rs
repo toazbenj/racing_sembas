@@ -21,7 +21,8 @@ pub struct Span<const N: usize> {
 }
 
 /// An N-dimensional hyperrectangle that is defined by an lower and upper bound (low
-/// and high). Ex. a valid input region to sample from for a system under test.
+/// and high). Used to define a valid input region to sample from for a system under
+/// test.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Domain<const N: usize> {
     low: SVector<f64, N>,
@@ -29,6 +30,9 @@ pub struct Domain<const N: usize> {
 }
 
 impl<const N: usize> Span<N> {
+    /// Constructs a Span across @u and @v. @u and @v are orthonormalized, where @v
+    /// is forced to be orthogonal to @u, and @u retains its directionality. Uses
+    /// Gramm Schmidt Orthonormalization
     pub fn new(u: SVector<f64, N>, v: SVector<f64, N>) -> Self {
         let u = u.normalize();
         let v = v.normalize();
@@ -61,6 +65,15 @@ impl<const N: usize> Domain<N> {
         let low = p1.zip_map(&p2, |a, b| a.min(b));
         let high = p1.zip_map(&p2, |a, b| a.max(b));
 
+        Domain { low, high }
+    }
+
+    /// Returns a domain with the provided bounds.
+    /// ## Safety
+    /// This function is unsafe because it doesn't do any checks to ensure that for
+    /// all dimensions, low < high. If this condition is not met, the Domain's
+    /// operations behavior is undefined.
+    pub unsafe fn new_from_bounds(low: SVector<f64, N>, high: SVector<f64, N>) -> Self {
         Domain { low, high }
     }
 
@@ -122,7 +135,7 @@ impl<const N: usize> Domain<N> {
     /// samples on the extremes of the input space.
     /// * p: A point that the ray starts from
     /// * v: The direction the ray travels
-    /// # Returns
+    ////// ## Returns
     /// * t: The linear distance between p and the edge of the domain in the
     ///   direction v
     pub fn distance_to_edge(
@@ -161,7 +174,7 @@ impl<const N: usize> fmt::Display for Span<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Span({}, {})",
+            "Span({:?}, {:?})",
             vector_to_string(&self.u),
             vector_to_string(&self.v)
         )
