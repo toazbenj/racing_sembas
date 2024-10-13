@@ -1,6 +1,6 @@
 use crate::{
     structs::SamplingError,
-    structs::{BoundaryPair, Classifier, Halfspace, WithinMode},
+    structs::{BoundaryPair, Classifier, Halfspace, Result, WithinMode},
 };
 
 /// Finds the surface of an envelope, i.e. the initial halfspace for beginning
@@ -16,7 +16,7 @@ pub fn binary_surface_search<const N: usize>(
     b_pair: &BoundaryPair<N>,
     max_samples: u32,
     classifier: &mut Box<dyn Classifier<N>>,
-) -> Result<Halfspace<N>, SamplingError> {
+) -> Result<Halfspace<N>> {
     let mut p_t = b_pair.t().0;
     let mut p_x = b_pair.x().0;
     let mut s = (p_x - p_t) / 2.0;

@@ -138,11 +138,7 @@ impl<const N: usize> Domain<N> {
     ////// ## Returns
     /// * t: The linear distance between p and the edge of the domain in the
     ///   direction v
-    pub fn distance_to_edge(
-        &self,
-        p: &SVector<f64, N>,
-        v: &SVector<f64, N>,
-    ) -> Result<f64, SamplingError> {
+    pub fn distance_to_edge(&self, p: &SVector<f64, N>, v: &SVector<f64, N>) -> Result<f64> {
         let t_lower = (self.low - p).component_div(v);
         let t_upper = (self.high - p).component_div(v);
 

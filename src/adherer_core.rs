@@ -2,7 +2,7 @@ use core::fmt;
 
 use nalgebra::SVector;
 
-use crate::structs::{Classifier, Halfspace, Sample, SamplingError};
+use crate::structs::{Classifier, Halfspace, Result, Sample, SamplingError};
 
 /// A valid state of an adherer.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -19,10 +19,7 @@ pub trait Adherer<const N: usize> {
     ///   is being explored.
     /// ## Returns
     /// * sample: Either a PointNode or a Sampling Error
-    fn sample_next(
-        &mut self,
-        classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<&Sample<N>, SamplingError>;
+    fn sample_next(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<&Sample<N>>;
 
     /// Returns the current state of the adherer, either Searching or
     /// FoundBoundary(hs) where hs is the resulting halfspace.

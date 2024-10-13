@@ -2,7 +2,7 @@ use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
     explorer_core::Explorer,
     extensions::Queue,
-    structs::{backprop::Backpropagation, Classifier, Halfspace, Sample, SamplingError, Span},
+    structs::{backprop::Backpropagation, Classifier, Halfspace, Result, Sample, Span},
     utils::{array_distance, svector_to_array},
 };
 use nalgebra::{self, Const, OMatrix, SVector};
@@ -149,10 +149,7 @@ impl<const N: usize, F: AdhererFactory<N>> MeshExplorer<N, F> {
 }
 
 impl<const N: usize, F: AdhererFactory<N>> Explorer<N> for MeshExplorer<N, F> {
-    fn step(
-        &mut self,
-        classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Option<Sample<N>>, SamplingError> {
+    fn step(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<Option<Sample<N>>> {
         if self.adherer.is_none() {
             if let Some((hs, id, v)) = self.select_parent() {
                 self.current_parent = id;

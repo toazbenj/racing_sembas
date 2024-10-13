@@ -3,7 +3,7 @@ use nalgebra::{Const, OMatrix};
 use crate::{
     prelude::WithinMode,
     search::find_opposing_boundary,
-    structs::{BoundaryPair, Classifier, Domain, SamplingError, Span},
+    structs::{BoundaryPair, Classifier, Domain, Result, Span},
 };
 
 pub mod boundary_metrics;
@@ -31,7 +31,7 @@ pub fn find_diameter<const N: usize>(
     ndim: usize,
     domain: &Domain<N>,
     classifier: &mut Box<dyn Classifier<N>>,
-) -> Result<Vec<f64>, SamplingError> {
+) -> Result<Vec<f64>> {
     assert!(
         ndim > 1,
         "Invalid number for ndim, must be positive non-zero! Got: {ndim}"

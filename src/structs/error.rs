@@ -6,3 +6,6 @@ pub enum SamplingError {
     MaxSamplesExceeded,
     InvalidClassifierResponse(String),
 }
+
+/// The Result type from sampling a function under test.
+pub type Result<T> = std::result::Result<T, SamplingError>;

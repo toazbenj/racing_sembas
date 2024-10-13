@@ -4,6 +4,7 @@ use std::io::Write;
 use std::io::{self, Read};
 use std::net;
 
+use crate::structs::error;
 use crate::structs::Classifier;
 use crate::structs::Domain;
 
@@ -30,7 +31,7 @@ impl<const N: usize> RemoteClassifier<N> {
     /// 5. RemoteClassifier accepts configuration, throwing error if N != num params
     /// 6. RemoteClassifier sends back 'OK\n'
     /// 7. RemoteClassifier setup complete, ready to classify.
-    pub fn bind(addr: String) -> Result<Self, io::Error> {
+    pub fn bind(addr: String) -> io::Result<Self> {
         let listener = net::TcpListener::bind(addr)?;
         println!("Listening for client connection...");
         let (mut stream, _) = listener.accept()?;
@@ -81,7 +82,7 @@ impl From<io::Error> for SamplingError {
 }
 
 impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> error::Result<bool> {
         if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }

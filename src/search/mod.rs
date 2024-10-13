@@ -3,7 +3,7 @@ use surfacing::binary_surface_search;
 
 use crate::{
     extensions::Queue,
-    structs::{BoundaryPair, Classifier, Domain, OutOfMode, SamplingError, WithinMode},
+    structs::{BoundaryPair, Classifier, Domain, OutOfMode, Result, WithinMode},
 };
 
 #[cfg(feature = "global_search")]
@@ -103,7 +103,7 @@ pub fn find_opposing_boundary<const N: usize>(
     classifier: &mut Box<dyn Classifier<N>>,
     num_checks: u32,
     num_iter: u32,
-) -> Result<WithinMode<N>, SamplingError> {
+) -> Result<WithinMode<N>> {
     let dist = domain.distance_to_edge(&t0, &v)? * 0.999;
     let p = t0 + v * dist;
 
@@ -166,7 +166,7 @@ mod search_tests {
 
     struct EmptyClassifier<const N: usize> {}
     impl<const N: usize> Classifier<N> for EmptyClassifier<N> {
-        fn classify(&mut self, _: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError> {
+        fn classify(&mut self, _: &SVector<f64, N>) -> Result<bool> {
             Ok(false)
         }
     }

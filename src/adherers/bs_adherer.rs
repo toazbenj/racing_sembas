@@ -1,6 +1,6 @@
 use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
-    structs::{Classifier, Halfspace, OutOfMode, Sample, SamplingError, Span, WithinMode},
+    structs::{Classifier, Halfspace, OutOfMode, Result, Sample, SamplingError, Span, WithinMode},
 };
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;
@@ -62,7 +62,7 @@ impl<const N: usize> BinarySearchAdherer<N> {
     fn take_initial_sample(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Sample<N>, SamplingError> {
+    ) -> Result<Sample<N>> {
         let cur = self.pivot.b + self.v;
         let cls = classifier.classify(&cur)?;
         self.prev_cls = Some(cls);
@@ -82,7 +82,7 @@ impl<const N: usize> BinarySearchAdherer<N> {
         &mut self,
         prev_cls: bool,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Sample<N>, SamplingError> {
+    ) -> Result<Sample<N>> {
         let ccw = if prev_cls { 1.0 } else { -1.0 };
         let rot = (self.rot_factory)(ccw * self.angle);
         self.v = rot * self.v;
@@ -110,10 +110,7 @@ impl<const N: usize> Adherer<N> for BinarySearchAdherer<N> {
         self.state
     }
 
-    fn sample_next(
-        &mut self,
-        classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<&Sample<N>, SamplingError> {
+    fn sample_next(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<&Sample<N>> {
         let cur = if let Some(prev_cls) = self.prev_cls {
             self.take_sample(prev_cls, classifier)?
         } else {
