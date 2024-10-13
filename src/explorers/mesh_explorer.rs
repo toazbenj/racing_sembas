@@ -4,7 +4,7 @@ use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
     explorer_core::Explorer,
     extensions::Queue,
-    prelude::summary::ExplorationStatus,
+    prelude::report::ExplorationStatus,
     structs::{backprop::Backpropagation, Classifier, Halfspace, Result, Sample, Span},
     utils::{array_distance, svector_to_array},
 };

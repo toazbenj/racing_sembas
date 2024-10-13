@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fs::File,
-    io::{BufWriter, Write},
+    io::{self, BufWriter, Write},
 };
 
 use nalgebra::SVector;
@@ -102,16 +102,17 @@ impl<const N: usize, A> ExplorationStatus<N, A>
 where
     A: AdhererFactory<N> + Serialize + for<'a> Deserialize<'a>,
 {
-    pub fn load(path: &str) -> Self {
-        let f = File::open(path).expect("File not found?");
-        serde_json::from_reader(f)
-            .expect("Incorrect ExplorationSummary JSON or Improper JSON format.")
+    pub fn load(path: &str) -> io::Result<Self> {
+        let f = File::open(path)?;
+        let status = serde_json::from_reader(f)?;
+        Ok(status)
     }
 
-    pub fn save(&self, path: &str) {
-        let f = File::create(path).expect("Full path does not exist.");
+    pub fn save(&self, path: &str) -> io::Result<()> {
+        let f = File::create(path)?;
         let mut writer = BufWriter::new(f);
-        serde_json::to_writer(&mut writer, &self).expect("Serialize derive failed?");
-        writer.flush().expect("Failed to flush.");
+        serde_json::to_writer(&mut writer, &self)?;
+        writer.flush()?;
+        Ok(())
     }
 }
