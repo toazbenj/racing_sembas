@@ -1,6 +1,9 @@
 use nalgebra::SVector;
 
-use crate::structs::{Classifier, Domain};
+use crate::{
+    prelude::{Result, Sample},
+    structs::{Classifier, Domain},
+};
 
 pub struct Sphere<const N: usize> {
     center: SVector<f64, N>,
@@ -43,14 +46,17 @@ impl<const N: usize> Sphere<N> {
 }
 
 impl<const N: usize> Classifier<N> for Sphere<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>> {
         if let Some(domain) = &self.domain {
             if !domain.contains(p) {
                 return Err(crate::structs::SamplingError::OutOfBounds);
             }
         }
 
-        Ok((self.center - p).norm() <= self.radius)
+        Ok(Sample::from_class(
+            *p,
+            (self.center - p).norm() <= self.radius,
+        ))
     }
 }
 
@@ -85,14 +91,14 @@ impl<const N: usize> Cube<N> {
 }
 
 impl<const N: usize> Classifier<N> for Cube<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>> {
         if let Some(domain) = &self.domain {
             if !domain.contains(p) {
                 return Err(crate::structs::SamplingError::OutOfBounds);
             }
         }
 
-        Ok(self.shape.contains(p))
+        Ok(Sample::from_class(*p, self.shape.contains(p)))
     }
 }
 
@@ -120,7 +126,7 @@ impl<const N: usize> SphereCluster<N> {
 }
 
 impl<const N: usize> Classifier<N> for SphereCluster<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, crate::prelude::SamplingError<N>> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>> {
         if let Some(domain) = &self.domain {
             if !domain.contains(p) {
                 return Err(crate::structs::SamplingError::OutOfBounds);
@@ -128,11 +134,11 @@ impl<const N: usize> Classifier<N> for SphereCluster<N> {
         }
 
         for sphere in self.spheres.iter_mut() {
-            if sphere.classify(p)? {
-                return Ok(true);
-            }
+            if let Sample::WithinMode(t) = sphere.classify(p)? {
+                return Ok(Sample::WithinMode(t));
+            };
         }
 
-        Ok(false)
+        Ok(Sample::from_class(*p, false))
     }
 }

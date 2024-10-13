@@ -1,38 +1,17 @@
-use nalgebra::{vector, SVector};
-use sembas::{
-    adherers::const_adherer::ConstantAdhererFactory,
-    explorer_core::Explorer,
-    explorers::MeshExplorer,
-    search::{
-        global_search::{MonteCarloSearch, SearchFactory},
-        surfacing::binary_surface_search,
-    },
-    structs::{BoundaryPair, Classifier, Domain, Sample, SamplingError},
-};
-
-struct Sphere<const N: usize> {
-    pub radius: f64,
-    pub center: SVector<f64, N>,
-    pub domain: Domain<N>,
-}
-
-impl<const N: usize> Classifier<N> for Sphere<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool, SamplingError<N>> {
-        if !self.domain.contains(p) {
-            return Err(SamplingError::OutOfBounds);
-        }
-
-        Ok((p - self.center).norm() <= self.radius)
-    }
-}
+use nalgebra::vector;
+use sembas::prelude::*;
+use sembas::search::global_search::{MonteCarloSearch, SearchFactory};
+use sembas::search::surfacing::binary_surface_search;
+use sembas::sps::Sphere;
 
 fn main() {
     // Setup your classifier
-    let mut classifier: Box<dyn Classifier<3>> = Box::new(Sphere {
-        center: vector![0.5, 0.5, 0.5],
-        radius: 0.25,
-        domain: Domain::normalized(),
-    });
+    let mut classifier: Box<dyn Classifier<3>> = Box::new(Sphere::new(
+        vector![0.5, 0.5, 0.5],
+        0.25,
+        Some(Domain::normalized()),
+    ));
+
     // Pick a (d)istance between samples:
     let d = 0.05;
 
@@ -59,7 +38,7 @@ fn main() {
     let adherer_f = ConstantAdhererFactory::new(delta_angle, Some(max_rotation));
 
     // Create your explorer
-    let mut expl = MeshExplorer::new(d, root, d * 0.9, Box::new(adherer_f));
+    let mut expl = MeshExplorer::new(d, root, d * 0.9, adherer_f);
 
     let max_boundary_points = 500;
     let max_samples = 1000;
@@ -93,14 +72,13 @@ fn find_initial_boundary_pair<const N: usize>(
     classifier: &mut Box<dyn Classifier<N>>,
     history: &mut Vec<Sample<N>>,
     max_samples: i32,
-) -> Result<BoundaryPair<N>, SamplingError<N>> {
+) -> Result<BoundaryPair<N>> {
     let mut search = MonteCarloSearch::new(Domain::normalized(), 1);
     let mut take_sample = move || {
         let p = search.sample();
-        let cls = classifier
+        classifier
             .classify(&p)
-            .expect("Invalid sample. Bad global search domain?");
-        Sample::from_class(p, cls)
+            .expect("Invalid sample. Bad global search domain?")
     };
 
     let mut t0 = None;

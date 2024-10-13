@@ -1,6 +1,6 @@
 use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
-    structs::{Classifier, Halfspace, OutOfMode, Sample, SamplingError, Span, WithinMode},
+    structs::{Classifier, Halfspace, OutOfMode, Result, Sample, SamplingError, Span, WithinMode},
 };
 use nalgebra::{Const, OMatrix, SVector};
 use std::f64::consts::PI;
@@ -27,6 +27,21 @@ pub struct BinarySearchAdhererFactory<const N: usize> {
 }
 
 impl<const N: usize> BinarySearchAdherer<N> {
+    /// Creates a BinarySearchAdherer
+    /// ## Arguments
+    /// * pivot : The halfspace to rotate around for finding a neighboring halfspace.
+    /// * v : The vector of travel, the direction along the surface to explore in.
+    ///     The length of this vector determines how far to travel.
+    /// * init_angle : The initial angle to rotate by. Recommended values fall
+    ///   between 90 and 120 degrees.
+    /// * n_iter : The number of iterations to take before returning the acquired
+    ///   halfspace.
+    /// ## Characteristics
+    /// * Boundary Sampling Efficiency (BSE): 0 <= BSE <= 1 / (n_iter - 1)
+    ///     * BSE will be equal to the upper bound unless boundary lost / out of
+    ///       bounds errors occur
+    /// * Boundary Error: 0 <= err <= v.norm() * sin(init_angle / 2^(n_iter - 1))
+    ///     * Average case will be v.norm() * sin(init_angle / 2^(n_iter))
     pub fn new(pivot: Halfspace<N>, v: SVector<f64, N>, init_angle: f64, n_iter: u32) -> Self {
         let rot_factory = Span::new(pivot.n, v).get_rotater();
 
@@ -47,15 +62,15 @@ impl<const N: usize> BinarySearchAdherer<N> {
     fn take_initial_sample(
         &mut self,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Sample<N>, SamplingError<N>> {
+    ) -> Result<Sample<N>> {
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(&cur)?;
+        let sample = classifier.classify(&cur)?;
+        let cls = sample.class();
         self.prev_cls = Some(cls);
 
-        if cls {
-            self.t = Some(cur.into());
-        } else {
-            self.x = Some(cur.into());
+        match sample {
+            Sample::WithinMode(t) => self.t = Some(t),
+            Sample::OutOfMode(x) => self.x = Some(x),
         }
 
         self.n_iter -= 1;
@@ -67,18 +82,18 @@ impl<const N: usize> BinarySearchAdherer<N> {
         &mut self,
         prev_cls: bool,
         classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Sample<N>, SamplingError<N>> {
+    ) -> Result<Sample<N>> {
         let ccw = if prev_cls { 1.0 } else { -1.0 };
         let rot = (self.rot_factory)(ccw * self.angle);
         self.v = rot * self.v;
 
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(&cur)?;
+        let sample = classifier.classify(&cur)?;
+        let cls = sample.class();
 
-        if cls {
-            self.t = Some(cur.into());
-        } else {
-            self.x = Some(cur.into());
+        match sample {
+            Sample::WithinMode(t) => self.t = Some(t),
+            Sample::OutOfMode(x) => self.x = Some(x),
         }
 
         self.angle /= 2.0;
@@ -86,7 +101,7 @@ impl<const N: usize> BinarySearchAdherer<N> {
 
         self.prev_cls = Some(cls);
 
-        Ok(Sample::from_class(cur, cls))
+        Ok(sample)
     }
 }
 
@@ -95,10 +110,7 @@ impl<const N: usize> Adherer<N> for BinarySearchAdherer<N> {
         self.state
     }
 
-    fn sample_next(
-        &mut self,
-        classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<&Sample<N>, SamplingError<N>> {
+    fn sample_next(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<&Sample<N>> {
         let cur = if let Some(prev_cls) = self.prev_cls {
             self.take_sample(prev_cls, classifier)?
         } else {
@@ -133,12 +145,8 @@ impl<const N: usize> BinarySearchAdhererFactory<N> {
 }
 
 impl<const N: usize> AdhererFactory<N> for BinarySearchAdhererFactory<N> {
-    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> Box<dyn Adherer<N>> {
-        Box::new(BinarySearchAdherer::new(
-            hs,
-            v,
-            self.init_angle,
-            self.n_iter,
-        ))
+    type TargetAdherer = BinarySearchAdherer<N>;
+    fn adhere_from(&self, hs: Halfspace<N>, v: SVector<f64, N>) -> BinarySearchAdherer<N> {
+        BinarySearchAdherer::new(hs, v, self.init_angle, self.n_iter)
     }
 }
