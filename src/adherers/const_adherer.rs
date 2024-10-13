@@ -69,7 +69,8 @@ impl<const N: usize> ConstantAdherer<N> {
         classifier: &mut Box<dyn Classifier<N>>,
     ) -> Result<Sample<N>> {
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(&cur)?;
+        let sample = classifier.classify(&cur)?;
+        let cls = sample.class();
         let delta_angle = if cls {
             self.delta_angle
         } else {
@@ -86,11 +87,10 @@ impl<const N: usize> ConstantAdherer<N> {
     ) -> Result<Sample<N>> {
         self.v = rot * self.v;
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(&cur)?;
-
         self.angle += self.delta_angle;
 
-        Ok(Sample::from_class(cur, cls))
+        // let sample = classifier.classify(&cur)?;
+        classifier.classify(&cur)
     }
 }
 

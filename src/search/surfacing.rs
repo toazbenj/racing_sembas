@@ -1,6 +1,6 @@
 use crate::{
-    structs::SamplingError,
-    structs::{BoundaryPair, Classifier, Halfspace, Result, WithinMode},
+    prelude::Sample,
+    structs::{BoundaryPair, Classifier, Halfspace, Result, SamplingError, WithinMode},
 };
 
 /// Finds the surface of an envelope, i.e. the initial halfspace for beginning
@@ -23,11 +23,15 @@ pub fn binary_surface_search<const N: usize>(
     let mut i = 0;
 
     while s.norm() > max_err && i < max_samples {
-        if classifier.classify(&(p_t + s))? {
-            p_t += s;
-        } else {
-            p_x -= s;
+        match classifier.classify(&(p_t + s))? {
+            Sample::WithinMode(_) => p_t += s,
+            Sample::OutOfMode(_) => p_x -= s,
         }
+        // if classifier.classify(&(p_t + s))? {
+        //     p_t += s;
+        // } else {
+        //     p_x -= s;
+        // }
 
         s = (p_x - p_t) / 2.0;
         i += 1
@@ -85,12 +89,12 @@ mod test_surfacer {
             .expect("Failed to find boundary?");
 
         assert!(
-            sphere.classify(&hs.b).unwrap(),
+            sphere.classify(&hs.b).unwrap().class(),
             "Halfspace outside of geometry?"
         );
 
         assert!(
-            !sphere.classify(&(hs.b + hs.n * d)).unwrap(),
+            !sphere.classify(&(hs.b + hs.n * d)).unwrap().class(),
             "Halfspace not on boundary?"
         );
     }
@@ -114,11 +118,11 @@ mod test_surfacer {
             .expect("Failed to find boundary within the maximum number of samples ({max_samples})");
 
         assert!(
-            sphere.classify(&hs.b).unwrap(),
+            sphere.classify(&hs.b).unwrap().class(),
             "Halfspace outside of geometry?"
         );
         assert!(
-            !sphere.classify(&(hs.b + hs.n * d)).unwrap(),
+            !sphere.classify(&(hs.b + hs.n * d)).unwrap().class(),
             "Halfspace not on boundary?"
         );
     }

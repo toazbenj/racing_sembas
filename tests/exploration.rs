@@ -13,7 +13,8 @@ use sembas::{
     explorers::MeshExplorer,
     sps::Sphere,
     structs::{
-        backprop::Backpropagation, Classifier, Domain, Halfspace, Result, SamplingError, WithinMode,
+        backprop::Backpropagation, Classifier, Domain, Halfspace, Result, Sample, SamplingError,
+        WithinMode,
     },
 };
 
@@ -177,12 +178,12 @@ fn oob_err_prunes_exploration_branch() {
         i: usize,
     }
     impl<const N: usize> Classifier<N> for TestClassifier<N> {
-        fn classify(&mut self, _: &SVector<f64, N>) -> Result<bool> {
+        fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>> {
             if self.i > 2 {
                 Err(SamplingError::OutOfBounds)
             } else {
                 self.i += 1;
-                Ok(true)
+                Ok(Sample::from_class(*p, true))
             }
         }
     }
@@ -213,8 +214,8 @@ fn oob_err_prunes_exploration_branch() {
 fn ble_err_prunes_exploration_branch() {
     struct TestClassifier<const N: usize> {}
     impl<const N: usize> Classifier<N> for TestClassifier<N> {
-        fn classify(&mut self, _: &SVector<f64, N>) -> Result<bool> {
-            Ok(true)
+        fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>> {
+            Ok(Sample::from_class(*p, true))
         }
     }
     let mut classifier: Box<dyn Classifier<10>> = Box::new(TestClassifier {});

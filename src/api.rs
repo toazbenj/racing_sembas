@@ -1,3 +1,4 @@
+use crate::prelude::Sample;
 use crate::structs::SamplingError;
 use nalgebra::SVector;
 use std::io::Write;
@@ -82,7 +83,7 @@ impl From<io::Error> for SamplingError {
 }
 
 impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> error::Result<bool> {
+    fn classify(&mut self, p: &SVector<f64, N>) -> error::Result<Sample<N>> {
         if !self.domain.contains(p) {
             return Err(SamplingError::OutOfBounds);
         }
@@ -98,7 +99,7 @@ impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
                 "Remote Classifier received non-bool response?".to_string(),
             ))
         } else {
-            Ok(buffer[0] == 1)
+            Ok(Sample::from_class(*p, buffer[0] == 1))
         }
     }
 }

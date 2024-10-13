@@ -10,7 +10,7 @@ use crate::structs::Result;
 /// A system under test whose output can be classified as "target" or "non-target"
 /// behavior. For example, safe/unsafe.
 pub trait Classifier<const N: usize> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool>;
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>>;
 }
 
 /// A Classifier defined by a function (p: SVector) -> Result<bool>
@@ -38,8 +38,8 @@ impl<F, const N: usize> Classifier<N> for FunctionClassifier<F, N>
 where
     F: FnMut(&SVector<f64, N>) -> Result<bool>,
 {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<bool> {
-        (self.fut)(p)
+    fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>> {
+        Ok(Sample::from_class(*p, (self.fut)(p)?))
     }
 }
 
@@ -75,6 +75,13 @@ impl<const N: usize> Sample<N> {
         match self {
             Sample::WithinMode(WithinMode(p)) => p,
             Sample::OutOfMode(OutOfMode(p)) => p,
+        }
+    }
+
+    pub fn class(&self) -> bool {
+        match self {
+            Sample::WithinMode(_) => true,
+            Sample::OutOfMode(_) => false,
         }
     }
 }
@@ -116,7 +123,8 @@ impl<const N: usize> Deref for OutOfMode<N> {
 }
 
 // Operators for samples
-
+// # Borrowed
+// ## Addition
 impl<const N: usize> Add<&WithinMode<N>> for &WithinMode<N> {
     type Output = SVector<f64, N>;
 
@@ -129,6 +137,20 @@ impl<const N: usize> Add<&OutOfMode<N>> for &WithinMode<N> {
 
     fn add(self, rhs: &OutOfMode<N>) -> Self::Output {
         self.0 + rhs.0
+    }
+}
+impl<const N: usize> Add<&WithinMode<N>> for &SVector<f64, N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: &WithinMode<N>) -> Self::Output {
+        self + rhs.0
+    }
+}
+impl<const N: usize> Add<&OutOfMode<N>> for &SVector<f64, N> {
+    type Output = SVector<f64, N>;
+
+    fn add(self, rhs: &OutOfMode<N>) -> Self::Output {
+        self + rhs.0
     }
 }
 impl<const N: usize> Add<&SVector<f64, N>> for &WithinMode<N> {
@@ -161,6 +183,7 @@ impl<const N: usize> Add<&SVector<f64, N>> for &OutOfMode<N> {
     }
 }
 
+// ## Subtraction
 impl<const N: usize> Sub<&WithinMode<N>> for &WithinMode<N> {
     type Output = SVector<f64, N>;
 
@@ -182,7 +205,20 @@ impl<const N: usize> Sub<&SVector<f64, N>> for &WithinMode<N> {
         self.0 - rhs
     }
 }
+impl<const N: usize> Sub<&WithinMode<N>> for &SVector<f64, N> {
+    type Output = SVector<f64, N>;
 
+    fn sub(self, rhs: &WithinMode<N>) -> Self::Output {
+        self - rhs.0
+    }
+}
+impl<const N: usize> Sub<&OutOfMode<N>> for &SVector<f64, N> {
+    type Output = SVector<f64, N>;
+
+    fn sub(self, rhs: &OutOfMode<N>) -> Self::Output {
+        self - rhs.0
+    }
+}
 impl<const N: usize> Sub<&OutOfMode<N>> for &OutOfMode<N> {
     type Output = SVector<f64, N>;
 

@@ -64,13 +64,13 @@ impl<const N: usize> BinarySearchAdherer<N> {
         classifier: &mut Box<dyn Classifier<N>>,
     ) -> Result<Sample<N>> {
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(&cur)?;
+        let sample = classifier.classify(&cur)?;
+        let cls = sample.class();
         self.prev_cls = Some(cls);
 
-        if cls {
-            self.t = Some(cur.into());
-        } else {
-            self.x = Some(cur.into());
+        match sample {
+            Sample::WithinMode(t) => self.t = Some(t),
+            Sample::OutOfMode(x) => self.x = Some(x),
         }
 
         self.n_iter -= 1;
@@ -88,12 +88,12 @@ impl<const N: usize> BinarySearchAdherer<N> {
         self.v = rot * self.v;
 
         let cur = self.pivot.b + self.v;
-        let cls = classifier.classify(&cur)?;
+        let sample = classifier.classify(&cur)?;
+        let cls = sample.class();
 
-        if cls {
-            self.t = Some(cur.into());
-        } else {
-            self.x = Some(cur.into());
+        match sample {
+            Sample::WithinMode(t) => self.t = Some(t),
+            Sample::OutOfMode(x) => self.x = Some(x),
         }
 
         self.angle /= 2.0;
@@ -101,7 +101,7 @@ impl<const N: usize> BinarySearchAdherer<N> {
 
         self.prev_cls = Some(cls);
 
-        Ok(Sample::from_class(cur, cls))
+        Ok(sample)
     }
 }
 
