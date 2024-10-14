@@ -20,6 +20,7 @@ use sembas::{
 
 const D: usize = 10;
 const JUMP_DISTANCE: f64 = 0.2;
+const MARGIN: f64 = JUMP_DISTANCE * 0.85;
 const ADH_DELTA_ANGLE: f64 = 0.261799;
 const ADH_MAX_ANGLE: f64 = std::f64::consts::PI;
 
@@ -38,7 +39,7 @@ fn setup_mesh_expl<const N: usize>(
     let root = Halfspace { b, n };
     let adherer_f = ConstantAdhererFactory::new(ADH_DELTA_ANGLE, Some(ADH_MAX_ANGLE));
 
-    MeshExplorer::new(JUMP_DISTANCE, root, JUMP_DISTANCE * 0.85, adherer_f)
+    MeshExplorer::new(JUMP_DISTANCE, root, MARGIN, adherer_f)
 }
 
 fn setup_sphere<const N: usize>() -> Sphere<N> {
@@ -47,10 +48,6 @@ fn setup_sphere<const N: usize>() -> Sphere<N> {
     let domain = Domain::normalized();
 
     Sphere::new(center, radius, Some(domain))
-}
-
-fn sphere_to_classifier<const N: usize>(sphere: Sphere<N>) -> Box<dyn Classifier<N>> {
-    Box::new(sphere)
 }
 
 fn average_vectors<const N: usize>(vectors: &Vec<SVector<f64, N>>) -> Option<SVector<f64, N>> {
@@ -75,18 +72,17 @@ fn average_vectors<const N: usize>(vectors: &Vec<SVector<f64, N>>) -> Option<SVe
 
 #[test]
 fn fully_explores_sphere() {
-    let sphere = setup_sphere::<D>();
+    let mut sphere = setup_sphere::<D>();
     let center = *sphere.center();
     let radius = sphere.radius();
     // let area = sphere_surface_area(&sphere);
     let mut expl = setup_mesh_expl(&sphere);
-    let mut classifier = sphere_to_classifier(sphere);
 
     let timeout = Duration::from_secs(5);
     let start_time = Instant::now();
     let mut i = 0;
 
-    while let Ok(Some(_)) = expl.step(&mut classifier) {
+    while let Ok(Some(_)) = expl.step(&mut sphere) {
         if start_time.elapsed() > timeout {
             panic!("Test exceeded expected time to completion. Mesh explorer got stuck?");
         }
@@ -125,15 +121,14 @@ fn fully_explores_sphere() {
 fn saves_and_loads_results_correctly() {
     use sembas::structs::report::ExplorationStatus;
 
-    let sphere = setup_sphere::<D>();
+    let mut sphere = setup_sphere::<D>();
     // let area = sphere_surface_area(&sphere);
     let mut expl = setup_mesh_expl(&sphere);
-    let mut classifier = sphere_to_classifier(sphere);
 
     let timeout = Duration::from_secs(5);
     let start_time = Instant::now();
 
-    while let Ok(Some(_)) = expl.step(&mut classifier) {
+    while let Ok(Some(_)) = expl.step(&mut sphere) {
         if start_time.elapsed() > timeout {
             panic!("Test exceeded expected time to completion. Mesh explorer got stuck?");
         }
@@ -169,18 +164,17 @@ fn saves_and_loads_results_correctly() {
 
 #[test]
 fn backprop_fully_explores_sphere() {
-    let sphere = setup_sphere::<D>();
+    let mut sphere = setup_sphere::<D>();
     let center = *sphere.center();
     let radius = sphere.radius();
     let mut expl = setup_mesh_expl(&sphere);
-    let mut classifier = sphere_to_classifier(sphere);
 
     let timeout = Duration::from_secs(5);
     let start_time = Instant::now();
     let mut i = 0;
     let mut j = 0;
 
-    while let Ok(Some(_)) = expl.step(&mut classifier) {
+    while let Ok(Some(_)) = expl.step(&mut sphere) {
         if start_time.elapsed() > timeout {
             panic!("Test exceeded expected time to completion. Mesh explorer got stuck?");
         }
@@ -234,7 +228,7 @@ fn oob_err_prunes_exploration_branch() {
             }
         }
     }
-    let mut classifier: Box<dyn Classifier<10>> = Box::new(TestClassifier { i: 0 });
+    let mut classifier = TestClassifier::<10> { i: 0 };
 
     let b = WithinMode(SVector::from_fn(|_, _| 0.5));
     let mut n = SVector::zeros();
@@ -265,7 +259,7 @@ fn ble_err_prunes_exploration_branch() {
             Ok(Sample::from_class(*p, true))
         }
     }
-    let mut classifier: Box<dyn Classifier<10>> = Box::new(TestClassifier {});
+    let mut classifier = TestClassifier::<10> {};
 
     let b = WithinMode(SVector::from_fn(|_, _| 0.5));
     let mut n = SVector::zeros();
@@ -286,4 +280,10 @@ fn ble_err_prunes_exploration_branch() {
             panic!("Explorer hung due to boundary lost errors!")
         }
     }
+}
+
+pub fn svector_to_array<const N: usize>(v: SVector<f64, N>) -> [f64; N] {
+    v.as_slice()
+        .try_into()
+        .expect("Failed to convert slice to array.")
 }

@@ -68,10 +68,7 @@ impl<const N: usize> ConstantAdherer<N> {
         }
     }
 
-    fn take_initial_sample(
-        &mut self,
-        classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Sample<N>> {
+    fn take_initial_sample<C: Classifier<N>>(&mut self, classifier: &mut C) -> Result<Sample<N>> {
         let cur = self.pivot.b + self.v;
         let sample = classifier.classify(&cur)?;
         let cls = sample.class();
@@ -84,10 +81,10 @@ impl<const N: usize> ConstantAdherer<N> {
         Ok(Sample::from_class(cur, cls))
     }
 
-    fn take_sample(
+    fn take_sample<C: Classifier<N>>(
         &mut self,
         rot: OMatrix<f64, Const<N>, Const<N>>,
-        classifier: &mut Box<dyn Classifier<N>>,
+        classifier: &mut C,
     ) -> Result<Sample<N>> {
         self.v = rot * self.v;
         let cur = self.pivot.b + self.v;
@@ -103,7 +100,7 @@ impl<const N: usize> Adherer<N> for ConstantAdherer<N> {
         self.state
     }
 
-    fn sample_next(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<&Sample<N>> {
+    fn sample_next<C: Classifier<N>>(&mut self, classifier: &mut C) -> Result<&Sample<N>> {
         let cur = if let Some(rot) = self.rot {
             self.take_sample(rot, classifier)?
         } else {

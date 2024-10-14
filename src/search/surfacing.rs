@@ -11,11 +11,11 @@ use crate::{
 /// * `t0` A target sample
 /// * `x0` A non-target sample
 /// * `max_samples` The maximum number of samples before the failing the process.
-pub fn binary_surface_search<const N: usize>(
+pub fn binary_surface_search<const N: usize, C: Classifier<N>>(
     max_err: f64,
     b_pair: &BoundaryPair<N>,
     max_samples: u32,
-    classifier: &mut Box<dyn Classifier<N>>,
+    classifier: &mut C,
 ) -> Result<Halfspace<N>> {
     let mut p_t = b_pair.t().0;
     let mut p_x = b_pair.x().0;
@@ -63,12 +63,12 @@ mod test_surfacer {
     const RADIUS: f64 = 0.25;
     const DIAMETER: f64 = 2.0 * RADIUS;
 
-    fn setup_sphere<const N: usize>() -> Box<dyn Classifier<N>> {
+    fn setup_sphere<const N: usize>() -> Sphere<N> {
         let radius = 0.25;
         let center = SVector::from_fn(|_, _| 0.5);
         let domain = Domain::normalized();
 
-        Sphere::boxed(center, radius, Some(domain))
+        Sphere::new(center, radius, Some(domain))
     }
 
     #[test]

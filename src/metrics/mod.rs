@@ -25,12 +25,12 @@ pub mod const_adherer_metrics;
 /// ## Error (Err)
 /// * Returns a OutOfBounds exception if either sample of the initial pair is outside
 ///   of the domain.
-pub fn find_diameter<const N: usize>(
+pub fn find_diameter<const N: usize, C: Classifier<N>>(
     max_err: f64,
     initial_pair: &BoundaryPair<N>,
     ndim: usize,
     domain: &Domain<N>,
-    classifier: &mut Box<dyn Classifier<N>>,
+    classifier: &mut C,
 ) -> Result<Vec<f64>> {
     assert!(
         ndim > 1,
@@ -80,10 +80,10 @@ mod find_diameter {
 
     const RADIUS: f64 = 0.25;
 
-    fn create_sphere<const N: usize>() -> Box<dyn Classifier<N>> {
+    fn create_sphere<const N: usize>() -> Sphere<N> {
         let c: SVector<f64, N> = SVector::from_fn(|_, _| 0.5);
 
-        Sphere::boxed(c, RADIUS, Some(Domain::normalized()))
+        Sphere::new(c, RADIUS, Some(Domain::normalized()))
     }
 
     #[test]

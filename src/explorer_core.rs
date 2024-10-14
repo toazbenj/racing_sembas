@@ -15,7 +15,7 @@ where
     ///   being explored.
     /// ## Returns
     /// * sample: A PointNode or SamplingError.
-    fn step(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<Option<Sample<N>>>;
+    fn step<C: Classifier<N>>(&mut self, classifier: &mut C) -> Result<Option<Sample<N>>>;
 
     /// Gets the current state of the explored boundary.
     /// ## Returns

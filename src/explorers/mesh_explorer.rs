@@ -152,7 +152,7 @@ impl<const N: usize, F: AdhererFactory<N>> MeshExplorer<N, F> {
 }
 
 impl<const N: usize, F: AdhererFactory<N>> Explorer<N, F> for MeshExplorer<N, F> {
-    fn step(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<Option<Sample<N>>> {
+    fn step<C: Classifier<N>>(&mut self, classifier: &mut C) -> Result<Option<Sample<N>>> {
         if self.adherer.is_none() {
             if let Some((hs, id, v)) = self.select_parent() {
                 self.current_parent = id;

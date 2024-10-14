@@ -63,10 +63,7 @@ impl<const N: usize> BinarySearchAdherer<N> {
         }
     }
 
-    fn take_initial_sample(
-        &mut self,
-        classifier: &mut Box<dyn Classifier<N>>,
-    ) -> Result<Sample<N>> {
+    fn take_initial_sample<C: Classifier<N>>(&mut self, classifier: &mut C) -> Result<Sample<N>> {
         let cur = self.pivot.b + self.v;
         let sample = classifier.classify(&cur)?;
         let cls = sample.class();
@@ -82,10 +79,10 @@ impl<const N: usize> BinarySearchAdherer<N> {
         Ok(Sample::from_class(cur, cls))
     }
 
-    fn take_sample(
+    fn take_sample<C: Classifier<N>>(
         &mut self,
         prev_cls: bool,
-        classifier: &mut Box<dyn Classifier<N>>,
+        classifier: &mut C,
     ) -> Result<Sample<N>> {
         let ccw = if prev_cls { 1.0 } else { -1.0 };
         let rot = (self.rot_factory)(ccw * self.angle);
@@ -114,7 +111,7 @@ impl<const N: usize> Adherer<N> for BinarySearchAdherer<N> {
         self.state
     }
 
-    fn sample_next(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<&Sample<N>> {
+    fn sample_next<C: Classifier<N>>(&mut self, classifier: &mut C) -> Result<&Sample<N>> {
         let cur = if let Some(prev_cls) = self.prev_cls {
             self.take_sample(prev_cls, classifier)?
         } else {
