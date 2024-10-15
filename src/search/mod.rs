@@ -36,13 +36,13 @@ pub enum SearchMode {
 /// * Some(p) : The point that is classified as target_cls, i.e.
 ///   classifier.classify(p) == target_cls
 /// * None : No target_cls points were found within max_samples number of iterations.
-pub fn binary_search_between<const N: usize>(
+pub fn binary_search_between<const N: usize, C: Classifier<N>>(
     mode: SearchMode,
     target_cls: bool,
     max_samples: u32,
     p1: SVector<f64, N>,
     p2: SVector<f64, N>,
-    classifier: &mut Box<dyn Classifier<N>>,
+    classifier: &mut C,
 ) -> Option<SVector<f64, N>> {
     let mut pairs = vec![(p1, p2)];
 
@@ -98,12 +98,12 @@ pub fn binary_search_between<const N: usize>(
 /// * If @v is not facing the geometry, it may still return a boundary point with a
 ///   sufficiently large @num_checks or innaccurate @b. This is because it will
 ///   converge upon the same side of the geometry as @b.
-pub fn find_opposing_boundary<const N: usize>(
+pub fn find_opposing_boundary<const N: usize, C: Classifier<N>>(
     max_err: f64,
     t0: WithinMode<N>,
     v: SVector<f64, N>,
     domain: &Domain<N>,
-    classifier: &mut Box<dyn Classifier<N>>,
+    classifier: &mut C,
     num_checks: u32,
     num_iter: u32,
 ) -> Result<WithinMode<N>> {
@@ -175,10 +175,10 @@ mod search_tests {
         }
     }
 
-    fn create_sphere<const N: usize>() -> Box<dyn Classifier<N>> {
+    fn create_sphere<const N: usize>() -> Sphere<N> {
         let c: SVector<f64, N> = SVector::from_fn(|_, _| 0.5);
 
-        Sphere::boxed(c, RADIUS, Some(Domain::normalized()))
+        Sphere::new(c, RADIUS, Some(Domain::normalized()))
     }
     mod binary_search_between {
         use super::*;
@@ -205,7 +205,7 @@ mod search_tests {
         fn returns_none_when_no_envelope_exists() {
             let p1: SVector<f64, 10> = SVector::zeros();
             let p2 = SVector::from_fn(|_, _| 1.0);
-            let mut classifier: Box<dyn Classifier<10>> = Box::new(EmptyClassifier {});
+            let mut classifier = EmptyClassifier {};
 
             let r = binary_search_between(SearchMode::Full, true, 10, p1, p2, &mut classifier);
 
@@ -218,8 +218,7 @@ mod search_tests {
             let p2 = SVector::from_fn(|_, _| 1.0);
 
             let c = p2 / 8.0;
-            let mut classifier: Box<dyn Classifier<10>> =
-                Sphere::boxed(c, 0.1, Some(Domain::normalized()));
+            let mut classifier = Sphere::new(c, 0.1, Some(Domain::normalized()));
             let num_steps_to_find = 4;
 
             let r = binary_search_between(
@@ -240,8 +239,7 @@ mod search_tests {
             let p2 = SVector::from_fn(|_, _| 1.0);
 
             let c = p2 / 8.0;
-            let mut classifier: Box<dyn Classifier<10>> =
-                Sphere::boxed(c, 0.1, Some(Domain::normalized()));
+            let mut classifier = Sphere::new(c, 0.1, Some(Domain::normalized()));
             let num_steps_to_find = 4;
 
             binary_search_between(
@@ -297,8 +295,7 @@ mod search_tests {
             let domain = Domain::normalized();
 
             let c = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.5 });
-            let mut classifier: Box<dyn Classifier<10>> =
-                Sphere::boxed(c, RADIUS, Some(Domain::normalized()));
+            let mut classifier = Sphere::new(c, RADIUS, Some(Domain::normalized()));
 
             let b: SVector<f64, 10> =
                 SVector::from_fn(|i, _| if i == 0 { 1.0 - RADIUS + d * 0.75 } else { 0.5 });
@@ -369,8 +366,8 @@ mod search_tests {
             let sphere1 = Sphere::boxed(c1, radius, Some(Domain::normalized()));
             let sphere2 = Sphere::boxed(c2, radius, Some(Domain::normalized()));
 
-            let mut classifier: Box<dyn Classifier<10>> =
-                SphereCluster::boxed(vec![*sphere1, *sphere2], Some(Domain::normalized()));
+            let mut classifier =
+                SphereCluster::new(vec![*sphere1, *sphere2], Some(Domain::normalized()));
 
             let v = SVector::<f64, 10>::from_fn(|_, _| 1.0).normalize();
             let b = c1 - v * (radius - d * 0.9);

@@ -6,11 +6,7 @@ use sembas::sps::Sphere;
 
 fn main() {
     // Setup your classifier
-    let mut classifier: Box<dyn Classifier<3>> = Box::new(Sphere::new(
-        vector![0.5, 0.5, 0.5],
-        0.25,
-        Some(Domain::normalized()),
-    ));
+    let mut classifier = Sphere::new(vector![0.5, 0.5, 0.5], 0.25, Some(Domain::normalized()));
 
     // Pick a (d)istance between samples:
     let d = 0.05;
@@ -68,8 +64,8 @@ fn main() {
     println!("OOB Count: {oob_count}");
 }
 
-fn find_initial_boundary_pair<const N: usize>(
-    classifier: &mut Box<dyn Classifier<N>>,
+fn find_initial_boundary_pair<const N: usize, C: Classifier<N>>(
+    classifier: &mut C,
     history: &mut Vec<Sample<N>>,
     max_samples: i32,
 ) -> Result<BoundaryPair<N>> {

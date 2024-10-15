@@ -19,7 +19,7 @@ pub trait Adherer<const N: usize> {
     ///   is being explored.
     /// ## Returns
     /// * sample: Either a PointNode or a Sampling Error
-    fn sample_next(&mut self, classifier: &mut Box<dyn Classifier<N>>) -> Result<&Sample<N>>;
+    fn sample_next<C: Classifier<N>>(&mut self, classifier: &mut C) -> Result<&Sample<N>>;
 
     /// Returns the current state of the adherer, either Searching or
     /// FoundBoundary(hs) where hs is the resulting halfspace.
