@@ -7,5 +7,10 @@ pub enum SamplingError {
     InvalidClassifierResponse(String),
 }
 
+pub enum ParameterError {
+    Invalid(String),
+    OutOfRange,
+}
+
 /// The Result type from sampling a function under test.
 pub type Result<T> = std::result::Result<T, SamplingError>;
