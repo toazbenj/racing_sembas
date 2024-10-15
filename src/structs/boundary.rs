@@ -1,8 +1,12 @@
 use nalgebra::SVector;
+use rstar::{primitives::GeomWithData, RTree};
 
 use super::{OutOfMode, Sample, WithinMode};
 
 pub type Boundary<const N: usize> = [Halfspace<N>];
+pub type NodeID = usize;
+pub type KnnNode<const N: usize> = GeomWithData<[f64; N], NodeID>;
+pub type BoundaryRTree<const N: usize> = RTree<KnnNode<N>>;
 
 /// A pair of points, t and x, where t falls within the target performance mode and x
 /// falls outside of the performance mode. When a boundary pair exists, a boundary
