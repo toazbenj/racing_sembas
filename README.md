@@ -66,8 +66,10 @@ polyhedra.
 ## Terminology 
 | Term / Acronym / Synonyms                                     | Description                                                                                                                                                       |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Function Under Test, FUT**                        | The system that is being tested / explored / executed.which is being explored and therefore executed by the FUT.Exceptional, Undesired, or otherwise interesting. |
+| **Function Under Test, FUT**                        | The system that is being tested / explored / executed. |
+| **Target Performance, In-Mode**                     | The output behavior of FUT that is being explored. For example, Autonomous Vehicle safety for a simulation, where "unsafe" is defined as Time-to-Collision < $\lambda$, where lambda is the threshold for "unsafe" behavior. |
 | **Performance Class, Sample Class, Classification** | A boolean value, `true` or `false`, where `true` means that the given point when executed by the FUT resulted in Target Performance.                              |
+| **Classifier**                                      | The wrapper for the FUT which interprets the FUT's output and returns a WithinMode or OutOfMode sample, depending on its classification. |
 | **Input, Point**                                    | Both Input and Point refer to the same thing, the parameters to be  passed into the FUT.                                                                          |
 | **Sample (verb)**                                   | To execute the FUT with a given input to acquire it's classification.                                                                                             |
 | **Sample (noun)**                                   | An input that has been executed by the FUT and classified.                                                                                                        |
