@@ -19,6 +19,6 @@ pub fn get_const_params_by_envelope_size(
         .iter()
         .min_by(|a, b| a.total_cmp(b))
         .expect("Must provide a non-empty list of axis lengths!")
-        * resolution;
+        * (1.0 - resolution);
     (d, (max_err / d).asin())
 }
