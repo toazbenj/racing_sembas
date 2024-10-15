@@ -55,3 +55,101 @@ pub fn falls_on_boundary<const N: usize>(
         hs.n.dot(&nearest_hs.n) >= 0.0
     }
 }
+
+#[cfg(test)]
+mod falls_on_boundary_tests {
+    use nalgebra::vector;
+
+    use crate::prelude::WithinMode;
+
+    use super::*;
+
+    const JUMP_DIST: f64 = 0.1;
+
+    fn get_plane() -> Vec<Halfspace<3>> {
+        vec![
+            Halfspace {
+                b: WithinMode(vector![0.5, 0.5, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+            Halfspace {
+                b: WithinMode(vector![0.5 - JUMP_DIST, 0.5, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+            Halfspace {
+                b: WithinMode(vector![0.5 + JUMP_DIST, 0.5, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+            Halfspace {
+                b: WithinMode(vector![0.5, 0.5 - JUMP_DIST, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+            Halfspace {
+                b: WithinMode(vector![0.5, 0.5 + JUMP_DIST, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+            Halfspace {
+                b: WithinMode(vector![0.5 - JUMP_DIST, 0.5 - JUMP_DIST, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+            Halfspace {
+                b: WithinMode(vector![0.5 + JUMP_DIST, 0.5 + JUMP_DIST, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+            Halfspace {
+                b: WithinMode(vector![0.5 - JUMP_DIST, 0.5 + JUMP_DIST, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+            Halfspace {
+                b: WithinMode(vector![0.5 + JUMP_DIST, 0.5 - JUMP_DIST, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+        ]
+    }
+
+    #[test]
+    fn hs_on_boundary_returns_true() {
+        // Boundary Plane:
+        let boundary = get_plane();
+        let brtree = get_rtree_from_boundary(&boundary);
+
+        for hs in &boundary {
+            assert!(
+                falls_on_boundary(JUMP_DIST, hs, &boundary, &brtree),
+                "falls_on_boundary for halfspace in @boundary returned false"
+            );
+        }
+    }
+
+    #[test]
+    fn hs_off_boundary_returns_false() {
+        // Boundary Plane:
+        let boundary = get_plane();
+        let brtree = get_rtree_from_boundary(&boundary);
+
+        let other_hs = vector![
+            // Above facing toward @boundary
+            Halfspace {
+                b: WithinMode(vector![0.5, 0.5, 0.55]),
+                n: vector![-1.0, 0.0, 0.0],
+            },
+            // Below facing away from @boundary
+            Halfspace {
+                b: WithinMode(vector![0.45, 0.45, 0.45]),
+                n: vector![-1.0, 0.0, 0.0],
+            },
+            // Far from @boundary
+            Halfspace {
+                b: WithinMode(vector![5.0, 5.0, 0.5]),
+                n: vector![1.0, 0.0, 0.0],
+            },
+        ];
+
+        for hs in &other_hs {
+            assert!(
+                !falls_on_boundary(JUMP_DIST, hs, &boundary, &brtree),
+                "falls_on_boundary returned true for halfspace not in @boundary."
+            )
+        }
+    }
+}
