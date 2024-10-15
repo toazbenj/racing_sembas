@@ -1,6 +1,6 @@
 pub mod adherer_core;
 pub mod adherers;
-pub mod boundaries;
+pub mod boundary_tools;
 pub mod explorer_core;
 pub mod explorers;
 pub mod extensions;
