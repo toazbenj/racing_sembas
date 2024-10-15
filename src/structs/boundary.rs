@@ -2,6 +2,8 @@ use nalgebra::SVector;
 
 use super::{OutOfMode, Sample, WithinMode};
 
+pub type Boundary<const N: usize> = [Halfspace<N>];
+
 /// A pair of points, t and x, where t falls within the target performance mode and x
 /// falls outside of the performance mode. When a boundary pair exists, a boundary
 /// must exist between t and x.
