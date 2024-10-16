@@ -105,7 +105,7 @@ impl<const N: usize, F: AdhererFactory<N>> MeshExplorer<N, F> {
         next_paths
     }
 
-    fn create_cardinals(
+    pub fn create_cardinals(
         n: SVector<f64, N>,
         basis_vectors: OMatrix<f64, Const<N>, Const<N>>,
     ) -> Vec<SVector<f64, N>> {
