@@ -94,15 +94,16 @@ def loss_fn(predictions, targets, model, kl_weight):
 def train_bnn(model, optimizer, dataset, kl_weight=1e-6, epochs=1):
     train_data, test_data = train_test_split(dataset, test_size=0.1, shuffle=True)
     test_loss = []
-    test_x, test_y = test_data
+    train_loss = []
+
+    test_x = torch.vstack([row[0] for row in test_data])
+    test_y = torch.vstack([row[1] for row in test_data])
 
     loader = DataLoader(train_data, 32, True)
 
     for epoch in range(epochs):
         model.train()
         optimizer.zero_grad()
-
-        running_loss = 0.0
 
         for i, batch in enumerate(loader):
             inputs, labels = batch
@@ -111,18 +112,18 @@ def train_bnn(model, optimizer, dataset, kl_weight=1e-6, epochs=1):
 
             y_hat = model(inputs)
             loss = loss_fn(y_hat, labels, model, kl_weight)
+            train_loss.append(loss.item())
             loss.backward()
             optimizer.step()
-            running_loss += loss.item()
 
             with torch.no_grad():
                 model.eval()
                 yhat = model(test_x)
-                test_loss.append(loss_fn(yhat, test_y, model, kl_weight))
+                test_loss.append(loss_fn(yhat, test_y, model, kl_weight).item())
                 model.train()
 
         print(
-            f"Epoch #{epoch}: Loss = {running_loss / i}, Test Loss = {sum(test_loss[-i:]) / i}"
+            f"Epoch #{epoch + 1}: Loss = {sum(train_loss[-i:]) / i}, Test Loss = {sum(test_loss[-i:]) / i}"
         )
 
-    return test_loss
+    return test_loss, train_loss
