@@ -22,6 +22,7 @@ where
     /// * boundary: A Vec<Halfspace<N>>, which contains all of the acquired boundary
     ///   halfspaces found so far.
     fn boundary(&self) -> &Vec<Halfspace<N>>;
+    fn boundary_owned(self) -> Vec<Halfspace<N>>;
 
     /// Gets the total number of boundary halfspaces found so far.
     /// ## Returns
