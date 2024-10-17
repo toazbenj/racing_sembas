@@ -4,7 +4,7 @@ use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
     explorer_core::Explorer,
     extensions::Queue,
-    prelude::report::ExplorationStatus,
+    prelude::{report::ExplorationStatus, KnnNode, NodeID},
     structs::{backprop::Backpropagation, Classifier, Halfspace, Result, Sample, Span},
     utils::{array_distance, svector_to_array},
 };
@@ -12,9 +12,7 @@ use nalgebra::{self, Const, OMatrix, SVector};
 use petgraph::{graph::NodeIndex, visit::EdgeRef, Direction::Incoming, Graph};
 use rstar::{primitives::GeomWithData, RTree};
 
-type NodeID = usize;
-type Path<const N: usize> = (NodeID, SVector<f64, N>);
-type KnnNode<const N: usize> = GeomWithData<[f64; N], NodeID>;
+pub type Path<const N: usize> = (NodeID, SVector<f64, N>);
 
 /// Explores a surface uniformly by using a grid-search approach.
 pub struct MeshExplorer<const N: usize, F: AdhererFactory<N>> {
@@ -107,7 +105,7 @@ impl<const N: usize, F: AdhererFactory<N>> MeshExplorer<N, F> {
         next_paths
     }
 
-    fn create_cardinals(
+    pub fn create_cardinals(
         n: SVector<f64, N>,
         basis_vectors: OMatrix<f64, Const<N>, Const<N>>,
     ) -> Vec<SVector<f64, N>> {

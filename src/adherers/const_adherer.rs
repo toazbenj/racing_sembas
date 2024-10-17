@@ -150,3 +150,39 @@ impl<const N: usize> AdhererFactory<N> for ConstantAdhererFactory<N> {
         ConstantAdherer::new(hs, v, self.delta_angle, self.max_rotation)
     }
 }
+
+#[cfg(test)]
+mod constant_adherer {
+    use nalgebra::SVector;
+
+    use crate::prelude::{Adherer, AdhererState, FunctionClassifier, Halfspace, WithinMode};
+
+    use super::ConstantAdherer;
+
+    #[test]
+    fn displacement_vector_norm_never_changes() {
+        let pivot = Halfspace {
+            b: WithinMode(SVector::from_fn(|_, _| 0.21501)),
+            n: SVector::<f64, 10>::from_fn(|i, _| if i == 0 { 1.0 } else { 0.25 }).normalize(),
+        };
+        let v = SVector::from_fn(|i, _| if i == 0 { 1.0 } else { 0.0 });
+
+        let d = 0.05;
+        let mut adh = ConstantAdherer::new(pivot, d * v, 5.0f64.to_radians(), None);
+
+        let mut classifier = FunctionClassifier::new(|_| Ok(false));
+
+        while let AdhererState::Searching = adh.get_state() {
+            match adh.sample_next(&mut classifier) {
+                Ok(_) => (),
+                Err(_) => break,
+            }
+
+            let magnitude = adh.v.norm();
+            assert!(
+                (magnitude - d).abs() <= 1.0e-10,
+                "Bad displacement vector! {magnitude}"
+            );
+        }
+    }
+}

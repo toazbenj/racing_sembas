@@ -1,7 +1,7 @@
 use nalgebra::{Const, OMatrix};
 
 use crate::{
-    prelude::WithinMode,
+    prelude::{Halfspace, WithinMode},
     search::find_opposing_boundary,
     structs::{BoundaryPair, Classifier, Domain, Result, Span},
 };
@@ -10,12 +10,16 @@ pub mod boundary_metrics;
 pub mod bs_adherer_metrics;
 pub mod const_adherer_metrics;
 
-/// Finds the diameter for ndim number of dimensions. 1 <= ndim <= N
+pub type Chord<const N: usize> = (Halfspace<N>, Halfspace<N>);
+
+/// Finds @ndim number of chords through the (estimated) center of the envelope.
 /// ## Arguments
 /// * max_err : The maximum error (distance) allowed for boundary points to be from
 ///   the boundary.
 /// * initial_pair : Describes where the known boundary is.
-/// * ndim : How many dimensions to find the diameter for. A value of 1 will search
+/// * ndim : How many dimensions to find the diameter for.
+///   1 <= ndim <= N    
+///   A value of 1 will search
 ///   only in the direction @initial_pair.t() - @initial_pair.x(). 0 and negative
 ///   numbers are invalid.
 /// * domain : The region of the search space to limit the exploration to.
@@ -25,15 +29,15 @@ pub mod const_adherer_metrics;
 /// ## Error (Err)
 /// * Returns a OutOfBounds exception if either sample of the initial pair is outside
 ///   of the domain.
-pub fn find_diameter<const N: usize, C: Classifier<N>>(
+pub fn find_chords<const N: usize, C: Classifier<N>>(
     max_err: f64,
     initial_pair: &BoundaryPair<N>,
     ndim: usize,
     domain: &Domain<N>,
     classifier: &mut C,
-) -> Result<Vec<f64>> {
+) -> Result<Vec<Chord<N>>> {
     assert!(
-        ndim > 1,
+        ndim >= 1,
         "Invalid number for ndim, must be positive non-zero! Got: {ndim}"
     );
     let basis_vectors = OMatrix::<f64, Const<N>, Const<N>>::identity();
@@ -52,7 +56,7 @@ pub fn find_diameter<const N: usize, C: Classifier<N>>(
     let p2 = find_opposing_boundary(max_err, *initial_pair.t(), -v0, domain, classifier, 10, 10)?;
 
     let mid = p1 + (p2 - p1) / 2.0;
-    let mut result = vec![(p2 - p1).magnitude()];
+    let mut result = vec![(Halfspace { b: p1, n: v0 }, Halfspace { b: p2, n: -v0 })];
 
     for i in 1..ndim {
         let vi = basis_vectors.column(i).into_owned();
@@ -61,10 +65,14 @@ pub fn find_diameter<const N: usize, C: Classifier<N>>(
 
         let b2 = find_opposing_boundary(max_err, WithinMode(mid), -vi, domain, classifier, 10, 10)?;
 
-        result.push((b2 - b1).magnitude());
+        result.push((Halfspace { b: b1, n: v0 }, Halfspace { b: b2, n: -v0 }));
     }
 
     Ok(result)
+}
+
+pub fn get_diameters_from_chords<const N: usize>(chords: &[Chord<N>]) -> Vec<f64> {
+    chords.iter().map(|(h1, h2)| (h2.b - h1.b).norm()).collect()
 }
 
 #[cfg(test)]
@@ -96,7 +104,7 @@ mod find_diameter {
             SVector::from_fn(|i, _| if i == 0 { 0.5 - RADIUS + d * 0.75 } else { 0.5 });
         let x = SVector::zeros();
 
-        let diameters = find_diameter(
+        let chords = find_chords(
             d,
             &BoundaryPair::new(WithinMode(t), OutOfMode(x)),
             10,
@@ -104,6 +112,8 @@ mod find_diameter {
             &mut classifier,
         )
         .expect("Unexpected error from find_diameter.");
+
+        let diameters = get_diameters_from_chords(&chords);
 
         assert!(
             diameters.iter().all(|x| x - 2.0 * RADIUS <= 2.0 * d),

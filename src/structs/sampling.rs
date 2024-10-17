@@ -89,8 +89,8 @@ impl<const N: usize> Sample<N> {
 impl<const N: usize> fmt::Display for Sample<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
-            Sample::WithinMode(t) => write!(f, "WithinMode(p: {:?})", t),
-            Sample::OutOfMode(x) => write!(f, "OutOfMode(p: {:?})", x),
+            Sample::WithinMode(WithinMode(t)) => write!(f, "WithinMode(p: {:?})", t),
+            Sample::OutOfMode(OutOfMode(x)) => write!(f, "OutOfMode(p: {:?})", x),
         }
     }
 }
