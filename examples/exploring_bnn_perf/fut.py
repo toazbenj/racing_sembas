@@ -9,34 +9,27 @@ This script depends on:
 import numpy as np
 import torch
 import argparse
+import os
+
+import torch.optim as optim
 
 from numpy import ndarray
 from torch import Tensor
-
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
+from torch.nn import Module
 
 # Stores the BNN architecture and training logic
 from fut_network import *
+from fut_data import *
+from fut_sembas_api import *
+
+THRESHOLD = 0.5
 
 
-def train_and_save():
-    model = BayesianNN()
-
-
-def load_bnn():
-    pass
-
-
-def connect():
-    pass
-
-
-def get_args(arg_override=None) -> argparse.Namespace:
+def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         "BNN Exploration",
         "python fut [mode]",
-        description="If no mode is provided, mode defaults to --full.",
+        description="If no mode is provided, mode defaults to --explore.",
     )
 
     mode = parser.add_mutually_exclusive_group()
@@ -63,8 +56,19 @@ def get_args(arg_override=None) -> argparse.Namespace:
         action="store_true",
         default=False,
         help=(
-            "Only explores an existing model under --model-path. If no model exists "
-            "under said path, the program will fail."
+            "Explores an existing model under --model-path. If no model exists "
+            "under this path, the model will be generated prior to exploration."
+        ),
+    ),
+
+    parser.add_argument(
+        "--graphics",
+        "-g",
+        action="store_true",
+        default=True,
+        help=(
+            "Displays loss history for training and the samples taken during "
+            "exploration."
         ),
     ),
 
@@ -72,29 +76,179 @@ def get_args(arg_override=None) -> argparse.Namespace:
         "--model-path",
         "-p",
         type=str,
-        default="models/bnn_expl/",
+        default=".models/bnn_expl/",
         help="Where to store and load the BNN model.",
     )
 
     parser.add_argument(
         "--model-name",
-        "-n",
+        "-m",
         type=str,
         default="bnn.model",
         help="The name of the bnn model file.",
     )
 
-    return parser.parse_args(arg_override)
+    parser.add_argument(
+        "--num-networks",
+        "-n",
+        type=int,
+        default=1,
+        help=(
+            "The number of networks to explore. "
+            "Doesn't do anything for mode --train.",
+        ),
+    )
+
+    return parser.parse_args()
 
 
-def main(arg_override=None):
+if __name__ == "__main__":
+    import sys
+
+    if get_args().graphics:
+        print("Enabled graphics")
+        import fut_graphics as graphics
+        import matplotlib.pyplot as plt
+    else:
+        graphics = None
+
+
+def train_and_save(dataset: FutData, path: str, model_name: str):
+    bnn = BayesianNN()
+
+    optimizer = optim.Adam(bnn.parameters(), lr=0.01)
+
+    test_history, train_history = train_bnn(bnn, optimizer, dataset, epochs=2)
+    os.makedirs(path, exist_ok=True)
+    torch.save(bnn.state_dict(), f"{path}/{model_name}")
+    return test_history, train_history
+
+
+def load_bnn(path: str):
+    state = torch.load(path, weights_only=True)
+    model = BayesianNN()
+    model.load_state_dict(state)
+    return model
+
+
+def classify_validity(network: Module, x: Tensor):
+    """
+    Given a network, classifiers a sample as valid/invalid.
+
+    In real-world circumstances, you would often need a measure of validity that is
+    unsupervised, meaning you can't measure the exact "error" from ground truth.
+
+    ***
+    In the case of this toy example, we do have ground truth, so we are using
+    it directly.
+    ***
+
+    An example of a solution for classifying an `AV testing scenario` would be
+    collision occurance, time-to-collision thresholds, traffic violations, etc.
+
+    Unsupervised solutions for an `image classifier` might require an adversarial
+    neural network designed to catch fraudulant examples, such as those used in GANs.
+
+    `Regression` is more difficult/complicated, but you might find measures that
+    characterize confidence as a measure of validity, or K-nearest-neighbor based on
+    a test set.
+    """
+    return (network(x).squeeze() - f(*x.T)).pow(2) < THRESHOLD
+
+
+def load_and_explore(bnn_path: str, num_networks: int, sample_classifier):
+    """
+    This program will
+    """
+    bnn = load_bnn(bnn_path)
+    NDIM = 2
+
+    for i in range(num_networks):
+        network = bnn.sample_network()
+        client = setup_socket(NDIM)
+
+        samples = []
+
+        session_ended = False
+        while not session_ended:
+            try:
+                p = receive_request(client, NDIM)
+                cls = sample_classifier(network, p)
+                samples.append((p, cls))
+                send_response(client, cls)
+            except:
+                client.close()
+                session_ended = True
+
+        if graphics is not None:
+            print(f"Took {len(samples)} samples.")
+            print("Displaying sample graph. Close to continue...")
+            fig, (axl, axr) = plt.subplots(ncols=2)
+            fig.tight_layout()
+            graphics.sample_graph(samples, ax=axl)
+            graphics.brute_force_search(network, classify_validity, ax=axr)
+            plt.show()
+
+
+def get_mode(args: argparse.Namespace) -> str:
+    if args.full:
+        return "full"
+    elif args.train:
+        return "train"
+    elif args.explore:
+        return "explore"
+    return "explore"
+
+
+def main(dataset_size: int = 2**10):
     import os
 
-    args = get_args(arg_override)
+    dataset = FutData(dataset_size)
+    args = get_args()
 
     pre_trained_exists = os.path.isfile(f"{args.model_path}/{args.model_name}")
+    mode = get_mode(args)
 
-    print(f"Pre-trained model exists: {pre_trained_exists}")
+    do_train = mode in (
+        "train",
+        "full",
+    )
+    do_explore = mode in ("explore", "full")
+
+    if pre_trained_exists and mode == "explore":
+        print(f"Pre-trained model exists.")
+    elif mode == "explore":
+        print(f"Pre-trained model does not exist.")
+        do_train = True
+
+    if do_train:
+        print("Generating and training model...")
+        test_history, train_history = train_and_save(
+            dataset, args.model_path, args.model_name
+        )
+
+        if graphics is not None:
+            print("Displaying loss graph. Close to continue...")
+            graphics.loss_graph(test_history, train_history)
+            plt.show()
+
+        print("Model training complete.")
+
+    if do_explore:
+        print("Beginning exploration.")
+        load_and_explore(
+            f"{args.model_path}/{args.model_name}", args.num_networks, classify_validity
+        )
+
+        print("Exploration complete.")
+
+
+def test():
+    bnn = load_bnn(".models/bnn_expl/bnn.model")
+    network = bnn.sample_network()
+
+    graphics.brute_force_search(network, classify_validity)
+    plt.show()
 
 
 if __name__ == "__main__":
