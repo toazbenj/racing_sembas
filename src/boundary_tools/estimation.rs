@@ -23,7 +23,7 @@ use crate::prelude::{
 pub fn approx_surface<const N: usize, F, C>(
     d: f64,
     hs: Halfspace<N>,
-    adherer_f: &mut F,
+    adherer_f: &F,
     classifier: &mut C,
 ) -> Result<(Halfspace<N>, Vec<Halfspace<N>>, Vec<Sample<N>>)>
 where
