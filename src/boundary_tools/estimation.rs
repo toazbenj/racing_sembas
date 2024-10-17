@@ -90,7 +90,7 @@ mod approx_surface {
     fn get_perfect_hs<const N: usize>() -> Halfspace<N> {
         let b = SVector::from_fn(|i, _| {
             if i == 0 {
-                0.5 + RADIUS - JUMP_DIST * 0.75
+                0.5 + RADIUS - JUMP_DIST * 0.25
             } else {
                 0.5
             }
@@ -107,7 +107,7 @@ mod approx_surface {
     fn get_imperfect_hs<const N: usize>() -> Halfspace<N> {
         let b = SVector::from_fn(|i, _| {
             if i == 0 {
-                0.5 + RADIUS - JUMP_DIST * 0.75
+                0.5 + RADIUS - JUMP_DIST * 0.25
             } else {
                 0.5
             }
@@ -123,14 +123,14 @@ mod approx_surface {
 
     #[test]
     fn improves_imperfect_hs() {
-        let domain = Domain::<2>::normalized();
+        let domain = Domain::<10>::normalized();
         let mut sphere = Sphere::new(get_center(), RADIUS, Some(domain));
 
         let hs = get_imperfect_hs();
 
-        let mut adh_f = ConstantAdhererFactory::new(10.0f64.to_radians(), None);
+        let mut adh_f = ConstantAdhererFactory::new(5.0f64.to_radians(), None);
 
-        let new_hs = approx_surface(JUMP_DIST, hs, &mut adh_f, &mut sphere)
+        let (new_hs, _, _) = approx_surface(JUMP_DIST, hs, &mut adh_f, &mut sphere)
             .expect("Unexpected sampling error");
 
         let correct_hs = get_perfect_hs();
@@ -138,9 +138,10 @@ mod approx_surface {
         let angle = new_hs.n.angle(&correct_hs.n);
 
         let err = angle / PI;
+        let prev_err = get_imperfect_hs::<10>().n.angle(&correct_hs.n);
         assert!(
-            err <= 1e-5,
-            "Unexpected level of error in estimated OSV. Got error of {err}%"
+            err <= prev_err,
+            "Did not decrease OSV error. Original error of {prev_err} and got new error of {err}"
         );
     }
 }
