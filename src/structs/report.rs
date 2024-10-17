@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::prelude::AdhererFactory;
 
-use super::{Halfspace, WithinMode};
+use super::{Boundary, Halfspace, WithinMode};
 
 #[cfg_attr(feature = "io", derive(Serialize, Deserialize))]
 pub struct ExplorationStatus<const N: usize, F>
@@ -35,7 +35,7 @@ where
         adherer_type: &str,
         explorer_parameters: HashMap<String, f64>,
         adherer_parameters: A,
-        boundary: &[Halfspace<N>],
+        boundary: &Boundary<N>,
         notes: Option<&str>,
     ) -> Self {
         let mut b_points: Vec<Vec<f64>> = vec![];

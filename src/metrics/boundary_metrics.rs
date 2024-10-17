@@ -1,6 +1,6 @@
 use nalgebra::{Const, OMatrix, SVector};
 
-use crate::prelude::Halfspace;
+use crate::prelude::Boundary;
 
 /// Calculates K, a metric that describes how the surface is curved relative to the
 /// CoM. Where -1 <= K <= 1.
@@ -17,7 +17,7 @@ use crate::prelude::Halfspace;
 /// * boundary : The set of halfspaces describing the boundary.
 /// ## Returns
 /// * K : The curvature metric that describes how the surface is curved.
-pub fn curvature<const N: usize>(boundary: &[Halfspace<N>]) -> f64 {
+pub fn curvature<const N: usize>(boundary: &Boundary<N>) -> f64 {
     let com = center_of_mass(boundary);
     let mut total = 0.0;
     let mut count = 0.0;
@@ -35,7 +35,7 @@ pub fn curvature<const N: usize>(boundary: &[Halfspace<N>]) -> f64 {
 /// * boundary : The set of halfspaces describing the boundary.
 /// ## Returns
 /// * com : The mean position of the boundary.
-pub fn center_of_mass<const N: usize>(boundary: &[Halfspace<N>]) -> SVector<f64, N> {
+pub fn center_of_mass<const N: usize>(boundary: &Boundary<N>) -> SVector<f64, N> {
     let mut total = SVector::zeros();
     let mut count = 0.0;
     for hs in boundary.iter() {
@@ -53,7 +53,7 @@ pub fn center_of_mass<const N: usize>(boundary: &[Halfspace<N>]) -> SVector<f64,
 /// * boundary : The set of halfspaces describing the boundary.
 /// ## Returns
 /// * v : The mean direction of the surface.
-pub fn mean_direction<const N: usize>(boundary: &[Halfspace<N>]) -> SVector<f64, N> {
+pub fn mean_direction<const N: usize>(boundary: &Boundary<N>) -> SVector<f64, N> {
     let mut total = SVector::zeros();
     let mut count = 0.0;
     for hs in boundary.iter() {
@@ -70,7 +70,7 @@ pub fn mean_direction<const N: usize>(boundary: &[Halfspace<N>]) -> SVector<f64,
 /// ## Returns
 /// * std_dev : The standard deviation of the boundary point cloud.
 pub fn boundary_std_dev<const N: usize>(
-    boundary: &[Halfspace<N>],
+    boundary: &Boundary<N>,
 ) -> OMatrix<f64, Const<N>, Const<N>> {
     let com = center_of_mass(boundary);
 
@@ -91,7 +91,7 @@ pub fn boundary_std_dev<const N: usize>(
 /// * boundary : The set of halfspaces describing the boundary.
 /// ## Returns
 /// * radius : The maximum distance from the CoM
-pub fn boundary_radius<const N: usize>(boundary: &[Halfspace<N>]) -> f64 {
+pub fn boundary_radius<const N: usize>(boundary: &Boundary<N>) -> f64 {
     let com = center_of_mass(boundary);
     boundary
         .iter()
