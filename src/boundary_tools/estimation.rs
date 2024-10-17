@@ -1,18 +1,31 @@
 use nalgebra::{Const, OMatrix, SVector};
 
 use crate::prelude::{
-    Adherer, AdhererFactory, AdhererState, Classifier, Halfspace, MeshExplorer, Result,
+    Adherer, AdhererFactory, AdhererState, Classifier, Halfspace, MeshExplorer, Result, Sample,
 };
 
 /// Given an initial halfspace, determines a more accurate surface direction and
-/// returns the updated halfspace, sampled boundary points, and non-boundary points.
-///  
+/// returns the updated halfspace,.
+/// ## Arguments
+/// * d : The distance to sample from @hs.
+/// * hs : The initial halfspace to improve OSV accuracy for.
+/// * adherer_f : The AdhererFactory to use for finding neighboring halfspaces.
+/// * classifier : The classifier for the FUT being tested.
+/// ## Return (Ok((new_hs, neighbors, non_b_samples)))
+/// * new_hs : The updated @hs with an improved OSV approximation.
+/// * neighbors : The boundary points neighboring @hs.
+/// * all_samples : All samples that were taken during the process.
+/// ## Error (Err)
+/// * SamplingError : If the sample is out of bounds or the boundary is lost, this
+///   error can be returned. BLEs can sometimes be remedied by decreasing @hs's
+///   distance from the boundary. Out of Bounds errors are due to limitations of the
+///   input domain, so reducing @d's size can circumvent these issues.
 pub fn approx_surface<const N: usize, F, C>(
     d: f64,
     hs: Halfspace<N>,
     adherer_f: &mut F,
     classifier: &mut C,
-) -> Result<Halfspace<N>>
+) -> Result<(Halfspace<N>, Vec<Halfspace<N>>, Vec<Sample<N>>)>
 where
     F: AdhererFactory<N>,
     C: Classifier<N>,
@@ -22,6 +35,8 @@ where
     let cardinals: Vec<SVector<f64, N>> =
         MeshExplorer::<N, F>::create_cardinals(hs.n, basis_vectors);
 
+    let mut all_samples = vec![];
+
     // Find neighboring boundary points
     let mut neighbors = vec![];
     for cardinal in cardinals {
@@ -29,7 +44,7 @@ where
         loop {
             match adh.get_state() {
                 AdhererState::Searching => {
-                    adh.sample_next(classifier)?;
+                    all_samples.push(*adh.sample_next(classifier)?);
                 }
                 AdhererState::FoundBoundary(halfspace) => {
                     neighbors.push(halfspace);
@@ -49,7 +64,7 @@ where
 
     new_n /= count;
 
-    Ok(Halfspace { b: hs.b, n: new_n })
+    Ok((Halfspace { b: hs.b, n: new_n }, neighbors, all_samples))
 }
 
 #[cfg(test)]
