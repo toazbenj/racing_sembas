@@ -184,6 +184,9 @@ impl<const N: usize, F: AdhererFactory<N>> Explorer<N, F> for MeshExplorer<N, F>
     fn boundary(&self) -> &Vec<Halfspace<N>> {
         &self.boundary
     }
+    fn boundary_owned(self) -> Vec<Halfspace<N>> {
+        self.boundary
+    }
 
     fn boundary_count(&self) -> usize {
         self.boundary.len()
