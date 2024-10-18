@@ -128,10 +128,10 @@ mod approx_surface {
 
         let hs = get_imperfect_hs();
 
-        let mut adh_f = ConstantAdhererFactory::new(5.0f64.to_radians(), None);
+        let adh_f = ConstantAdhererFactory::new(5.0f64.to_radians(), None);
 
-        let (new_hs, _, _) = approx_surface(JUMP_DIST, hs, &mut adh_f, &mut sphere)
-            .expect("Unexpected sampling error");
+        let (new_hs, _, _) =
+            approx_surface(JUMP_DIST, hs, &adh_f, &mut sphere).expect("Unexpected sampling error");
 
         let correct_hs = get_perfect_hs();
 
