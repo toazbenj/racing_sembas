@@ -31,16 +31,33 @@ const ANGLE: f64 = 0.0873; // 5 deg
 ///   over those that are outside of the region of validity, to further increase
 ///   model performance.
 fn main() {
-    // const NUM_NETWORKS: u32 = 1;
+    const NUM_NETWORKS: u32 = 100;
 
-    // for i in 0..NUM_NETWORKS {
+    let mut boundaries = vec![];
+    let mut btrees = vec![];
+    let mut skiplist = vec![];
 
-    // }
+    for i in 0..NUM_NETWORKS {
+        if let Ok((boundary, btree)) = explore_network() {
+            if boundaries.is_empty() || evaluate(&boundary, &boundaries) {
+                boundaries.push(boundary);
+                btrees.push(btree);
+            } else {
+                skiplist.push(i);
+            }
+        } else {
+            skiplist.push(i);
+        }
+    }
 
-    explore_network();
+    println!("Skiplist: {skiplist:?}");
 }
 
-fn explore_network() {
+fn evaluate<const N: usize>(boundary: &Boundary<N>, others: &[Vec<Halfspace<N>>]) -> bool {
+    true
+}
+
+fn explore_network() -> Result<(Vec<Halfspace<2>>, BoundaryRTree<2>)> {
     // Setting up connection. Note that the SEMBAS server must run first, prior
     // to fut.py client
     let domain = Domain::normalized();
@@ -49,7 +66,7 @@ fn explore_network() {
     let start_time = Instant::now();
 
     println!("Finding initial pair...");
-    let bp = find_initial_boundary_pair(&mut classifier, 1000).unwrap();
+    let bp = find_initial_boundary_pair(&mut classifier, 1000)?;
     println!("Establishing roots...");
     let roots: Vec<Halfspace<NDIM>> =
         find_chords(JUMP_DIST * 0.25, &bp, NDIM, &domain, &mut classifier)
@@ -110,6 +127,12 @@ fn explore_network() {
         boundary_std_dev(&full_boundary).norm(),
         boundary_radius(&full_boundary),
     );
+
+    if let Some(full_btree) = full_btree {
+        Ok((full_boundary, full_btree))
+    } else {
+        Err(SamplingError::BoundaryLost)
+    }
 }
 
 fn explore_boundary<const N: usize, F: AdhererFactory<N>, E: Explorer<N, F>, C: Classifier<N>>(

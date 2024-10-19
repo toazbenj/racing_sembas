@@ -65,7 +65,7 @@ def get_args() -> argparse.Namespace:
         "--graphics",
         "-g",
         action="store_true",
-        default=True,
+        default=False,
         help=(
             "Displays loss history for training and the samples taken during "
             "exploration."
@@ -92,7 +92,7 @@ def get_args() -> argparse.Namespace:
         "--num-networks",
         "-n",
         type=int,
-        default=1,
+        default=100,
         help=(
             "The number of networks to explore. "
             "Doesn't do anything for mode --train.",
@@ -111,6 +111,8 @@ if __name__ == "__main__":
         import matplotlib.pyplot as plt
     else:
         graphics = None
+        import fut_graphics as graphics2
+        import matplotlib.pyplot as plt
 
 
 def train_and_save(dataset: FutData, path: str, model_name: str):
@@ -156,14 +158,17 @@ def classify_validity(network: Module, x: Tensor):
     return (network(x).squeeze() - f(*x.T)).pow(2) < THRESHOLD
 
 
-def load_and_explore(bnn_path: str, num_networks: int, sample_classifier):
+def load_and_explore(args: argparse.Namespace, sample_classifier):
     """
     This program will
     """
-    bnn = load_bnn(bnn_path)
+
+    bnn = load_bnn(f"{args.model_path}/{args.model_name}")
     NDIM = 2
 
-    for i in range(num_networks):
+    os.makedirs(f"{args.model_path}/ensemble", exist_ok=True)
+
+    for i in range(args.num_networks):
         network = bnn.sample_network()
         client = setup_socket(NDIM)
 
@@ -188,6 +193,10 @@ def load_and_explore(bnn_path: str, num_networks: int, sample_classifier):
             graphics.sample_graph(samples, ax=axl)
             graphics.brute_force_search(network, classify_validity, ax=axr)
             plt.show()
+
+        torch.save(
+            network.state_dict(), f"{args.model_path}/ensemble/network_{i}.model"
+        )
 
 
 def get_mode(args: argparse.Namespace) -> str:
@@ -239,7 +248,6 @@ def main(dataset_size: int = 2**10):
         load_and_explore(
             f"{args.model_path}/{args.model_name}", args.num_networks, classify_validity
         )
-
         print("Exploration complete.")
 
 
