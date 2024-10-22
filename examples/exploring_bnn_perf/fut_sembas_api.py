@@ -34,7 +34,6 @@ def setup_socket(ndim: int, fail_on_refuse=False):
         client.sendall(ndim_packed)
 
         msg = client.recv(1024).decode("utf-8")
-        print(f"Received msg: '{msg}'")
         if msg != "OK\n":
             raise Exception("Invalid number of dimensions?")
     except Exception as e:
