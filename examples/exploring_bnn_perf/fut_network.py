@@ -7,12 +7,14 @@ from torch.utils.data import DataLoader
 
 
 class ConcreteLinear(nn.Module):
-    def __init__(self, in_features, out_features, weight, bias):
+    def __init__(self, in_features, out_features, weight=None, bias=None):
         super(ConcreteLinear, self).__init__()
         self.linear = nn.Linear(in_features, out_features)
-        with torch.no_grad():
-            self.linear.weight = nn.Parameter(weight)
-            self.linear.bias = nn.Parameter(bias)
+
+        if weight is not None and bias is not None:
+            with torch.no_grad():
+                self.linear.weight = nn.Parameter(weight)
+                self.linear.bias = nn.Parameter(bias)
 
     def forward(self, x):
         return self.linear(x)
