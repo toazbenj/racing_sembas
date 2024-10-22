@@ -133,7 +133,7 @@ def load_bnn(path: str):
     return model
 
 
-def classify_validity(network: Module, x: Tensor):
+def classify_validity(network: Module, dataset: FutData, x: Tensor):
     """
     Given a network, classifiers a sample as valid/invalid.
 
@@ -155,10 +155,16 @@ def classify_validity(network: Module, x: Tensor):
     characterize confidence as a measure of validity, or K-nearest-neighbor based on
     a test set.
     """
-    return (network(x).squeeze() - f(*x.T)).pow(2) < THRESHOLD
+
+    model_x = dataset.transform_request(x)
+    true_x = dataset.input_scaler.inverse_transform(model_x)
+    return (
+        np.power(network(model_x).squeeze().detach().numpy() - f(*true_x.T), 2.0)
+        < THRESHOLD
+    )
 
 
-def load_and_explore(args: argparse.Namespace, sample_classifier):
+def load_and_explore(args: argparse.Namespace, dataset: FutData, sample_classifier):
     """
     This program will
     """
@@ -171,6 +177,7 @@ def load_and_explore(args: argparse.Namespace, sample_classifier):
     for i in range(args.num_networks):
         network = bnn.sample_network()
         client = setup_socket(NDIM)
+        print("Done setup")
 
         samples = []
 
@@ -178,10 +185,10 @@ def load_and_explore(args: argparse.Namespace, sample_classifier):
         while not session_ended:
             try:
                 p = receive_request(client, NDIM)
-                cls = sample_classifier(network, p)
+                cls = sample_classifier(network, dataset, p.reshape(1, -1)).squeeze()
                 samples.append((p, cls))
                 send_response(client, cls)
-            except:
+            except struct.error as e:
                 client.close()
                 session_ended = True
 
@@ -245,9 +252,7 @@ def main(dataset_size: int = 2**10):
 
     if do_explore:
         print("Beginning exploration.")
-        load_and_explore(
-            f"{args.model_path}/{args.model_name}", args.num_networks, classify_validity
-        )
+        load_and_explore(args, dataset, classify_validity)
         print("Exploration complete.")
 
 

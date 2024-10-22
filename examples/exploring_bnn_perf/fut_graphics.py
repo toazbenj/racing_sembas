@@ -8,6 +8,8 @@ from torch.nn import Module
 from matplotlib.axes import Axes
 from numpy import ndarray
 
+from fut_data import FutData
+
 
 def loss_graph(test_loss: ndarray, train_loss: ndarray, ax: Axes = None):
     if ax is None:
@@ -38,7 +40,9 @@ def sample_graph(samples: list[tuple[ndarray, bool]], ax: Axes = None):
     ax.legend()
 
 
-def brute_force_search(network: Module, classifier, n=100, ax: Axes = None):
+def brute_force_search(
+    network: Module, dataset: FutData, classifier, n=100, ax: Axes = None
+):
     if ax is None:
         fig, ax = plt.subplots()
 
@@ -47,7 +51,9 @@ def brute_force_search(network: Module, classifier, n=100, ax: Axes = None):
     B = B.flatten()
     x = np.vstack((A, B)).T
 
-    y_cls: torch.Tensor = classifier(network, torch.tensor(x, dtype=torch.float32))
+    y_cls: torch.Tensor = classifier(
+        network, dataset, torch.tensor(x, dtype=torch.float32)
+    )
 
-    ax.imshow(np.flip(y_cls.reshape((n, n)).detach().numpy(), 0))
+    ax.imshow(np.flip(y_cls.reshape((n, n)), 0))
     ax.set_title("Validity Graph")
