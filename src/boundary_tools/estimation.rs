@@ -68,6 +68,16 @@ where
     Ok((Halfspace { b: hs.b, n: new_n }, neighbors, all_samples))
 }
 
+/// Predicts whether or not some point, @p, will be classified as WithinMode or
+/// OutOfMode according to the explored boundary. As a result, does not require the
+/// classifier for the fut.
+/// ## Arguments
+/// * p : The point to be classified.
+/// * boundary : The explored boundary for the target performance mode.
+/// * btree : The RTree for @boundary.
+/// * k : The number of halfspaces to consider while classifier @p. A good default is
+///   1, but with higher resolution and dimensional boundaries, playing with this
+///   number may improve results.
 pub fn approx_prediction<const N: usize>(
     p: SVector<f64, N>,
     boundary: &Boundary<N>,
