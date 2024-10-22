@@ -142,6 +142,70 @@ pub fn approx_mc_volume<const N: usize>(
     ratio * mc.get_domain().volume()
 }
 
+/// Estimates the volume of an envelope using Monte Carlo sampling using approximate
+/// predictions.
+/// ## Arguments
+/// * b1 : The first boundary.
+/// * b2 : The second boundary.
+/// * btree1 : The RTree for the first boundary.
+/// * btree : The RTree for the second boundary.
+/// * n_samples : How many samples to take for estimating volume. More -> higher
+///   accuracy
+/// * n_neighbors : Varies how many halfspaces should be considered while determining
+///   if a point falls within an envelope. A good default is 1, but with higher
+///   resolution and dimensional boundaries playing with this number may improve
+///   results.
+/// * seed : The seed to use while generating random points for MC.
+/// ## Return (intersection_volume, envelope1_volume, envelope2_volume)
+/// * intersection_volume : The volume that lies in both envelope 1 and 2.
+/// * envelope1_volume : The volume that lies only with envelope1.
+/// * envelope2_volume : The volume that lies only with envelope2.
+///
+/// The total volume is the sum of these voumes. The total volume of an envelop is
+/// the sum of its volume and the intersection volume.
+pub fn approx_mc_volume_intersection<const N: usize>(
+    b1: &Boundary<N>,
+    b2: &Boundary<N>,
+    btree1: &BoundaryRTree<N>,
+    btree2: &BoundaryRTree<N>,
+    n_samples: u32,
+    n_neighbors: u32,
+    seed: u64,
+) -> (f64, f64, f64) {
+    let pc: Vec<_> = b1.iter().chain(b2).map(|hs| *hs.b).collect();
+
+    let mut mc = MonteCarloSearch::new(Domain::new_from_point_cloud(&pc), seed);
+
+    let mut b1_only_count = 0;
+    let mut b2_only_count = 0;
+    let mut both_count = 0;
+
+    for _ in 0..n_samples {
+        let p = mc.sample();
+        let cls1 = approx_prediction(p, b1, btree1, n_neighbors).class();
+        let cls2 = approx_prediction(p, b2, btree2, n_neighbors).class();
+
+        if cls1 && cls2 {
+            both_count += 1;
+        } else if cls1 {
+            b1_only_count += 1;
+        } else if cls2 {
+            b2_only_count += 1;
+        }
+    }
+
+    let ratio1 = b1_only_count as f64 / n_samples as f64;
+    let ratio2 = b2_only_count as f64 / n_samples as f64;
+    let intersect_ratio = both_count as f64 / n_samples as f64;
+
+    let vol = mc.get_domain().volume();
+    let b1_vol = ratio1 * vol;
+    let b2_vol = ratio2 * vol;
+    let intesect_vol = intersect_ratio * vol;
+
+    (intesect_vol, b1_vol, b2_vol)
+}
+
 #[cfg(test)]
 mod approx_surface {
     use std::f64::consts::PI;
