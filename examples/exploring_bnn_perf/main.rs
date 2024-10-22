@@ -1,5 +1,10 @@
-use std::time::Instant;
+use std::{
+    fs::{File, OpenOptions},
+    io::{self, Read, Write},
+    time::Instant,
+};
 
+use nalgebra::SVector;
 use sembas::{
     api::RemoteClassifier,
     boundary_tools::{
@@ -10,10 +15,17 @@ use sembas::{
     search::global_search::*,
     structs::{Classifier, Halfspace},
 };
+use serde::{Deserialize, Serialize};
 
 const NDIM: usize = 2;
 const JUMP_DIST: f64 = 0.01;
 const ANGLE: f64 = 0.0873; // 5 deg
+
+#[derive(Serialize, Deserialize)]
+struct BoundaryData {
+    boundary_points: Vec<Vec<f64>>,
+    boundary_surface: Vec<Vec<f64>>,
+}
 
 /// In this example, we will look at how we can use SEMBAS to identify complementary
 /// neural networks for constructing an ensemble from a
@@ -40,6 +52,11 @@ fn main() {
     for i in 0..NUM_NETWORKS {
         if let Ok((boundary, btree)) = explore_network() {
             if boundaries.is_empty() || evaluate(&boundary, &boundaries) {
+                save_boundary(
+                    &boundary,
+                    format!(".data/boundaries/boundary_{i}.json").as_str(),
+                )
+                .unwrap();
                 boundaries.push(boundary);
                 btrees.push(btree);
             } else {
@@ -55,6 +72,54 @@ fn main() {
 
 fn evaluate<const N: usize>(boundary: &Boundary<N>, others: &[Vec<Halfspace<N>>]) -> bool {
     true
+}
+
+fn save_boundary<const N: usize>(boundary: &Boundary<N>, path: &str) -> io::Result<()> {
+    // let mut f = File::create_new(path)?;
+    let mut f = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(path)?;
+
+    let (boundary_points, boundary_surface): (Vec<Vec<f64>>, Vec<Vec<f64>>) = boundary
+        .iter()
+        .map(|hs| {
+            (
+                (*hs.b).iter().copied().collect(),
+                hs.n.iter().copied().collect(),
+            )
+        })
+        .unzip();
+
+    f.write_all(
+        serde_json::to_string_pretty(&BoundaryData {
+            boundary_points,
+            boundary_surface,
+        })?
+        .as_bytes(),
+    )?;
+    Ok(())
+}
+
+fn load_boundary<const N: usize>(path: &str) -> io::Result<Vec<Halfspace<N>>> {
+    let f = File::open(path)?;
+
+    let BoundaryData {
+        boundary_points,
+        boundary_surface,
+    } = serde_json::from_reader(f)?;
+
+    let boundary = boundary_points
+        .iter()
+        .zip(boundary_surface.iter())
+        .map(|(bv, nv)| Halfspace {
+            b: WithinMode(SVector::from_column_slice(bv)),
+            n: SVector::from_column_slice(nv),
+        })
+        .collect();
+
+    Ok(boundary)
 }
 
 fn explore_network() -> Result<(Vec<Halfspace<2>>, BoundaryRTree<2>)> {
