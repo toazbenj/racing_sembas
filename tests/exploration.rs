@@ -9,7 +9,7 @@ use nalgebra::{vector, SVector};
 use petgraph::graph::NodeIndex;
 use sembas::{
     adherers::const_adherer::ConstantAdhererFactory,
-    boundary_tools::estimation::approx_prediction,
+    boundary_tools::estimation::{approx_mc_volume, approx_prediction},
     explorer_core::Explorer,
     explorers::MeshExplorer,
     sps::Sphere,
@@ -324,4 +324,27 @@ fn prediction_tests() {
             panic!("False Negative for within mode point {x:?}.")
         }
     }
+}
+
+#[test]
+fn volume_mc() {
+    let mut sphere = setup_sphere::<3>();
+    let radius = sphere.radius();
+    // let area = sphere_surface_area(&sphere);
+    let mut expl = setup_mesh_expl(&sphere);
+
+    let timeout = Duration::from_secs(5);
+    let start_time = Instant::now();
+
+    while let Ok(Some(_)) = expl.step(&mut sphere) {
+        if start_time.elapsed() > timeout {
+            panic!("Test exceeded expected time to completion. Mesh explorer got stuck?");
+        }
+    }
+
+    let true_volume = 4.0 / 3.0 * PI * radius.powf(3.0);
+    let est_vol = approx_mc_volume(expl.boundary(), expl.knn_index(), 100, 1, 1);
+
+    let perc_err = (est_vol - true_volume).abs() / true_volume;
+    assert!(perc_err < 0.2, "Excessive error in volume: {perc_err}");
 }
