@@ -1,4 +1,5 @@
-use crate::prelude::{Boundary, BoundaryRTree, Halfspace, KnnNode};
+use crate::prelude::{Boundary, BoundaryRTree, Halfspace, KnnNode, Sample};
+use nalgebra::SVector;
 use rstar::RTree;
 
 pub mod estimation;
@@ -56,6 +57,28 @@ pub fn falls_on_boundary<const N: usize>(
     } else {
         hs.n.dot(&nearest_hs.n) >= 0.0
     }
+}
+
+pub fn approx_prediction<const N: usize>(
+    p: SVector<f64, N>,
+    boundary: &Boundary<N>,
+    btree: &BoundaryRTree<N>,
+    k: u32,
+) -> Sample<N> {
+    let mut cls = true;
+    for (_, neighbor) in (0..k).zip(btree.nearest_neighbor_iter(&p.into())) {
+        let hs = boundary.get(neighbor.data).expect(
+            "Invalid neighbor index used on @boundary. Often a result of @boundary being out of sync or entirely different from @btree."
+        );
+
+        let s = (p - *hs.b).normalize();
+        if s.dot(&hs.n) > 0.0 {
+            cls = false;
+            break;
+        }
+    }
+
+    Sample::from_class(p, cls)
 }
 
 #[cfg(test)]
