@@ -1,8 +1,11 @@
 use nalgebra::{Const, OMatrix, SVector};
 
-use crate::prelude::{
-    Adherer, AdhererFactory, AdhererState, Boundary, BoundaryRTree, Classifier, Halfspace,
-    MeshExplorer, Result, Sample,
+use crate::{
+    prelude::{
+        Adherer, AdhererFactory, AdhererState, Boundary, BoundaryRTree, Classifier, Domain,
+        Halfspace, MeshExplorer, Result, Sample,
+    },
+    search::global_search::{MonteCarloSearch, SearchFactory},
 };
 
 /// Given an initial halfspace, determines a more accurate surface direction and
@@ -98,6 +101,45 @@ pub fn approx_prediction<const N: usize>(
     }
 
     Sample::from_class(p, cls)
+}
+
+/// Estimates the volume of an envelope using Monte Carlo sampling using approximate
+/// predictions.
+/// ## Arguments
+/// * boundary : The boundary of the envelope whose volume is being measured.
+/// * btree : The RTree for the boundary.
+/// * n_samples : How many samples to take for estimating volume. More -> higher
+///   accuracy
+/// * n_neighbors : Varies how many halfspaces should be considered while determining
+///   if a point falls within an envelope. A good default is 1, but with higher
+///   resolution and dimensional boundaries playing with this number may improve
+///   results.
+/// * seed : The seed to use while generating random points for MC.
+/// ## Return
+/// * volume : The volume that lies within the envelope.
+pub fn approx_mc_volume<const N: usize>(
+    boundary: &Boundary<N>,
+    btree: &BoundaryRTree<N>,
+    n_samples: u32,
+    n_neighbors: u32,
+    seed: u64,
+) -> f64 {
+    let point_cloud: Vec<_> = boundary.iter().map(|hs| *hs.b).collect();
+    let domain = Domain::new_from_point_cloud(&point_cloud);
+
+    let mut mc = MonteCarloSearch::new(domain, seed);
+
+    let mut wm_count = 0;
+
+    for _ in 0..n_samples {
+        if approx_prediction(mc.sample(), boundary, btree, n_neighbors).class() {
+            wm_count += 1;
+        }
+    }
+
+    let ratio = wm_count as f64 / n_samples as f64;
+
+    ratio * mc.get_domain().volume()
 }
 
 #[cfg(test)]
