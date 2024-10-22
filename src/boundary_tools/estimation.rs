@@ -1,7 +1,8 @@
 use nalgebra::{Const, OMatrix, SVector};
 
 use crate::prelude::{
-    Adherer, AdhererFactory, AdhererState, Classifier, Halfspace, MeshExplorer, Result, Sample,
+    Adherer, AdhererFactory, AdhererState, Boundary, BoundaryRTree, Classifier, Halfspace,
+    MeshExplorer, Result, Sample,
 };
 
 /// Given an initial halfspace, determines a more accurate surface direction and
@@ -65,6 +66,28 @@ where
     new_n /= count;
 
     Ok((Halfspace { b: hs.b, n: new_n }, neighbors, all_samples))
+}
+
+pub fn approx_prediction<const N: usize>(
+    p: SVector<f64, N>,
+    boundary: &Boundary<N>,
+    btree: &BoundaryRTree<N>,
+    k: u32,
+) -> Sample<N> {
+    let mut cls = true;
+    for (_, neighbor) in (0..k).zip(btree.nearest_neighbor_iter(&p.into())) {
+        let hs = boundary.get(neighbor.data).expect(
+            "Invalid neighbor index used on @boundary. Often a result of @boundary being out of sync or entirely different from @btree."
+        );
+
+        let s = (p - *hs.b).normalize();
+        if s.dot(&hs.n) > 0.0 {
+            cls = false;
+            break;
+        }
+    }
+
+    Sample::from_class(p, cls)
 }
 
 #[cfg(test)]
