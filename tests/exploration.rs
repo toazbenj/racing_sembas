@@ -9,7 +9,7 @@ use nalgebra::{vector, SVector};
 use petgraph::graph::NodeIndex;
 use sembas::{
     adherers::const_adherer::ConstantAdhererFactory,
-    boundary_tools::approx_prediction,
+    boundary_tools::estimation::approx_prediction,
     explorer_core::Explorer,
     explorers::MeshExplorer,
     sps::Sphere,
