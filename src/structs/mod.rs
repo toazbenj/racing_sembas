@@ -85,6 +85,35 @@ impl<const N: usize> Domain<N> {
         Domain { low, high }
     }
 
+    /// Returns the smallest domain to encompass the point cloud. The domain
+    /// represents the upper and lower bound of each dimension for the point cloud.
+    /// ## Arguments
+    /// * cloud : The points to enclose within the domain.
+    /// ## Returns
+    /// * Self : The minimum size Domain that contains all points in @cloud.
+    /// ## Panic
+    /// 1. When cloud is empty.
+    /// 2. When N is 0.
+    pub fn new_from_point_cloud(cloud: &[SVector<f64, N>]) -> Self {
+        let mut lower_bound = *cloud.first().expect("Point cloud is empty.");
+        let mut upper_bound = *cloud.first().expect("Point cloud is empty.");
+
+        for p in cloud.iter() {
+            for (i, &v) in p.iter().enumerate() {
+                if v > upper_bound[i] {
+                    upper_bound[i] = v;
+                } else if v < lower_bound[i] {
+                    lower_bound[i] = v;
+                }
+            }
+        }
+
+        Domain {
+            low: lower_bound,
+            high: upper_bound,
+        }
+    }
+
     /// The lower bound of the domain.
     pub fn low(&self) -> &SVector<f64, N> {
         &self.low
@@ -93,6 +122,12 @@ impl<const N: usize> Domain<N> {
     /// The upper bound of the domain.
     pub fn high(&self) -> &SVector<f64, N> {
         &self.high
+    }
+
+    /// The N-dimensional hypervolume that the domain occupies.
+    pub fn volume(&self) -> f64 {
+        let bounds = self.high - self.low;
+        bounds.iter().product()
     }
 
     /// Checks if the given vector is within the domain.
