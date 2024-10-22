@@ -124,6 +124,12 @@ impl<const N: usize> Domain<N> {
         &self.high
     }
 
+    /// The N-dimensional hypervolume that the domain occupies.
+    pub fn volume(&self) -> f64 {
+        let bounds = self.high - self.low;
+        bounds.iter().product()
+    }
+
     /// Checks if the given vector is within the domain.
     pub fn contains(&self, p: &SVector<f64, N>) -> bool {
         let below_low = SVector::<bool, N>::from_fn(|i, _| p[i] < self.low[i]);
