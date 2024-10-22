@@ -1,4 +1,5 @@
-use crate::prelude::{Boundary, BoundaryRTree, Halfspace, KnnNode};
+use crate::prelude::{Boundary, BoundaryRTree, Halfspace, KnnNode, Sample};
+use nalgebra::SVector;
 use rstar::RTree;
 
 pub mod estimation;
