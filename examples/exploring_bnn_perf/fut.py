@@ -177,7 +177,6 @@ def load_and_explore(args: argparse.Namespace, dataset: FutData, sample_classifi
     for i in range(args.num_networks):
         network = bnn.sample_network()
         client = setup_socket(NDIM)
-        print("Done setup")
 
         samples = []
 
