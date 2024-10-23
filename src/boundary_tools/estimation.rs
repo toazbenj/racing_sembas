@@ -8,6 +8,12 @@ use crate::{
     search::global_search::{MonteCarloSearch, SearchFactory},
 };
 
+#[derive(Clone, Copy)]
+pub enum PredictionMode {
+    Union,
+    Intersection,
+}
+
 /// Given an initial halfspace, determines a more accurate surface direction and
 /// returns the updated halfspace,.
 /// ## Arguments
@@ -97,6 +103,46 @@ pub fn approx_prediction<const N: usize>(
         if s.dot(&hs.n) > 0.0 {
             cls = false;
             break;
+        }
+    }
+
+    Sample::from_class(p, cls)
+}
+
+/// Predicts whether or not some point, @p, will be classified as WithinMode or
+/// OutOfMode according to the explored boundary. As a result, does not require the
+/// classifier for the fut.
+/// ## Arguments
+/// * p : The point to be classified.
+/// * boundary : The explored boundary for the target performance mode.
+/// * btree : The RTree for @boundary.
+/// * k : The number of halfspaces to consider while classifier @p. A good default is
+///   1, but with higher resolution and dimensional boundaries, playing with this
+///   number may improve results.
+pub fn approx_group_prediction<const N: usize>(
+    mode: PredictionMode,
+    p: SVector<f64, N>,
+    group: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    k: u32,
+) -> Sample<N> {
+    let mut cls = match mode {
+        PredictionMode::Union => false,
+        PredictionMode::Intersection => true,
+    };
+    for (boundary, btree) in group.iter() {
+        match mode {
+            PredictionMode::Union => {
+                if approx_prediction(p, boundary, btree, k).class() {
+                    cls = true;
+                    break;
+                }
+            }
+            PredictionMode::Intersection => {
+                if !approx_prediction(p, boundary, btree, k).class() {
+                    cls = false;
+                    break;
+                }
+            }
         }
     }
 
