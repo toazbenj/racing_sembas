@@ -164,21 +164,23 @@ pub fn approx_group_prediction<const N: usize>(
 /// ## Return
 /// * volume : The volume that lies within the envelope.
 pub fn approx_mc_volume<const N: usize>(
-    boundary: &Boundary<N>,
-    btree: &BoundaryRTree<N>,
+    mode: PredictionMode,
+    group: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
     n_samples: u32,
     n_neighbors: u32,
     seed: u64,
 ) -> f64 {
-    let point_cloud: Vec<_> = boundary.iter().map(|hs| *hs.b).collect();
-    let domain = Domain::new_from_point_cloud(&point_cloud);
+    let mut pc: Vec<SVector<f64, N>> = vec![]; //group1.iter().chain(group2).map(|(hs, _)| *hs.b).collect();
 
-    let mut mc = MonteCarloSearch::new(domain, seed);
+    for (boundary, _) in group.iter() {
+        pc.append(&mut boundary.iter().map(|hs| *hs.b).collect());
+    }
 
+    let mut mc = MonteCarloSearch::new(Domain::new_from_point_cloud(&pc), seed);
     let mut wm_count = 0;
 
     for _ in 0..n_samples {
-        if approx_prediction(mc.sample(), boundary, btree, n_neighbors).class() {
+        if approx_group_prediction(mode, mc.sample(), group, n_neighbors).class() {
             wm_count += 1;
         }
     }
