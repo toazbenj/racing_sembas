@@ -1,6 +1,6 @@
 use std::{
     fs::{File, OpenOptions},
-    io::{self, Read, Write},
+    io::{self, Write},
     time::Instant,
 };
 
@@ -8,7 +8,11 @@ use nalgebra::SVector;
 use sembas::{
     api::RemoteClassifier,
     boundary_tools::{
-        bulk_insert_rtree, estimation::approx_surface, falls_on_boundary, get_rtree_from_boundary,
+        bulk_insert_rtree,
+        estimation::{
+            approx_mc_volume, approx_mc_volume_intersection, approx_surface, IntersectionMode,
+        },
+        falls_on_boundary, get_rtree_from_boundary,
     },
     metrics::{boundary_metrics::*, find_chords},
     prelude::*,
@@ -51,12 +55,16 @@ fn main() {
 
     for i in 0..NUM_NETWORKS {
         if let Ok((boundary, btree)) = explore_network() {
-            if boundaries.is_empty() || evaluate(&boundary, &boundaries) {
+            let mut envelopes: Vec<_> = boundaries.iter().zip(btrees.iter()).collect();
+            envelopes.push((&boundary, &btree));
+
+            if evaluate(&boundary, &btree, envelopes.as_slice()) {
                 save_boundary(
                     &boundary,
                     format!(".data/boundaries/boundary_{i}.json").as_str(),
                 )
                 .unwrap();
+
                 boundaries.push(boundary);
                 btrees.push(btree);
             } else {
@@ -70,8 +78,20 @@ fn main() {
     println!("Skiplist: {skiplist:?}");
 }
 
-fn evaluate<const N: usize>(boundary: &Boundary<N>, others: &[Vec<Halfspace<N>>]) -> bool {
-    true
+fn evaluate<const N: usize>(
+    boundary: &Boundary<N>,
+    btree: &BoundaryRTree<N>,
+    others: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+) -> bool {
+    if !others.is_empty() {
+        let (inter_vol, _) =
+            approx_mc_volume_intersection(IntersectionMode::Any, others, 100, 1, 1);
+        let new_env_vol = approx_mc_volume(boundary, btree, 100, 1, 2);
+
+        inter_vol / new_env_vol < 0.5
+    } else {
+        true
+    }
 }
 
 fn save_boundary<const N: usize>(boundary: &Boundary<N>, path: &str) -> io::Result<()> {
