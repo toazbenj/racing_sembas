@@ -8,6 +8,11 @@ use crate::{
     search::global_search::{MonteCarloSearch, SearchFactory},
 };
 
+pub enum IntersectionMode {
+    All,
+    Any,
+}
+
 /// Given an initial halfspace, determines a more accurate surface direction and
 /// returns the updated halfspace,.
 /// ## Arguments
@@ -163,6 +168,7 @@ pub fn approx_mc_volume<const N: usize>(
 /// The total volume is the sum of these voumes. The total volume of an envelop is
 /// the sum of its volume and the intersection volume.
 pub fn approx_mc_volume_intersection<const N: usize>(
+    mode: IntersectionMode,
     boundaries: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
     n_samples: u32,
     n_neighbors: u32,
@@ -186,12 +192,25 @@ pub fn approx_mc_volume_intersection<const N: usize>(
 
     for _ in 0..n_samples {
         let p = mc.sample();
-        let mut all_hit = true;
+        let mut all_hit = match mode {
+            IntersectionMode::All => false,
+            IntersectionMode::Any => true,
+        };
 
         for (boundary, btree) in boundaries.iter() {
-            if !approx_prediction(p, boundary, btree, n_neighbors).class() {
-                all_hit = false;
-                break;
+            match mode {
+                IntersectionMode::All => {
+                    if !approx_prediction(p, boundary, btree, n_neighbors).class() {
+                        all_hit = false;
+                        break;
+                    }
+                }
+                IntersectionMode::Any => {
+                    if approx_prediction(p, boundary, btree, n_neighbors).class() {
+                        all_hit = true;
+                        break;
+                    }
+                }
             }
         }
 
