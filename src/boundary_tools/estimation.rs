@@ -212,15 +212,17 @@ pub fn approx_mc_volume<const N: usize>(
 /// The total volume is the sum of these voumes. The total volume of an envelop is
 /// the sum of its volume and the intersection volume.
 pub fn approx_mc_volume_intersection<const N: usize>(
-    b1: &Boundary<N>,
-    b2: &Boundary<N>,
-    btree1: &BoundaryRTree<N>,
-    btree2: &BoundaryRTree<N>,
+    group1: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    group2: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
     n_samples: u32,
     n_neighbors: u32,
     seed: u64,
 ) -> (f64, f64, f64) {
-    let pc: Vec<_> = b1.iter().chain(b2).map(|hs| *hs.b).collect();
+    let mut pc: Vec<SVector<f64, N>> = vec![]; //group1.iter().chain(group2).map(|(hs, _)| *hs.b).collect();
+
+    for (boundary, _) in group1.iter().chain(group2.iter()) {
+        pc.append(&mut boundary.iter().map(|hs| *hs.b).collect());
+    }
 
     let mut mc = MonteCarloSearch::new(Domain::new_from_point_cloud(&pc), seed);
 
@@ -230,8 +232,8 @@ pub fn approx_mc_volume_intersection<const N: usize>(
 
     for _ in 0..n_samples {
         let p = mc.sample();
-        let cls1 = approx_prediction(p, b1, btree1, n_neighbors).class();
-        let cls2 = approx_prediction(p, b2, btree2, n_neighbors).class();
+        let cls1 = approx_group_prediction(PredictionMode::Union, p, group1, n_neighbors).class();
+        let cls2 = approx_group_prediction(PredictionMode::Union, p, group2, n_neighbors).class();
 
         if cls1 && cls2 {
             both_count += 1;
