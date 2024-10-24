@@ -46,15 +46,15 @@ impl<const N: usize> Sphere<N> {
 }
 
 impl<const N: usize> Classifier<N> for Sphere<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>> {
+    fn classify(&mut self, p: SVector<f64, N>) -> Result<Sample<N>> {
         if let Some(domain) = &self.domain {
-            if !domain.contains(p) {
+            if !domain.contains(&p) {
                 return Err(crate::structs::SamplingError::OutOfBounds);
             }
         }
 
         Ok(Sample::from_class(
-            *p,
+            p,
             (self.center - p).norm() <= self.radius,
         ))
     }
@@ -91,14 +91,14 @@ impl<const N: usize> Cube<N> {
 }
 
 impl<const N: usize> Classifier<N> for Cube<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>> {
+    fn classify(&mut self, p: SVector<f64, N>) -> Result<Sample<N>> {
         if let Some(domain) = &self.domain {
-            if !domain.contains(p) {
+            if !domain.contains(&p) {
                 return Err(crate::structs::SamplingError::OutOfBounds);
             }
         }
 
-        Ok(Sample::from_class(*p, self.shape.contains(p)))
+        Ok(Sample::from_class(p, self.shape.contains(&p)))
     }
 }
 
@@ -126,9 +126,9 @@ impl<const N: usize> SphereCluster<N> {
 }
 
 impl<const N: usize> Classifier<N> for SphereCluster<N> {
-    fn classify(&mut self, p: &SVector<f64, N>) -> Result<Sample<N>> {
+    fn classify(&mut self, p: SVector<f64, N>) -> Result<Sample<N>> {
         if let Some(domain) = &self.domain {
-            if !domain.contains(p) {
+            if !domain.contains(&p) {
                 return Err(crate::structs::SamplingError::OutOfBounds);
             }
         }
@@ -139,6 +139,6 @@ impl<const N: usize> Classifier<N> for SphereCluster<N> {
             };
         }
 
-        Ok(Sample::from_class(*p, false))
+        Ok(Sample::from_class(p, false))
     }
 }
