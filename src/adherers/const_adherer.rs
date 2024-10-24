@@ -78,7 +78,7 @@ impl<const N: usize> ConstantAdherer<N> {
             -self.delta_angle
         };
         self.rot = Some(self.span.get_rotater()(delta_angle));
-        Ok(Sample::from_class(cur, cls))
+        Ok(sample)
     }
 
     fn take_sample<C: Classifier<N>>(
