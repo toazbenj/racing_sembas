@@ -50,7 +50,7 @@ impl<const N: usize> From<WithinMode<N>> for SVector<f64, N> {
 
 impl<const N: usize> From<WithinMode<N>> for [f64; N] {
     fn from(value: WithinMode<N>) -> Self {
-        svector_to_array(value.0)
+        svector_to_array(&value.0)
     }
 }
 
@@ -62,6 +62,6 @@ impl<const N: usize> From<OutOfMode<N>> for SVector<f64, N> {
 
 impl<const N: usize> From<OutOfMode<N>> for [f64; N] {
     fn from(value: OutOfMode<N>) -> Self {
-        svector_to_array(value.0)
+        svector_to_array(&value.0)
     }
 }
