@@ -73,7 +73,7 @@ impl<const N: usize, F: AdhererFactory<N>> MeshExplorer<N, F> {
             let hs = &self.boundary[id];
             let p = *hs.b + self.d * v;
 
-            if !self.check_overlap(p) {
+            if !self.check_overlap(&p) {
                 return Some((*hs, id, v));
             }
         }
@@ -131,11 +131,14 @@ impl<const N: usize, F: AdhererFactory<N>> MeshExplorer<N, F> {
         cardinals
     }
 
-    fn check_overlap(&self, p: SVector<f64, N>) -> bool {
-        let p: [f64; N] = p.into();
+    fn check_overlap(&self, p: &SVector<f64, N>) -> bool {
+        let p: &[f64; N] = p
+            .as_slice()
+            .try_into()
+            .expect("Unable to convert SVector to array");
 
-        if let Some(nearest) = self.knn_index.nearest_neighbor(&p) {
-            array_distance(&p, nearest.geom()) < self.margin
+        if let Some(nearest) = self.knn_index.nearest_neighbor(p) {
+            array_distance(p, nearest.geom()) < self.margin
         } else {
             false
         }
