@@ -363,11 +363,11 @@ mod search_tests {
 
             let c1 = SVector::from_fn(|_, _| 0.15);
             let c2 = SVector::from_fn(|_, _| 0.5);
-            let sphere1 = Sphere::boxed(c1, radius, Some(Domain::normalized()));
-            let sphere2 = Sphere::boxed(c2, radius, Some(Domain::normalized()));
+            let sphere1 = Sphere::new(c1, radius, Some(Domain::normalized()));
+            let sphere2 = Sphere::new(c2, radius, Some(Domain::normalized()));
 
             let mut classifier =
-                SphereCluster::new(vec![*sphere1, *sphere2], Some(Domain::normalized()));
+                SphereCluster::new(vec![sphere1, sphere2], Some(Domain::normalized()));
 
             let v = SVector::<f64, 10>::from_fn(|_, _| 1.0).normalize();
             let b = c1 - v * (radius - d * 0.9);

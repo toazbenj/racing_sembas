@@ -28,10 +28,6 @@ where
     pub fn new(fut: F) -> Self {
         Self { fut }
     }
-
-    pub fn boxed(fut: F) -> Box<Self> {
-        Box::new(Self { fut })
-    }
 }
 
 impl<F, const N: usize> Classifier<N> for FunctionClassifier<F, N>

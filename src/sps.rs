@@ -12,18 +12,6 @@ pub struct Sphere<const N: usize> {
 }
 
 impl<const N: usize> Sphere<N> {
-    pub fn boxed(
-        center: SVector<f64, N>,
-        radius: f64,
-        domain: Option<Domain<N>>,
-    ) -> Box<Sphere<N>> {
-        Box::new(Sphere {
-            center,
-            radius,
-            domain,
-        })
-    }
-
     pub fn new(center: SVector<f64, N>, radius: f64, domain: Option<Domain<N>>) -> Sphere<N> {
         Sphere {
             center,
@@ -66,10 +54,6 @@ pub struct Cube<const N: usize> {
 }
 
 impl<const N: usize> Cube<N> {
-    pub fn boxed(shape: Domain<N>, domain: Option<Domain<N>>) -> Box<Cube<N>> {
-        Box::new(Cube { shape, domain })
-    }
-
     pub fn new(shape: Domain<N>, domain: Option<Domain<N>>) -> Cube<N> {
         Cube { shape, domain }
     }
@@ -108,10 +92,6 @@ pub struct SphereCluster<const N: usize> {
 }
 
 impl<const N: usize> SphereCluster<N> {
-    pub fn boxed(spheres: Vec<Sphere<N>>, domain: Option<Domain<N>>) -> Box<SphereCluster<N>> {
-        Box::new(SphereCluster { spheres, domain })
-    }
-
     pub fn new(spheres: Vec<Sphere<N>>, domain: Option<Domain<N>>) -> Self {
         SphereCluster { spheres, domain }
     }
