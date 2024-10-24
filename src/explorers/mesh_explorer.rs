@@ -6,7 +6,7 @@ use crate::{
     extensions::Queue,
     prelude::{report::ExplorationStatus, KnnNode, NodeID},
     structs::{backprop::Backpropagation, Classifier, Halfspace, Result, Sample, Span},
-    utils::{array_distance, svector_to_array},
+    utils::array_distance,
 };
 use nalgebra::{self, Const, OMatrix, SVector};
 use petgraph::{graph::NodeIndex, visit::EdgeRef, Direction::Incoming, Graph};
@@ -132,7 +132,7 @@ impl<const N: usize, F: AdhererFactory<N>> MeshExplorer<N, F> {
     }
 
     fn check_overlap(&self, p: SVector<f64, N>) -> bool {
-        let p = svector_to_array(p);
+        let p: [f64; N] = p.into();
 
         if let Some(nearest) = self.knn_index.nearest_neighbor(&p) {
             array_distance(&p, nearest.geom()) < self.margin
