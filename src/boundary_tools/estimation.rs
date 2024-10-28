@@ -8,9 +8,10 @@ use crate::{
     search::global_search::{MonteCarloSearch, SearchFactory},
 };
 
-pub enum IntersectionMode {
-    All,
-    Any,
+#[derive(Clone, Copy)]
+pub enum PredictionMode {
+    Union,
+    Intersection,
 }
 
 /// Given an initial halfspace, determines a more accurate surface direction and
@@ -108,6 +109,46 @@ pub fn approx_prediction<const N: usize>(
     Sample::from_class(p, cls)
 }
 
+/// Predicts whether or not some point, @p, will be classified as WithinMode or
+/// OutOfMode according to the explored boundary. As a result, does not require the
+/// classifier for the fut.
+/// ## Arguments
+/// * p : The point to be classified.
+/// * boundary : The explored boundary for the target performance mode.
+/// * btree : The RTree for @boundary.
+/// * k : The number of halfspaces to consider while classifier @p. A good default is
+///   1, but with higher resolution and dimensional boundaries, playing with this
+///   number may improve results.
+pub fn approx_group_prediction<const N: usize>(
+    mode: PredictionMode,
+    p: SVector<f64, N>,
+    group: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    k: u32,
+) -> Sample<N> {
+    let mut cls = match mode {
+        PredictionMode::Union => false,
+        PredictionMode::Intersection => true,
+    };
+    for (boundary, btree) in group.iter() {
+        match mode {
+            PredictionMode::Union => {
+                if approx_prediction(p, boundary, btree, k).class() {
+                    cls = true;
+                    break;
+                }
+            }
+            PredictionMode::Intersection => {
+                if !approx_prediction(p, boundary, btree, k).class() {
+                    cls = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    Sample::from_class(p, cls)
+}
+
 /// Estimates the volume of an envelope using Monte Carlo sampling using approximate
 /// predictions.
 /// ## Arguments
@@ -123,21 +164,23 @@ pub fn approx_prediction<const N: usize>(
 /// ## Return
 /// * volume : The volume that lies within the envelope.
 pub fn approx_mc_volume<const N: usize>(
-    boundary: &Boundary<N>,
-    btree: &BoundaryRTree<N>,
+    mode: PredictionMode,
+    group: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
     n_samples: u32,
     n_neighbors: u32,
     seed: u64,
 ) -> f64 {
-    let point_cloud: Vec<_> = boundary.iter().map(|hs| *hs.b).collect();
-    let domain = Domain::new_from_point_cloud(&point_cloud);
+    let mut pc: Vec<SVector<f64, N>> = vec![]; //group1.iter().chain(group2).map(|(hs, _)| *hs.b).collect();
 
-    let mut mc = MonteCarloSearch::new(domain, seed);
+    for (boundary, _) in group.iter() {
+        pc.append(&mut boundary.iter().map(|hs| *hs.b).collect());
+    }
 
+    let mut mc = MonteCarloSearch::new(Domain::new_from_point_cloud(&pc), seed);
     let mut wm_count = 0;
 
     for _ in 0..n_samples {
-        if approx_prediction(mc.sample(), boundary, btree, n_neighbors).class() {
+        if approx_group_prediction(mode, mc.sample(), group, n_neighbors).class() {
             wm_count += 1;
         }
     }
@@ -168,62 +211,45 @@ pub fn approx_mc_volume<const N: usize>(
 /// The total volume is the sum of these voumes. The total volume of an envelop is
 /// the sum of its volume and the intersection volume.
 pub fn approx_mc_volume_intersection<const N: usize>(
-    mode: IntersectionMode,
-    boundaries: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    group1: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    group2: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
     n_samples: u32,
     n_neighbors: u32,
     seed: u64,
-) -> (f64, f64) {
-    let mut pc = Vec::with_capacity(
-        boundaries
-            .first()
-            .expect("Must have at least one boundary!")
-            .0
-            .len(),
-    );
+) -> (f64, f64, f64) {
+    let mut pc: Vec<SVector<f64, N>> = vec![]; //group1.iter().chain(group2).map(|(hs, _)| *hs.b).collect();
 
-    for (boundary, _) in boundaries.iter() {
-        pc.append(&mut boundary.iter().map(|hs| *hs.b).to_owned().collect());
+    for (boundary, _) in group1.iter().chain(group2.iter()) {
+        pc.append(&mut boundary.iter().map(|hs| *hs.b).collect());
     }
 
     let mut mc = MonteCarloSearch::new(Domain::new_from_point_cloud(&pc), seed);
 
-    let mut all_count = 0;
+    let mut b1_only_count = 0;
+    let mut b2_only_count = 0;
+    let mut both_count = 0;
 
     for _ in 0..n_samples {
         let p = mc.sample();
-        let mut all_hit = match mode {
-            IntersectionMode::All => false,
-            IntersectionMode::Any => true,
-        };
+        let cls1 = approx_group_prediction(PredictionMode::Union, p, group1, n_neighbors).class();
+        let cls2 = approx_group_prediction(PredictionMode::Union, p, group2, n_neighbors).class();
 
-        for (boundary, btree) in boundaries.iter() {
-            match mode {
-                IntersectionMode::All => {
-                    if !approx_prediction(p, boundary, btree, n_neighbors).class() {
-                        all_hit = false;
-                        break;
-                    }
-                }
-                IntersectionMode::Any => {
-                    if approx_prediction(p, boundary, btree, n_neighbors).class() {
-                        all_hit = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if all_hit {
-            all_count += 1;
+        if cls1 && cls2 {
+            both_count += 1;
+        } else if cls1 {
+            b1_only_count += 1;
+        } else if cls2 {
+            b2_only_count += 1;
         }
     }
 
-    let ratio = all_count as f64 / n_samples as f64;
+    let b1_ratio = b1_only_count as f64 / n_samples as f64;
+    let b2_ratio = b2_only_count as f64 / n_samples as f64;
+    let both_ratio = both_count as f64 / n_samples as f64;
 
     let vol = mc.get_domain().volume();
 
-    (ratio * vol, vol)
+    (b1_ratio * vol, b2_ratio * vol, both_ratio * vol)
 }
 
 #[cfg(test)]
