@@ -135,12 +135,17 @@ fn saves_and_loads_results_correctly() {
         }
     }
 
-    const PATH: &str = ".data/tmp.json";
+    const DIR: &str = "tmp-testdata";
+    const FILE_NAME: &str = "tmp.json";
+    let path: String = format!("{DIR}/{FILE_NAME}");
+
+    std::fs::create_dir_all(DIR).unwrap();
+
     let status = expl.describe();
-    status.save(PATH).unwrap();
+    status.save(&path).unwrap();
 
     let loaded_status: ExplorationStatus<10, ConstantAdhererFactory<10>> =
-        ExplorationStatus::load(PATH).unwrap();
+        ExplorationStatus::load(&path).unwrap();
 
     assert!(
         loaded_status
@@ -160,7 +165,8 @@ fn saves_and_loads_results_correctly() {
         "One or more boundary points were incorrectly stored in json?"
     );
 
-    std::fs::remove_file(PATH).unwrap();
+    std::fs::remove_file(&path).unwrap();
+    std::fs::remove_dir_all(DIR).unwrap();
 }
 
 #[test]
