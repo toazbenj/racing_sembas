@@ -9,7 +9,7 @@ use nalgebra::{vector, SVector};
 use petgraph::graph::NodeIndex;
 use sembas::{
     adherers::const_adherer::ConstantAdhererFactory,
-    boundary_tools::estimation::{approx_mc_volume, approx_prediction},
+    boundary_tools::estimation::{approx_mc_volume, approx_prediction, PredictionMode},
     explorer_core::Explorer,
     explorers::MeshExplorer,
     sps::Sphere,
@@ -343,7 +343,13 @@ fn volume_mc() {
     }
 
     let true_volume = 4.0 / 3.0 * PI * radius.powf(3.0);
-    let est_vol = approx_mc_volume(expl.boundary(), expl.knn_index(), 100, 1, 1);
+    let est_vol = approx_mc_volume(
+        PredictionMode::Union,
+        &[(expl.boundary(), expl.knn_index())],
+        100,
+        1,
+        1,
+    );
 
     let perc_err = (est_vol - true_volume).abs() / true_volume;
     assert!(perc_err < 0.2, "Excessive error in volume: {perc_err}");
