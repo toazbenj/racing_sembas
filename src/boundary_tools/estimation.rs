@@ -253,7 +253,7 @@ pub fn approx_mc_volume_intersection<const N: usize>(
 
     let vol = mc.get_domain().volume();
 
-    (b1_ratio * vol, b2_ratio * vol, both_ratio * vol)
+    (both_ratio * vol, b1_ratio * vol, b2_ratio * vol)
 }
 
 #[cfg(test)]
