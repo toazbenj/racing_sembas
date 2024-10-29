@@ -9,12 +9,10 @@ use sembas::{
     api::RemoteClassifier,
     boundary_tools::{
         bulk_insert_rtree,
-        estimation::{
-            approx_mc_volume, approx_mc_volume_intersection, approx_surface, IntersectionMode,
-        },
+        estimation::{approx_mc_volume_intersection, approx_surface},
         falls_on_boundary, get_rtree_from_boundary,
     },
-    metrics::{boundary_metrics::*, find_chords},
+    metrics::find_chords,
     prelude::*,
     search::global_search::*,
     structs::{Classifier, Halfspace},
@@ -49,14 +47,17 @@ struct BoundaryData {
 fn main() {
     const NUM_NETWORKS: u32 = 100;
 
-    let mut boundaries = vec![];
+    let mut boundaries: Vec<Vec<Halfspace<NDIM>>> = vec![];
     let mut btrees = vec![];
     let mut skiplist = vec![];
 
     for i in 0..NUM_NETWORKS {
         if let Ok((boundary, btree)) = explore_network() {
-            let mut envelopes: Vec<_> = boundaries.iter().zip(btrees.iter()).collect();
-            envelopes.push((&boundary, &btree));
+            let envelopes: Vec<(&[Halfspace<NDIM>], &BoundaryRTree<NDIM>)> = boundaries
+                .iter()
+                .zip(btrees.iter())
+                .map(|(b, bt)| (b.as_slice(), bt))
+                .collect();
 
             if evaluate(&boundary, &btree, envelopes.as_slice()) {
                 save_boundary(
@@ -81,16 +82,15 @@ fn main() {
 fn evaluate<const N: usize>(
     boundary: &Boundary<N>,
     btree: &BoundaryRTree<N>,
-    others: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    others: &[(&Boundary<N>, &BoundaryRTree<N>)],
 ) -> bool {
-    if !others.is_empty() {
-        let (inter_vol, _) =
-            approx_mc_volume_intersection(IntersectionMode::Any, others, 100, 1, 1);
-        let new_env_vol = approx_mc_volume(boundary, btree, 100, 1, 2);
-
-        inter_vol / new_env_vol < 0.5
-    } else {
+    if others.is_empty() {
         true
+    } else {
+        let (inter_vol, b_vol, _) =
+            approx_mc_volume_intersection(&[(boundary, btree)], others, 100, 1, 1);
+
+        inter_vol / (inter_vol + b_vol) < 0.1
     }
 }
 
@@ -199,19 +199,19 @@ fn explore_network() -> Result<(Vec<Halfspace<2>>, BoundaryRTree<2>)> {
         full_boundary.append(&mut boundary);
     }
 
-    println!(
-        "It took {}us to run after connecting.",
-        (Instant::now() - start_time).as_micros(),
-    );
+    // println!(
+    //     "It took {}us to run after connecting.",
+    //     (Instant::now() - start_time).as_micros(),
+    // );
 
-    println!(
-        "Metrics summary...\ncurvature: {},\nCoM: {},\nMean Direction: {},\nStd Dev:{},\nRadius: {}",
-        curvature(&full_boundary),
-        center_of_mass(&full_boundary),
-        mean_direction(&full_boundary),
-        boundary_std_dev(&full_boundary).norm(),
-        boundary_radius(&full_boundary),
-    );
+    // println!(
+    //     "Metrics summary...\ncurvature: {},\nCoM: {},\nMean Direction: {},\nStd Dev:{},\nRadius: {}",
+    //     curvature(&full_boundary),
+    //     center_of_mass(&full_boundary),
+    //     mean_direction(&full_boundary),
+    //     boundary_std_dev(&full_boundary).norm(),
+    //     boundary_radius(&full_boundary),
+    // );
 
     if let Some(full_btree) = full_btree {
         Ok((full_boundary, full_btree))

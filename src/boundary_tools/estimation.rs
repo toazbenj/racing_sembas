@@ -122,7 +122,7 @@ pub fn approx_prediction<const N: usize>(
 pub fn approx_group_prediction<const N: usize>(
     mode: PredictionMode,
     p: SVector<f64, N>,
-    group: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    group: &[(&Boundary<N>, &BoundaryRTree<N>)],
     k: u32,
 ) -> Sample<N> {
     let mut cls = match mode {
@@ -165,7 +165,7 @@ pub fn approx_group_prediction<const N: usize>(
 /// * volume : The volume that lies within the envelope.
 pub fn approx_mc_volume<const N: usize>(
     mode: PredictionMode,
-    group: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    group: &[(&Boundary<N>, &BoundaryRTree<N>)],
     n_samples: u32,
     n_neighbors: u32,
     seed: u64,
@@ -211,8 +211,8 @@ pub fn approx_mc_volume<const N: usize>(
 /// The total volume is the sum of these voumes. The total volume of an envelop is
 /// the sum of its volume and the intersection volume.
 pub fn approx_mc_volume_intersection<const N: usize>(
-    group1: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
-    group2: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    group1: &[(&[Halfspace<N>], &BoundaryRTree<N>)],
+    group2: &[(&[Halfspace<N>], &BoundaryRTree<N>)],
     n_samples: u32,
     n_neighbors: u32,
     seed: u64,
