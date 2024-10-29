@@ -77,6 +77,11 @@ where
     Ok((Halfspace { b: hs.b, n: new_n }, neighbors, all_samples))
 }
 
+pub fn is_behind_halfspace<const N: usize>(p: &SVector<f64, N>, hs: &Halfspace<N>) -> bool {
+    let s = (p - *hs.b).normalize();
+    s.dot(&hs.n) < 0.0
+}
+
 /// Predicts whether or not some point, @p, will be classified as WithinMode or
 /// OutOfMode according to the explored boundary. As a result, does not require the
 /// classifier for the fut.
@@ -99,8 +104,7 @@ pub fn approx_prediction<const N: usize>(
             "Invalid neighbor index used on @boundary. Often a result of @boundary being out of sync or entirely different from @btree."
         );
 
-        let s = (p - *hs.b).normalize();
-        if s.dot(&hs.n) > 0.0 {
+        if !is_behind_halfspace(&p, hs) {
             cls = false;
             break;
         }
