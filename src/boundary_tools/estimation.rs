@@ -338,3 +338,33 @@ mod approx_surface {
         );
     }
 }
+
+#[cfg(test)]
+mod approx_mode_prediction {
+    use nalgebra::SVector;
+
+    use crate::{
+        boundary_tools::estimation::is_behind_halfspace,
+        prelude::{Halfspace, WithinMode},
+    };
+
+    #[test]
+    fn is_behind_halfspace_accurately_returns_side() {
+        let hs = Halfspace {
+            b: WithinMode(SVector::repeat(0.5)),
+            n: SVector::<f64, 10>::repeat(1.0).normalize(),
+        };
+
+        let out_of_mode = [SVector::repeat(1.0), SVector::repeat(0.501)];
+        let in_mode = [SVector::zeros(), SVector::repeat(0.499)];
+
+        assert!(
+            in_mode.iter().all(|p| is_behind_halfspace(p, &hs)),
+            "False negative prediction for an in-mode point."
+        );
+        assert!(
+            out_of_mode.iter().all(|p| !is_behind_halfspace(p, &hs)),
+            "False negative prediction for a out-of-mode point."
+        )
+    }
+}
