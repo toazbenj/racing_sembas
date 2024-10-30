@@ -1,6 +1,10 @@
 [package]
 name = "sembas"
-version = "0.1.0"
+description = "This crate provides tools for exploring the edge of a performance mode for complex systems testing, analysis, and optimization. A performance mode is an abstract characteristic of the system, which can be anything from an Autonomous Vehicle's safety, a function throwing exceptions, or a threshold being exceeded. Any form of binary classification of the input space can be used to explore the boundary between the classifications. Applications include falsification, training data generation, region of validity analysis, and much more."
+homepage = "https://github.com/Thomj-Dev/SEMBAS"
+repository = "https://github.com/Thomj-Dev/SEMBAS"
+license = "GPL-3.0 license"
+version = "0.3.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
