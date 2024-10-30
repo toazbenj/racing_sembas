@@ -45,7 +45,7 @@ struct BoundaryData {
 ///   over those that are outside of the region of validity, to further increase
 ///   model performance.
 fn main() {
-    const NUM_NETWORKS: u32 = 100;
+    const NUM_NETWORKS: u32 = 1000;
 
     let mut boundaries: Vec<Vec<Halfspace<NDIM>>> = vec![];
     let mut btrees = vec![];
@@ -87,10 +87,10 @@ fn evaluate<const N: usize>(
     if others.is_empty() {
         true
     } else {
-        let (inter_vol, b_vol, _) =
+        let (inter_vol, b_vol, _other_vol) =
             approx_mc_volume_intersection(&[(boundary, btree)], others, 100, 1, 1);
 
-        inter_vol / (inter_vol + b_vol) < 0.1
+        inter_vol / (inter_vol + b_vol) < 0.2
     }
 }
 
@@ -147,8 +147,6 @@ fn explore_network() -> Result<(Vec<Halfspace<2>>, BoundaryRTree<2>)> {
     // to fut.py client
     let domain = Domain::normalized();
     let mut classifier = RemoteClassifier::<NDIM>::bind("127.0.0.1:2000".to_string()).unwrap();
-
-    let start_time = Instant::now();
 
     println!("Finding initial pair...");
     let bp = find_initial_boundary_pair(&mut classifier, 1000)?;

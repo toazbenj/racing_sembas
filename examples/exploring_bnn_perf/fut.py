@@ -92,7 +92,7 @@ def get_args() -> argparse.Namespace:
         "--num-networks",
         "-n",
         type=int,
-        default=100,
+        default=1000,
         help=(
             "The number of networks to explore. "
             "Doesn't do anything for mode --train.",
