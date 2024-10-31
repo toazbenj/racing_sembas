@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader
 
 
 class ConcreteLinear(nn.Module):
+    "A neural network layer, sampled from a BNN."
+
     def __init__(self, in_features, out_features, weight=None, bias=None):
         super(ConcreteLinear, self).__init__()
         self.linear = nn.Linear(in_features, out_features)
@@ -21,6 +23,8 @@ class ConcreteLinear(nn.Module):
 
 
 class BayesianLinear(nn.Module):
+    "A BNN layer that represents the distribution of the weights for a given layer."
+
     def __init__(self, in_features, out_features):
         super(BayesianLinear, self).__init__()
 
@@ -63,8 +67,9 @@ class BayesianLinear(nn.Module):
         return weight_sample, bias_sample
 
 
-# Define the Bayesian Neural Network
 class BayesianNN(nn.Module):
+    "The full BNN which models the distribution of solutions for a 2D function."
+
     def __init__(self):
         super(BayesianNN, self).__init__()
         self.bayesian_layer1 = BayesianLinear(2, 50)  # 2 inputs (a, b), 50 hidden units
@@ -86,6 +91,7 @@ class BayesianNN(nn.Module):
 
 
 def loss_fn(predictions, targets, model, kl_weight):
+    "Calculates the loss for a BNN"
     mse_loss = nn.MSELoss()(predictions, targets)
     kl_loss = sum(
         [layer.kl for layer in model.modules() if isinstance(layer, BayesianLinear)]
@@ -94,6 +100,7 @@ def loss_fn(predictions, targets, model, kl_weight):
 
 
 def train_bnn(model, optimizer, dataset, kl_weight=1e-6, epochs=1):
+    "Trains the bnn @model using @dataset for @epochs."
     train_data, test_data = train_test_split(dataset, test_size=0.1, shuffle=True)
     test_loss = []
     train_loss = []

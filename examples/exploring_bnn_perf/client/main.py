@@ -125,6 +125,7 @@ if __name__ == "__main__":
 
 
 def train_and_save(dataset: FutData, path: str, model_name: str):
+    "Trains a BNN using @dataset, and saves it under '@path/@model_name'"
     bnn = BayesianNN()
 
     optimizer = optim.Adam(bnn.parameters(), lr=0.01)
@@ -136,6 +137,7 @@ def train_and_save(dataset: FutData, path: str, model_name: str):
 
 
 def load_bnn(path: str):
+    "If a BNN exists under @path, will load and return the BNN model."
     state = torch.load(path, weights_only=True)
     model = BayesianNN()
     model.load_state_dict(state)
@@ -175,6 +177,14 @@ def classify_validity(network: Module, dataset: FutData, x: Tensor):
 
 def load_and_explore(args: argparse.Namespace, dataset: FutData, sample_classifier):
     """
+    This program will load the BNN, sample a network from the BNN, and explore the
+    network's input space. The function will iteratively sample the BNN until
+    args.num_networks number of networks has been explored.
+
+    Before sampling the next network, the remote classifier connection from the
+    main.rs program will be dropped and restarted to indicate that the client must
+    sample the next network. This is a slow process, and is a matter of future work
+    (e.g. adding a 'next' signal or similar).
     """
 
     bnn = load_bnn(f"{args.model_path}/{args.model_name}")
@@ -214,6 +224,7 @@ def load_and_explore(args: argparse.Namespace, dataset: FutData, sample_classifi
 
 
 def get_mode(args: argparse.Namespace) -> str:
+    "Converts the mode arg flags to string"
     if args.full:
         return "full"
     elif args.train:

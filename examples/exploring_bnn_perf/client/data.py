@@ -16,8 +16,13 @@ def f(a: Tensor, b: Tensor) -> Tensor:
 
 
 class FutData(Dataset):
-    def __init__(self, data_size):
+    """
+    Manages the training data for the simple function @f. Includes properties for
+    standardized and unstandardized input and output data. Used in conjunction with
+    pytorch's DataLoader to manage creating training batches.
+    """
 
+    def __init__(self, data_size):
         root = int(np.sqrt(data_size))
         self.data_size = root**2
         if self.data_size != data_size:
@@ -44,21 +49,26 @@ class FutData(Dataset):
 
     @property
     def inputs_std(self):
+        "Standardized inputs"
         return self.inputs
 
     @property
     def inputs_nonstd(self):
+        "Non-standardized inputs"
         return self.input_scaler.inverse_transform(self.inputs)
 
     @property
     def targets_std(self):
+        "Standardized labels"
         return self.targets
 
     @property
     def targets_nonstd(self):
+        "Non-standardized labels"
         return self.target_scaler.inverse_transform(self.targets)
 
     def transform_request(self, x: Tensor) -> Tensor:
+        "Transforms request from SEMBAS to the input domain of a model for @f"
         return self.input_min + x * (self.input_max - self.input_min)
 
     def __len__(self):

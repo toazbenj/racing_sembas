@@ -12,6 +12,7 @@ from data import FutData
 
 
 def loss_graph(test_loss: ndarray, train_loss: ndarray, ax: Axes = None):
+    "Shows the test and training loss history as a graph."
     if ax is None:
         fig, ax = plt.subplots()
     ax.set_xlabel("Training Samples")
@@ -25,6 +26,7 @@ def loss_graph(test_loss: ndarray, train_loss: ndarray, ax: Axes = None):
 
 
 def sample_graph(samples: list[tuple[ndarray, bool]], ax: Axes = None):
+    "Shows the classified sample history. Blue means WithinMode, Red means OutOfMode."
     if ax is None:
         fig, ax = plt.subplots()
 
@@ -44,6 +46,8 @@ def brute_force_search(
     network: Module, dataset: FutData, classifier, n=100, ax: Axes = None
 ):
     """
+    Explores the input-space using a grid search. Visualizes the region of validity
+    as a image, where dark pixels are OutOfMode and bright pixels are WithinMode.
     """
     if ax is None:
         fig, ax = plt.subplots()
