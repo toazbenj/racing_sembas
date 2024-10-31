@@ -13,16 +13,14 @@ import os
 
 import torch.optim as optim
 
-from numpy import ndarray
 from torch import Tensor
 from torch.nn import Module
 
 # Stores the BNN architecture and training logic
-from fut_network import *
-from fut_data import *
-from fut_sembas_api import *
+from network import *
+from data import *
+from sembas_api import *
 
-THRESHOLD = 0.5
 
 
 def get_args() -> argparse.Namespace:
@@ -92,7 +90,7 @@ def get_args() -> argparse.Namespace:
         "--num-networks",
         "-n",
         type=int,
-        default=1000,
+        default=100,
         help=(
             "The number of networks to explore. "
             "Doesn't do anything for mode --train.",
@@ -107,11 +105,11 @@ if __name__ == "__main__":
 
     if get_args().graphics:
         print("Enabled graphics")
-        import fut_graphics as graphics
+        import graphics as graphics
         import matplotlib.pyplot as plt
     else:
         graphics = None
-        import fut_graphics as graphics2
+        import graphics as graphics2
         import matplotlib.pyplot as plt
 
 
@@ -166,7 +164,6 @@ def classify_validity(network: Module, dataset: FutData, x: Tensor):
 
 def load_and_explore(args: argparse.Namespace, dataset: FutData, sample_classifier):
     """
-    This program will
     """
 
     bnn = load_bnn(f"{args.model_path}/{args.model_name}")
@@ -253,14 +250,6 @@ def main(dataset_size: int = 2**10):
         print("Beginning exploration.")
         load_and_explore(args, dataset, classify_validity)
         print("Exploration complete.")
-
-
-def test():
-    bnn = load_bnn(".models/bnn_expl/bnn.model")
-    network = bnn.sample_network()
-
-    graphics.brute_force_search(network, classify_validity)
-    plt.show()
 
 
 if __name__ == "__main__":

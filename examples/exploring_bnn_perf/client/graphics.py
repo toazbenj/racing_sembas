@@ -8,7 +8,7 @@ from torch.nn import Module
 from matplotlib.axes import Axes
 from numpy import ndarray
 
-from fut_data import FutData
+from data import FutData
 
 
 def loss_graph(test_loss: ndarray, train_loss: ndarray, ax: Axes = None):
@@ -43,6 +43,8 @@ def sample_graph(samples: list[tuple[ndarray, bool]], ax: Axes = None):
 def brute_force_search(
     network: Module, dataset: FutData, classifier, n=100, ax: Axes = None
 ):
+    """
+    """
     if ax is None:
         fig, ax = plt.subplots()
 
