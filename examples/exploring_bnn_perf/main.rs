@@ -1,10 +1,8 @@
 use std::{
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     io::{self, Write},
-    time::Instant,
 };
 
-use nalgebra::SVector;
 use sembas::{
     api::RemoteClassifier,
     boundary_tools::{
@@ -120,26 +118,6 @@ fn save_boundary<const N: usize>(boundary: &Boundary<N>, path: &str) -> io::Resu
         .as_bytes(),
     )?;
     Ok(())
-}
-
-fn load_boundary<const N: usize>(path: &str) -> io::Result<Vec<Halfspace<N>>> {
-    let f = File::open(path)?;
-
-    let BoundaryData {
-        boundary_points,
-        boundary_surface,
-    } = serde_json::from_reader(f)?;
-
-    let boundary = boundary_points
-        .iter()
-        .zip(boundary_surface.iter())
-        .map(|(bv, nv)| Halfspace {
-            b: WithinMode(SVector::from_column_slice(bv)),
-            n: SVector::from_column_slice(nv),
-        })
-        .collect();
-
-    Ok(boundary)
 }
 
 fn explore_network() -> Result<(Vec<Halfspace<2>>, BoundaryRTree<2>)> {
