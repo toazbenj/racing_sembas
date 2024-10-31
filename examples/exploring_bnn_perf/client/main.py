@@ -21,6 +21,7 @@ from network import *
 from data import *
 from sembas_api import *
 
+THRESHOLD = None
 
 
 def get_args() -> argparse.Namespace:
@@ -94,6 +95,16 @@ def get_args() -> argparse.Namespace:
         help=(
             "The number of networks to explore. "
             "Doesn't do anything for mode --train.",
+        ),
+    )
+    parser.add_argument(
+        "--thresold",
+        "-l",
+        type=float,
+        default=0.5,
+        help=(
+            "The maximum error for considering an output to be 'valid'. Used to "
+            "classified inputs for finding the region of validity "
         ),
     )
 
@@ -217,6 +228,7 @@ def main(dataset_size: int = 2**10):
 
     dataset = FutData(dataset_size)
     args = get_args()
+    THRESHOLD = args.threshold
 
     pre_trained_exists = os.path.isfile(f"{args.model_path}/{args.model_name}")
     mode = get_mode(args)
