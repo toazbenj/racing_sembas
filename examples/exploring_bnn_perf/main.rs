@@ -175,20 +175,6 @@ fn explore_network() -> Result<(Vec<Halfspace<2>>, BoundaryRTree<2>)> {
         full_boundary.append(&mut boundary);
     }
 
-    // println!(
-    //     "It took {}us to run after connecting.",
-    //     (Instant::now() - start_time).as_micros(),
-    // );
-
-    // println!(
-    //     "Metrics summary...\ncurvature: {},\nCoM: {},\nMean Direction: {},\nStd Dev:{},\nRadius: {}",
-    //     curvature(&full_boundary),
-    //     center_of_mass(&full_boundary),
-    //     mean_direction(&full_boundary),
-    //     boundary_std_dev(&full_boundary).norm(),
-    //     boundary_radius(&full_boundary),
-    // );
-
     if let Some(full_btree) = full_btree {
         Ok((full_boundary, full_btree))
     } else {
@@ -200,7 +186,6 @@ fn explore_boundary<const N: usize, F: AdhererFactory<N>, E: Explorer<N, F>, C: 
     explorer: &mut E,
     classifier: &mut C,
 ) {
-    // while let Ok(Some(_)) = explorer.step(classifier) {}
     loop {
         if let Ok(None) = explorer.step(classifier) {
             break;
