@@ -21,7 +21,7 @@ from network import *
 from data import *
 from sembas_api import *
 
-THRESHOLD = None
+THRESHOLD = 0.5
 
 
 def get_args() -> argparse.Namespace:
