@@ -98,7 +98,7 @@ def get_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--thresold",
+        "--threshold",
         "-l",
         type=float,
         default=0.5,
