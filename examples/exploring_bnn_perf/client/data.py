@@ -71,6 +71,10 @@ class FutData(Dataset):
         "Transforms request from SEMBAS to the input domain of a model for @f"
         return self.input_min + x * (self.input_max - self.input_min)
 
+    def inverse_transform_request(self, x: Tensor) -> Tensor:
+        "Transforms from input domain to SEMBAS request domain (i.e. normalized domain)"
+        return (x - self.input_min) / (self.input_max - self.input_min)
+
     def __len__(self):
         return self.data_size
 
