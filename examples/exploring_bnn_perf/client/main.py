@@ -215,7 +215,7 @@ def load_and_explore(args: argparse.Namespace, dataset: FutData, sample_classifi
             fig, (axl, axr) = plt.subplots(ncols=2)
             fig.tight_layout()
             graphics.sample_graph(samples, ax=axl)
-            graphics.brute_force_search(network, classify_validity, ax=axr)
+            graphics.brute_force_search(network, dataset, classify_validity, ax=axr)
             plt.show()
 
         torch.save(
