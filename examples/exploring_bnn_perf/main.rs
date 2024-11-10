@@ -57,13 +57,13 @@ fn main() {
                 .map(|(b, bt)| (b.as_slice(), bt))
                 .collect();
 
-            if evaluate(&boundary, &btree, envelopes.as_slice()) {
-                save_boundary(
-                    &boundary,
-                    format!(".data/boundaries/boundary_{i}.json").as_str(),
-                )
-                .unwrap();
+            save_boundary(
+                &boundary,
+                format!(".data/boundaries/boundary_{i}.json").as_str(),
+            )
+            .unwrap();
 
+            if evaluate(&boundary, &btree, envelopes.as_slice()) {
                 boundaries.push(boundary);
                 btrees.push(btree);
             } else {
@@ -93,7 +93,6 @@ fn evaluate<const N: usize>(
 }
 
 fn save_boundary<const N: usize>(boundary: &Boundary<N>, path: &str) -> io::Result<()> {
-    // let mut f = File::create_new(path)?;
     let mut f = OpenOptions::new()
         .write(true)
         .create(true)
