@@ -170,7 +170,11 @@ def classify_validity(network: Module, dataset: FutData, x: Tensor):
     model_x = dataset.transform_request(x)
     true_x = dataset.input_scaler.inverse_transform(model_x)
     return (
-        np.power(network(model_x).squeeze().detach().numpy() - f(*true_x.T), 2.0)
+        np.power(
+            network(model_x).squeeze().detach().numpy()
+            - dataset.target_scaler.transform(f(*true_x.T).reshape(1, -1)),
+            2.0,
+        )
         < THRESHOLD
     )
 
