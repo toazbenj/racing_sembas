@@ -1,3 +1,4 @@
+#![cfg(feature = "sps")]
 use std::{
     f64::consts::PI,
     time::{Duration, Instant},

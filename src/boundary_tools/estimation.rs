@@ -33,7 +33,7 @@ pub enum PredictionMode {
 pub fn approx_surface<const N: usize, F, C>(
     d: f64,
     hs: Halfspace<N>,
-    adherer_f: &mut F,
+    adherer_f: &F,
     classifier: &mut C,
 ) -> Result<(Halfspace<N>, Vec<Halfspace<N>>, Vec<Sample<N>>)>
 where
@@ -126,7 +126,7 @@ pub fn approx_prediction<const N: usize>(
 pub fn approx_group_prediction<const N: usize>(
     mode: PredictionMode,
     p: SVector<f64, N>,
-    group: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    group: &[(&Boundary<N>, &BoundaryRTree<N>)],
     k: u32,
 ) -> Sample<N> {
     let mut cls = match mode {
@@ -169,7 +169,7 @@ pub fn approx_group_prediction<const N: usize>(
 /// * volume : The volume that lies within the envelope.
 pub fn approx_mc_volume<const N: usize>(
     mode: PredictionMode,
-    group: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    group: &[(&Boundary<N>, &BoundaryRTree<N>)],
     n_samples: u32,
     n_neighbors: u32,
     seed: u64,
@@ -208,16 +208,15 @@ pub fn approx_mc_volume<const N: usize>(
 ///   resolution and dimensional boundaries playing with this number may improve
 ///   results.
 /// * seed : The seed to use while generating random points for MC.
-/// ## Return (intersection_volume, envelope1_volume, envelope2_volume)
-/// * intersection_volume : The volume that lies in both envelope 1 and 2.
-/// * envelope1_volume : The volume that lies only with envelope1.
-/// * envelope2_volume : The volume that lies only with envelope2.
+/// ## Return (intersection_volume, total_volume)
+/// * intersection_volume : The volume that lies in all envelopes.
+/// * total_volume : The volume of the entire space.
 ///
 /// The total volume is the sum of these voumes. The total volume of an envelop is
 /// the sum of its volume and the intersection volume.
 pub fn approx_mc_volume_intersection<const N: usize>(
-    group1: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
-    group2: &[(&Vec<Halfspace<N>>, &BoundaryRTree<N>)],
+    group1: &[(&[Halfspace<N>], &BoundaryRTree<N>)],
+    group2: &[(&[Halfspace<N>], &BoundaryRTree<N>)],
     n_samples: u32,
     n_neighbors: u32,
     seed: u64,
@@ -248,19 +247,16 @@ pub fn approx_mc_volume_intersection<const N: usize>(
         }
     }
 
-    let ratio1 = b1_only_count as f64 / n_samples as f64;
-    let ratio2 = b2_only_count as f64 / n_samples as f64;
-    let intersect_ratio = both_count as f64 / n_samples as f64;
+    let b1_ratio = b1_only_count as f64 / n_samples as f64;
+    let b2_ratio = b2_only_count as f64 / n_samples as f64;
+    let both_ratio = both_count as f64 / n_samples as f64;
 
     let vol = mc.get_domain().volume();
-    let b1_vol = ratio1 * vol;
-    let b2_vol = ratio2 * vol;
-    let intesect_vol = intersect_ratio * vol;
 
-    (intesect_vol, b1_vol, b2_vol)
+    (both_ratio * vol, b1_ratio * vol, b2_ratio * vol)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "sps"))]
 mod approx_surface {
     use std::f64::consts::PI;
 
@@ -321,10 +317,10 @@ mod approx_surface {
 
         let hs = get_imperfect_hs();
 
-        let mut adh_f = ConstantAdhererFactory::new(5.0f64.to_radians(), None);
+        let adh_f = ConstantAdhererFactory::new(5.0f64.to_radians(), None);
 
-        let (new_hs, _, _) = approx_surface(JUMP_DIST, hs, &mut adh_f, &mut sphere)
-            .expect("Unexpected sampling error");
+        let (new_hs, _, _) =
+            approx_surface(JUMP_DIST, hs, &adh_f, &mut sphere).expect("Unexpected sampling error");
 
         let correct_hs = get_perfect_hs();
 

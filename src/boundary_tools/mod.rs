@@ -19,6 +19,13 @@ pub fn get_rtree_from_boundary<const N: usize>(boundary: &Boundary<N>) -> Bounda
     )
 }
 
+pub fn bulk_insert_rtree<const N: usize>(btree: &mut BoundaryRTree<N>, boundary: &Boundary<N>) {
+    let size = btree.size();
+    for (i, hs) in boundary.iter().enumerate() {
+        btree.insert(KnnNode::new(hs.b.into(), size + i));
+    }
+}
+
 /// Returns true if the provided halfspace @hs is likely to be on the surface of
 /// @boundary. This is an early implementation, and is more of a proof-of-concept
 /// than a robust solution.
