@@ -256,7 +256,7 @@ pub fn approx_mc_volume_intersection<const N: usize>(
     (both_ratio * vol, b1_ratio * vol, b2_ratio * vol)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "sps"))]
 mod approx_surface {
     use std::f64::consts::PI;
 
