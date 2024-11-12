@@ -200,7 +200,7 @@ fn find_initial_boundary_pair<const N: usize, C: Classifier<N>>(
     let mut take_sample = move || {
         let p = search.sample();
         classifier
-            .classify(&p)
+            .classify(p)
             .expect("Invalid sample. Bad global search domain?")
     };
 
