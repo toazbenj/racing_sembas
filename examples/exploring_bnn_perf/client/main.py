@@ -4,6 +4,7 @@ This script depends on:
 * numpy (1.2.x)
 * sklearn
 * matplotlib
+* rtree (for analysis)
 """
 
 import numpy as np
