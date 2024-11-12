@@ -1,6 +1,7 @@
 use std::{
     fs::OpenOptions,
     io::{self, Write},
+    path::Path,
 };
 
 use sembas::{
@@ -93,6 +94,10 @@ fn evaluate<const N: usize>(
 }
 
 fn save_boundary<const N: usize>(boundary: &Boundary<N>, path: &str) -> io::Result<()> {
+    let path = Path::new(path);
+    if let Some(prefix) = path.parent() {
+        std::fs::create_dir_all(prefix);
+    }
     let mut f = OpenOptions::new()
         .write(true)
         .create(true)
