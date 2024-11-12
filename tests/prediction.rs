@@ -72,7 +72,10 @@ fn mode_pred() {
 
     let points: Vec<SVector<f64, NDIM>> = (0..1000).map(|_| mc.sample()).collect();
 
-    let truth: Vec<_> = points.iter().map(|p| sphere.classify(p).unwrap()).collect();
+    let truth: Vec<_> = points
+        .iter()
+        .map(|p| sphere.classify(*p).unwrap())
+        .collect();
     let pred: Vec<_> = points
         .iter()
         .map(|p| approx_prediction(*p, expl.boundary(), expl.knn_index(), 1))
