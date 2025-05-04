@@ -60,8 +60,43 @@ impl<const N: usize> RemoteClassifier<N> {
 
         println!("Got valid config. Ready.");
 
-        let domain = Domain::<N>::normalized();
-        Ok(RemoteClassifier { stream, domain })
+    /// Send a message to the client.
+    ///
+    /// Assertion Error: @msg must not contain a newline character.
+    ///     Do not include newline ('\n') characters in your messages,
+    ///     which is used to determine the end of the line and is automatically
+    ///     appended to your data. To prevent this from causing unexpected
+    ///     runtime defects,
+    ///
+    /// Provides a means of sending custom signals to the client. You can
+    /// send anything, but be sure that the client is prepared to receive these
+    /// messages. Pre-defined messages exist within structs/constants, which are
+    /// already implemented in the provided python api scripts (not yet on pep).
+    pub fn send_msg(&mut self, msg: &str) -> io::Result<()> {
+        assert!(!msg.contains("\n"));
+
+        let message = format!("{}\n", msg);
+        self.stream.write_all(message.as_bytes())?;
+        self.stream.flush()?;
+
+        Ok(())
+    }
+
+    /// Receive a message from the client.
+    ///
+    /// WARNING: Destructive, if recieve_msg is called on a classification response,
+    /// the class will be converted to a ASCII String.
+    ///
+    /// Provides a means of receiving custom signals from the client.
+    /// Pre-defined messages exist within structs/constants, which are
+    /// already implemented in the provided python api scripts (not yet on pep).
+    pub fn receive_msg(&mut self) -> io::Result<String> {
+        let mut reader = BufReader::new(&mut self.stream);
+
+        let mut line = String::new();
+        reader.read_line(&mut line)?;
+
+        Ok(line)
     }
 }
 
