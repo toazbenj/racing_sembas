@@ -2,6 +2,7 @@ use crate::prelude::{Boundary, BoundaryRTree, Halfspace, KnnNode};
 use rstar::RTree;
 
 pub mod estimation;
+pub mod reacquisition;
 
 /// Converts a boundary into an RTree. This is useful when many K-nearest neighbor
 /// searches are needed.
