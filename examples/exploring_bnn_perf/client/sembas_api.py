@@ -56,3 +56,13 @@ def send_response(client: socket.socket, cls: bool):
     "Sends a response to SEMBAS, i.e. the class of the input it requested."
     bool_byte = int(cls).to_bytes(1, byteorder="big")
     client.sendall(bool_byte)
+
+
+def send_message(client: socket.socket, msg: str):
+    f = client.makefile("wb")
+    f.writelines([msg])
+
+
+def receive_message(client: socket.socket) -> str:
+    f = client.makefile("rb")
+    return f.readline()
