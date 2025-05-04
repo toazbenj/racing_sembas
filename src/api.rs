@@ -1,8 +1,9 @@
+use crate::prelude::messagse::{MSG_END, MSG_OK};
 use crate::prelude::Sample;
 use crate::structs::SamplingError;
 use nalgebra::SVector;
-use std::io::Write;
 use std::io::{self, Read};
+use std::io::{BufRead, BufReader, Write};
 use std::net;
 
 use crate::structs::error;
@@ -20,6 +21,19 @@ pub struct RemoteClassifier<const N: usize> {
 }
 
 impl<const N: usize> RemoteClassifier<N> {
+    /// Constructs a RemoteClassifer. Prefer using `bind()` unless you need
+    /// fine-grained control. This is used internally after socket setup.
+    /// During construction, sends OK signal to client.
+    fn new(stream: net::TcpStream) -> Self {
+        let domain = Domain::<N>::normalized();
+        let mut classifier = RemoteClassifier { stream, domain };
+        classifier
+            .send_msg(MSG_OK)
+            .expect("Invalid 'OK' write to stream?");
+
+        classifier
+    }
+
     /// Opens a socket to be connected to by a remote function under test (FUT).  
     /// Once a connection is established, the RemoteClassifier will send the points
     /// to the FUT to be classified, and the FUT will return the resulting class
@@ -54,23 +68,55 @@ impl<const N: usize> RemoteClassifier<N> {
             ));
         }
 
-        stream
-            .write_all("OK\n".as_bytes())
-            .expect("Invalid 'OK' write to stream?");
-
         println!("Got valid config. Ready.");
 
-        let domain = Domain::<N>::normalized();
-        Ok(RemoteClassifier { stream, domain })
+        Ok(RemoteClassifier::new(stream))
+    }
+
+    /// Send a message to the client.
+    ///
+    /// Assertion Error: @msg must not contain a newline character.
+    ///     Do not include newline ('\n') characters in your messages,
+    ///     which is used to determine the end of the line and is automatically
+    ///     appended to your data. To prevent this from causing unexpected
+    ///     runtime defects,
+    ///
+    /// Provides a means of sending custom signals to the client. You can
+    /// send anything, but be sure that the client is prepared to receive these
+    /// messages. Pre-defined messages exist within structs/constants, which are
+    /// already implemented in the provided python api scripts (not yet on pep).
+    pub fn send_msg(&mut self, msg: &str) -> io::Result<()> {
+        assert!(!msg.contains("\n"));
+
+        let message = format!("{}\n", msg);
+        self.stream.write_all(message.as_bytes())?;
+        self.stream.flush()?;
+
+        Ok(())
+    }
+
+    /// Receive a message from the client.
+    ///
+    /// WARNING: Destructive, if recieve_msg is called on a classification response,
+    /// the class will be converted to a ASCII String.
+    ///
+    /// Provides a means of receiving custom signals from the client.
+    /// Pre-defined messages exist within structs/constants, which are
+    /// already implemented in the provided python api scripts (not yet on pep).
+    pub fn receive_msg(&mut self) -> io::Result<String> {
+        let mut reader = BufReader::new(&mut self.stream);
+
+        let mut line = String::new();
+        reader.read_line(&mut line)?;
+
+        Ok(line)
     }
 }
 
 impl<const N: usize> Drop for RemoteClassifier<N> {
     fn drop(&mut self) {
-        let buffer = "end\n".as_bytes();
-        self.stream
-            .write_all(buffer)
-            .expect("Invalid 'end' write to stream?")
+        self.send_msg(MSG_END)
+            .expect("Invalid 'END' write to stream?");
     }
 }
 

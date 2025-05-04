@@ -21,14 +21,14 @@ def wait_until_open(
         i += 1
 
 
-def setup_socket(ndim: int, fail_on_refuse=False):
+def setup_socket(ndim: int, max_attempts: int = None, fail_on_refuse=False):
     "Create the FUT's connection to SEMBAS"
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     if fail_on_refuse:
         client.connect(("127.0.0.1", 2000))
     else:
-        wait_until_open(client)
+        wait_until_open(client, max_attempts)
 
     # send config to remote classifier
     try:
@@ -56,3 +56,13 @@ def send_response(client: socket.socket, cls: bool):
     "Sends a response to SEMBAS, i.e. the class of the input it requested."
     bool_byte = int(cls).to_bytes(1, byteorder="big")
     client.sendall(bool_byte)
+
+
+def send_message(client: socket.socket, msg: str):
+    f = client.makefile("wb")
+    f.writelines([msg])
+
+
+def receive_message(client: socket.socket) -> str:
+    f = client.makefile("rb")
+    return f.readline()
