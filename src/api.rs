@@ -2,7 +2,6 @@ use crate::prelude::messagse::{MSG_END, MSG_OK};
 use crate::prelude::Sample;
 use crate::structs::SamplingError;
 use nalgebra::SVector;
-use std::io::Write;
 use std::io::{self, Read};
 use std::io::{BufRead, BufReader, Write};
 use std::net;
@@ -22,6 +21,19 @@ pub struct RemoteClassifier<const N: usize> {
 }
 
 impl<const N: usize> RemoteClassifier<N> {
+    /// Constructs a RemoteClassifer. Prefer using `bind()` unless you need
+    /// fine-grained control. This is used internally after socket setup.
+    /// During construction, sends OK signal to client.
+    fn new(stream: net::TcpStream) -> Self {
+        let domain = Domain::<N>::normalized();
+        let mut classifier = RemoteClassifier { stream, domain };
+        classifier
+            .send_msg(MSG_OK)
+            .expect("Invalid 'OK' write to stream?");
+
+        classifier
+    }
+
     /// Opens a socket to be connected to by a remote function under test (FUT).  
     /// Once a connection is established, the RemoteClassifier will send the points
     /// to the FUT to be classified, and the FUT will return the resulting class
@@ -56,11 +68,10 @@ impl<const N: usize> RemoteClassifier<N> {
             ));
         }
 
-        stream
-            .write_all("OK\n".as_bytes())
-            .expect("Invalid 'OK' write to stream?");
-
         println!("Got valid config. Ready.");
+
+        Ok(RemoteClassifier::new(stream))
+    }
 
     /// Send a message to the client.
     ///
