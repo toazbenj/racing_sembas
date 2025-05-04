@@ -1,8 +1,10 @@
+use crate::prelude::messagse::{MSG_END, MSG_OK};
 use crate::prelude::Sample;
 use crate::structs::SamplingError;
 use nalgebra::SVector;
 use std::io::Write;
 use std::io::{self, Read};
+use std::io::{BufRead, BufReader, Write};
 use std::net;
 
 use crate::structs::error;
@@ -102,10 +104,8 @@ impl<const N: usize> RemoteClassifier<N> {
 
 impl<const N: usize> Drop for RemoteClassifier<N> {
     fn drop(&mut self) {
-        let buffer = "end\n".as_bytes();
-        self.stream
-            .write_all(buffer)
-            .expect("Invalid 'end' write to stream?")
+        self.send_msg(MSG_END)
+            .expect("Invalid 'END' write to stream?");
     }
 }
 
