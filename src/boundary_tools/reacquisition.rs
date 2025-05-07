@@ -54,20 +54,22 @@ where
 
 /// Attempts to reacquire the EXACT boundary after the FUT has changed in some way.
 ///
-/// "Precise" means find_opposing_boundary is used. This requires more computation time to provide greater
-/// confidence that the boundary that is found is for certain the same as @boundary.
+/// "Incremental" means that fixed-sized jump distances are used across all boundary
+/// points within @boundary.
 ///
 /// ### Return
+/// Ok
 /// - new_boundary : The resultant boundary
 /// - displacements : corresponding displacements for each halfspace in the @boundary
-pub fn reacquire_precise<const N: usize, C>(
+/// ERR : Classifier induced error, generally unexpected unless @domain is
+///     incorret.
+pub fn reacquire_all_incremental<const N: usize, C>(
     classifier: &mut C,
     boundary: &Boundary<N>,
-    domain: Domain<N>,
+    domain: &Domain<N>,
     max_err: f64,
-    num_checks: u32,
-    num_iter: u32,
-) -> Result<(Vec<Halfspace<N>>, Vec<f64>)>
+    samples_per_hs: Option<u32>,
+) -> Result<(Vec<Option<Halfspace<N>>>, Vec<Option<f64>>)>
 where
     C: Classifier<N>,
 {
@@ -75,12 +77,10 @@ where
     let mut displacements = vec![];
 
     for hs in boundary {
-        let b = find_opposing_boundary(
-            max_err, hs.b, hs.n, &domain, classifier, num_checks, num_iter,
-        )?;
-        let s = (b - hs.b).norm();
-        new_boundary.push(Halfspace { b, n: hs.n });
-        displacements.push(s);
+        let result = reacquire_hs_incremental(classifier, hs, domain, max_err, samples_per_hs)?;
+        new_boundary.push(result);
+
+        displacements.push(result.map(|new_hs| (new_hs.b - hs.b).norm()));
     }
 
     Ok((new_boundary, displacements))
