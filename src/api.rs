@@ -1,4 +1,4 @@
-use crate::prelude::messagse::{MSG_END, MSG_OK};
+use crate::prelude::messagse::{MSG_CONTINUE, MSG_END, MSG_OK};
 use crate::prelude::Sample;
 use crate::structs::SamplingError;
 use nalgebra::SVector;
@@ -113,6 +113,28 @@ impl<const N: usize> SembasSession<N> {
     }
 }
 
+impl<const N: usize> Classifier<N> for SembasSession<N> {
+    fn classify(&mut self, p: SVector<f64, N>) -> crate::prelude::Result<Sample<N>> {
+        match &mut self.inbound_mode {
+            ApiInboundMode::None => self.classifier.classify(p),
+            ApiInboundMode::Directed(InboundState::Idle) => {
+                self.inbound_mode = ApiInboundMode::Directed(InboundState::Messaging);
+                self.classifier.classify(p)
+            }
+            ApiInboundMode::Directed(InboundState::Messaging) => {
+                let msg = self.receive_msg()?;
+                if msg == MSG_CONTINUE {
+                    self.inbound_mode = ApiInboundMode::Directed(InboundState::Messaging);
+                    self.classifier.classify(p)
+                } else {
+                    Err(SamplingError::InvalidClassifierResponse(
+                        format!("By initiating a classify() call while in an ApiInboundMode::Direted(InboundState::Messaging) state, a {MSG_CONTINUE} message from client was expected in order to initiate next request. However, received {msg}'"))
+                    )
+                }
+            }
+        }
+    }
+}
 
 /// Allows an external function under test to connect to SEMBAS and request
 /// where to sample next. The classifier can then be called just like any other
