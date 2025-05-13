@@ -51,6 +51,69 @@ pub struct SembasSession<const N: usize> {
     outbound_mode: ApiOutboundMode,
 }
 
+impl<const N: usize> SembasSession<N> {
+    pub fn new(
+        classifier: RemoteClassifier<N>,
+        inbound_mode: ApiInboundMode,
+        outbound_mode: ApiOutboundMode,
+    ) -> Self {
+        Self {
+            classifier,
+            inbound_mode,
+            outbound_mode,
+        }
+    }
+
+    pub fn bind(
+        addr: String,
+        inbound_mode: ApiInboundMode,
+        outbound_mode: ApiOutboundMode,
+    ) -> io::Result<Self> {
+        Ok(Self {
+            classifier: RemoteClassifier::<N>::bind(addr)?,
+            inbound_mode,
+            outbound_mode,
+        })
+    }
+
+    pub fn update_phase(&mut self, phase: &str) -> io::Result<()> {
+        assert!(
+            matches!(&self.outbound_mode, ApiOutboundMode::Phased(_)),
+            "Attempted to send_phase while not in ApiOutboundMode::Phased mode!"
+        );
+
+        self.outbound_mode = ApiOutboundMode::Phased(phase.to_string());
+
+        self.classifier.send_msg(phase)
+    }
+
+    pub fn send_phase(&mut self) -> io::Result<()> {
+        match &self.outbound_mode {
+            ApiOutboundMode::Phased(phase) => self.classifier.send_msg(phase.as_str()),
+            ApiOutboundMode::None => panic!(
+                "Must be in ApiOutboundMode::Phased in order to send phase info back to client!"
+            ),
+        }
+    }
+
+    pub fn receive_msg(&mut self) -> io::Result<String> {
+        assert!(
+            matches!(
+                &self.inbound_mode,
+                ApiInboundMode::Directed(InboundState::Messaging)
+            ),
+            "Attempted to receive_msg while not in ApiInboundMode::Directed(InboundState::Messaging) mode!"
+        );
+
+        let msg = self.classifier.receive_msg()?;
+        if msg == MSG_CONTINUE {
+            self.inbound_mode = ApiInboundMode::Directed(InboundState::Idle);
+        }
+        Ok(msg)
+    }
+}
+
+
 /// Allows an external function under test to connect to SEMBAS and request
 /// where to sample next. The classifier can then be called just like any other
 /// classifier.
