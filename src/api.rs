@@ -12,6 +12,38 @@ use crate::structs::Domain;
 
 const BUFFER_CONFIG_SIZE: usize = 8;
 
+/// Determines how to handle communication to the client.
+///
+/// none: Sends no signals to the client, other than standard
+///     requests (samples to be classified).
+/// phased: Updates the client with the current phase after
+///     each completed request.
+enum ApiOutboundMode {
+    none,
+    phased,
+}
+
+/// Determines how to handle messages from the client.
+///
+/// none: Sends expects no signals from the client, other than
+///     standard responses (classification results).
+/// directed: Expects one or more messages after each completed
+///     request. Only continues AFTER a "CONT" message is received.
+enum ApiInboundMode {
+    none,
+    directed,
+}
+
+/// Represents the communication session with the client FUT.
+///
+/// Allows for complex bi-directional communication through a standardized
+/// communication protocol.
+pub struct SembasSession<const N: usize> {
+    classifier: RemoteClassifier<N>,
+    inbound_mode: ApiInboundMode,
+    outbound_mode: ApiOutboundMode,
+}
+
 /// Allows an external function under test to connect to SEMBAS and request
 /// where to sample next. The classifier can then be called just like any other
 /// classifier.
