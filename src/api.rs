@@ -1,4 +1,4 @@
-use crate::prelude::messagse::{MSG_END, MSG_OK};
+use crate::prelude::messagse::{MSG_CONTINUE, MSG_END, MSG_OK};
 use crate::prelude::Sample;
 use crate::structs::SamplingError;
 use nalgebra::SVector;
@@ -11,6 +11,135 @@ use crate::structs::Classifier;
 use crate::structs::Domain;
 
 const BUFFER_CONFIG_SIZE: usize = 8;
+
+/// While SEMBAS is in a directed outbound mode, it will enter a "messaging"
+/// state after each request.
+pub enum InboundState {
+    Idle,
+    Messaging,
+}
+
+/// Determines how to handle communication to the client.
+///
+/// none: Sends no signals to the client, other than standard
+///     requests (samples to be classified).
+/// phased: Updates the client with the current phase after
+///     each completed request.
+pub enum ApiOutboundMode {
+    None,
+    Phased(String),
+}
+
+/// Determines how to handle messages from the client.
+///
+/// none: Sends expects no signals from the client, other than
+///     standard responses (classification results).
+/// directed: Expects one or more messages after each completed
+///     request. Only continues AFTER a "CONT" message is received.
+pub enum ApiInboundMode {
+    None,
+    Directed(InboundState),
+}
+
+/// Represents the communication session with the client FUT, providing a
+/// simpler way of handling complex interactions between an FUT and SEMBAS.
+///
+/// Allows for complex bi-directional communication through a standardized
+/// communication protocol.
+pub struct SembasSession<const N: usize> {
+    classifier: RemoteClassifier<N>,
+    inbound_mode: ApiInboundMode,
+    outbound_mode: ApiOutboundMode,
+}
+
+impl<const N: usize> SembasSession<N> {
+    pub fn new(
+        classifier: RemoteClassifier<N>,
+        inbound_mode: ApiInboundMode,
+        outbound_mode: ApiOutboundMode,
+    ) -> Self {
+        Self {
+            classifier,
+            inbound_mode,
+            outbound_mode,
+        }
+    }
+
+    pub fn bind(
+        addr: String,
+        inbound_mode: ApiInboundMode,
+        outbound_mode: ApiOutboundMode,
+    ) -> io::Result<Self> {
+        Ok(Self {
+            classifier: RemoteClassifier::<N>::bind(addr)?,
+            inbound_mode,
+            outbound_mode,
+        })
+    }
+
+    pub fn update_phase(&mut self, phase: &str) {
+        assert!(
+            matches!(&self.outbound_mode, ApiOutboundMode::Phased(_)),
+            "Attempted to send_phase while not in ApiOutboundMode::Phased mode!"
+        );
+
+        self.outbound_mode = ApiOutboundMode::Phased(phase.to_string());
+    }
+
+    fn send_phase(&mut self) -> io::Result<()> {
+        match &self.outbound_mode {
+            ApiOutboundMode::Phased(phase) => self.classifier.send_msg(phase.as_str()),
+            ApiOutboundMode::None => panic!(
+                "Must be in ApiOutboundMode::Phased in order to send phase info back to client!"
+            ),
+        }
+    }
+
+    pub fn receive_msg(&mut self) -> io::Result<Option<String>> {
+        assert!(
+            matches!(
+                &self.inbound_mode,
+                ApiInboundMode::Directed(InboundState::Messaging)
+            ),
+            "Attempted to receive_msg while not in ApiInboundMode::Directed(InboundState::Messaging) mode!"
+        );
+
+        let msg = self.classifier.receive_msg()?;
+        if msg == MSG_CONTINUE {
+            self.inbound_mode = ApiInboundMode::Directed(InboundState::Idle);
+            Ok(None)
+        } else {
+            Ok(Some(msg))
+        }
+    }
+}
+
+impl<const N: usize> Classifier<N> for SembasSession<N> {
+    fn classify(&mut self, p: SVector<f64, N>) -> crate::prelude::Result<Sample<N>> {
+        if matches!(self.outbound_mode, ApiOutboundMode::Phased(_)) {
+            self.send_phase()?;
+        }
+
+        match &mut self.inbound_mode {
+            ApiInboundMode::None => self.classifier.classify(p),
+            ApiInboundMode::Directed(InboundState::Idle) => {
+                self.inbound_mode = ApiInboundMode::Directed(InboundState::Messaging);
+                self.classifier.classify(p)
+            }
+            ApiInboundMode::Directed(InboundState::Messaging) => {
+                if let Some(msg) = self.receive_msg()? {
+                    // If some message remains, the protocol has been broken.
+                    Err(SamplingError::InvalidClassifierResponse(
+                        format!("By initiating a classify() call while in an ApiInboundMode::Direted(InboundState::Messaging) state, a {MSG_CONTINUE} message from client was expected in order to initiate next request. However, received {msg}'"))
+                    )
+                } else {
+                    self.inbound_mode = ApiInboundMode::Directed(InboundState::Messaging);
+                    self.classifier.classify(p)
+                }
+            }
+        }
+    }
+}
 
 /// Allows an external function under test to connect to SEMBAS and request
 /// where to sample next. The classifier can then be called just like any other
