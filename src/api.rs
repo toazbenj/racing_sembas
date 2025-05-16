@@ -41,7 +41,8 @@ pub enum ApiInboundMode {
     Directed(InboundState),
 }
 
-/// Represents the communication session with the client FUT.
+/// Represents the communication session with the client FUT, providing a
+/// simpler way of handling complex interactions between an FUT and SEMBAS.
 ///
 /// Allows for complex bi-directional communication through a standardized
 /// communication protocol.
@@ -76,18 +77,16 @@ impl<const N: usize> SembasSession<N> {
         })
     }
 
-    pub fn update_phase(&mut self, phase: &str) -> io::Result<()> {
+    pub fn update_phase(&mut self, phase: &str) {
         assert!(
             matches!(&self.outbound_mode, ApiOutboundMode::Phased(_)),
             "Attempted to send_phase while not in ApiOutboundMode::Phased mode!"
         );
 
         self.outbound_mode = ApiOutboundMode::Phased(phase.to_string());
-
-        self.classifier.send_msg(phase)
     }
 
-    pub fn send_phase(&mut self) -> io::Result<()> {
+    fn send_phase(&mut self) -> io::Result<()> {
         match &self.outbound_mode {
             ApiOutboundMode::Phased(phase) => self.classifier.send_msg(phase.as_str()),
             ApiOutboundMode::None => panic!(
@@ -115,6 +114,10 @@ impl<const N: usize> SembasSession<N> {
 
 impl<const N: usize> Classifier<N> for SembasSession<N> {
     fn classify(&mut self, p: SVector<f64, N>) -> crate::prelude::Result<Sample<N>> {
+        if matches!(self.outbound_mode, ApiOutboundMode::Phased(_)) {
+            self.send_phase()?;
+        }
+
         match &mut self.inbound_mode {
             ApiInboundMode::None => self.classifier.classify(p),
             ApiInboundMode::Directed(InboundState::Idle) => {
