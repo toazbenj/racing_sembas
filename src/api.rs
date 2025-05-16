@@ -95,7 +95,7 @@ impl<const N: usize> SembasSession<N> {
         }
     }
 
-    pub fn receive_msg(&mut self) -> io::Result<String> {
+    pub fn receive_msg(&mut self) -> io::Result<Option<String>> {
         assert!(
             matches!(
                 &self.inbound_mode,
@@ -107,8 +107,10 @@ impl<const N: usize> SembasSession<N> {
         let msg = self.classifier.receive_msg()?;
         if msg == MSG_CONTINUE {
             self.inbound_mode = ApiInboundMode::Directed(InboundState::Idle);
+            Ok(None)
+        } else {
+            Ok(Some(msg))
         }
-        Ok(msg)
     }
 }
 
@@ -125,14 +127,14 @@ impl<const N: usize> Classifier<N> for SembasSession<N> {
                 self.classifier.classify(p)
             }
             ApiInboundMode::Directed(InboundState::Messaging) => {
-                let msg = self.receive_msg()?;
-                if msg == MSG_CONTINUE {
-                    self.inbound_mode = ApiInboundMode::Directed(InboundState::Messaging);
-                    self.classifier.classify(p)
-                } else {
+                if let Some(msg) = self.receive_msg()? {
+                    // If some message remains, the protocol has been broken.
                     Err(SamplingError::InvalidClassifierResponse(
                         format!("By initiating a classify() call while in an ApiInboundMode::Direted(InboundState::Messaging) state, a {MSG_CONTINUE} message from client was expected in order to initiate next request. However, received {msg}'"))
                     )
+                } else {
+                    self.inbound_mode = ApiInboundMode::Directed(InboundState::Messaging);
+                    self.classifier.classify(p)
                 }
             }
         }
