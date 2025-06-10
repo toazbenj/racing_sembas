@@ -19,6 +19,9 @@ pub enum SessionState {
     Incomplete,
 }
 
+/// Provides a bi-direction communication solution that enables the client to send signals
+/// to SEMBAS, and for SEMBAS to inform the client (FUT) what phase it is in (e.g. surface
+/// search).
 pub struct SembasSession<const N: usize> {
     classifier: RemoteClassifier<N>,
     phase: String,
@@ -26,6 +29,7 @@ pub struct SembasSession<const N: usize> {
 }
 
 impl<const N: usize> SembasSession<N> {
+    /// Create a new session from an existing RemoteClassifier.
     pub fn new(classifier: RemoteClassifier<N>, initial_phase: &str) -> io::Result<Self> {
         let mut s = Self {
             classifier,
@@ -38,10 +42,13 @@ impl<const N: usize> SembasSession<N> {
         Ok(s)
     }
 
+    /// Create a new session for a given IP address. Creates a RemoteClassifier with the IP.
     pub fn bind(addr: String, initial_phase: &str) -> io::Result<Self> {
         SembasSession::new(RemoteClassifier::<N>::bind(addr)?, initial_phase)
     }
 
+    /// Update the phase ID, which will be sent to the client prior to next communication
+    /// cycle.
     pub fn update_phase(&mut self, phase: &str) {
         self.phase = phase.to_string();
     }
@@ -50,6 +57,9 @@ impl<const N: usize> SembasSession<N> {
         self.classifier.send_msg(&self.phase)
     }
 
+    /// Listens for a message during Messaging state. If a continue (CONT) signal is
+    /// received, None will be returned. None indicates that the client is waiting for
+    /// a new request.
     pub fn expect_msg(&mut self) -> io::Result<Option<String>> {
         assert!(
             matches!(self.state, SessionState::Messaging),
@@ -154,7 +164,7 @@ impl<const N: usize> Classifier<N> for SembasSession<N> {
 ///
 /// Allows for complex bi-directional communication through a standardized
 /// communication protocol.
-
+///
 /// Allows an external function under test to connect to SEMBAS and request
 /// where to sample next. The classifier can then be called just like any other
 /// classifier.
