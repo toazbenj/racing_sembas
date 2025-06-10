@@ -1,5 +1,5 @@
 use crate::prelude::messagse::{MSG_CONTINUE, MSG_END, MSG_OK};
-use crate::prelude::Sample;
+use crate::prelude::{self, Sample};
 use crate::structs::SamplingError;
 use nalgebra::SVector;
 use std::io::{self, Read};
@@ -25,34 +25,128 @@ pub struct SembasSession<const N: usize> {
     state: SessionState,
 }
 
+impl<const N: usize> SembasSession<N> {
+    pub fn new(classifier: RemoteClassifier<N>, initial_phase: &str) -> io::Result<Self> {
+        let mut s = Self {
+            classifier,
+            state: SessionState::Messaging,
+            phase: initial_phase.to_string(),
+        };
 
-/// While SEMBAS is in a directed outbound mode, it will enter a "messaging"
-/// state after each request.
-pub enum InboundState {
-    Idle,
-    Messaging,
+        s.send_phase()?;
+
+        Ok(s)
+    }
+
+    pub fn bind(addr: String, initial_phase: &str) -> io::Result<Self> {
+        SembasSession::new(RemoteClassifier::<N>::bind(addr)?, initial_phase)
+    }
+
+    pub fn update_phase(&mut self, phase: &str) {
+        self.phase = phase.to_string();
+    }
+
+    fn send_phase(&mut self) -> io::Result<()> {
+        self.classifier.send_msg(&self.phase)
+    }
+
+    pub fn expect_msg(&mut self) -> io::Result<Option<String>> {
+        assert!(
+            matches!(self.state, SessionState::Messaging),
+            "Must be in messaging state to expect messages! State: {:?}",
+            self.state
+        );
+
+        self.send_phase()?;
+
+        let msg = self.classifier.receive_msg()?;
+
+        if msg == MSG_CONTINUE {
+            self.state = SessionState::Requesting;
+            Ok(None)
+        } else {
+            Ok(Some(msg))
+        }
+    }
+
+    /// Bypasses the send_phase() step, assuming phase already received
+    fn direct_msg(&mut self) -> io::Result<Option<String>> {
+        assert!(
+            matches!(self.state, SessionState::Messaging),
+            "Must be in messaging state to expect messages! State: {:?}",
+            self.state
+        );
+
+        let msg = self.classifier.receive_msg()?;
+        if msg == MSG_CONTINUE {
+            Ok(None)
+        } else {
+            Ok(Some(msg))
+        }
+    }
+
+    /// Initiates a new request that handles messaging and phase updates.
+    fn new_request(&mut self, p: SVector<f64, N>) -> prelude::Result<Sample<N>> {
+        println!("Classifying");
+        self.send_phase()?;
+
+        let result = match self.state {
+            SessionState::Messaging => {
+                println!("Auto-handling msg");
+                if let Some(msg) = self.direct_msg()? {
+                    panic!("Attempted classify(...) on messaging state, but client didn't request CONTINUE? Got {msg} msg.");
+                } else {
+                    self.send_phase()?;
+                    println!("Executing classifier {p:?}");
+                    self.classifier.classify(p)
+                    // .inspect_err(|_| self.state = SessionState::Incomplete)
+                }
+            }
+            SessionState::Requesting => {
+                println!("Executing classifier {p:?}");
+                self.classifier.classify(p)
+                // .inspect_err(|_| self.state = SessionState::Incomplete)
+            }
+            SessionState::Incomplete => panic!(
+                "Invalid state, attempted new request when existing request had not completed?"
+            ),
+        };
+        println!("Classification complete");
+
+        match result {
+            Err(SamplingError::OutOfBounds) => self.state = SessionState::Incomplete,
+            _ => self.state = SessionState::Messaging,
+        }
+
+        result
+    }
+
+    /// Continues an existing request that had failed due to out-of-bounds
+    /// errors.
+    fn continue_request(&mut self, p: SVector<f64, N>) -> prelude::Result<Sample<N>> {
+        assert!(
+            matches!(self.state, SessionState::Incomplete),
+            "Attempted to continue a failed request despite not being in Incomplete state?"
+        );
+
+        let result = self.classifier.classify(p);
+
+        match result {
+            Err(SamplingError::OutOfBounds) => (),
+            _ => self.state = SessionState::Messaging,
+        }
+
+        result
+    }
 }
 
-/// Determines how to handle communication to the client.
-///
-/// none: Sends no signals to the client, other than standard
-///     requests (samples to be classified).
-/// phased: Updates the client with the current phase after
-///     each completed request.
-pub enum ApiOutboundMode {
-    None,
-    Phased(String),
-}
-
-/// Determines how to handle messages from the client.
-///
-/// none: Sends expects no signals from the client, other than
-///     standard responses (classification results).
-/// directed: Expects one or more messages after each completed
-///     request. Only continues AFTER a "CONT" message is received.
-pub enum ApiInboundMode {
-    None,
-    Directed(InboundState),
+impl<const N: usize> Classifier<N> for SembasSession<N> {
+    fn classify(&mut self, p: SVector<f64, N>) -> prelude::Result<Sample<N>> {
+        match self.state {
+            SessionState::Messaging | SessionState::Requesting => self.new_request(p),
+            SessionState::Incomplete => self.continue_request(p),
+        }
+    }
 }
 
 /// Represents the communication session with the client FUT, providing a
