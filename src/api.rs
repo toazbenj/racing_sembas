@@ -12,6 +12,20 @@ use crate::structs::Domain;
 
 const BUFFER_CONFIG_SIZE: usize = 8;
 
+#[derive(Clone, Copy, Debug)]
+pub enum SessionState {
+    Messaging,
+    Requesting,
+    Incomplete,
+}
+
+pub struct SembasSession<const N: usize> {
+    classifier: RemoteClassifier<N>,
+    phase: String,
+    state: SessionState,
+}
+
+
 /// While SEMBAS is in a directed outbound mode, it will enter a "messaging"
 /// state after each request.
 pub enum InboundState {
