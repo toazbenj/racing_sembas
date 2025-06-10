@@ -110,6 +110,7 @@ impl<const N: usize> RemoteClassifier<N> {
             stream
                 .write_all(format!("{N}\n").as_bytes())
                 .expect("Invalid N write to stream?");
+            stream.flush()?;
 
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -186,6 +187,7 @@ impl<const N: usize> Classifier<N> for RemoteClassifier<N> {
         // Send request
         let bytes: &[u8] = bytemuck::cast_slice(p.as_slice());
         self.stream.write_all(bytes)?;
+        self.stream.flush()?;
 
         let mut buffer = [0; 1];
         self.stream.read_exact(&mut buffer)?;
