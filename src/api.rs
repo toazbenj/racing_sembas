@@ -158,6 +158,7 @@ impl<const N: usize> RemoteClassifier<N> {
 
         let mut line = String::new();
         reader.read_line(&mut line)?;
+        line = line.trim().to_string();
 
         Ok(line)
     }
