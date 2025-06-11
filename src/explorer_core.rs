@@ -1,5 +1,5 @@
 use crate::{
-    prelude::{report::ExplorationStatus, AdhererFactory},
+    prelude::{report::ExplorationStatus, AdhererFactory, Boundary},
     structs::{Classifier, Halfspace, Result, Sample},
 };
 
@@ -22,6 +22,13 @@ where
     /// * boundary: A Vec<Halfspace<N>>, which contains all of the acquired boundary
     ///   halfspaces found so far.
     fn boundary(&self) -> &Vec<Halfspace<N>>;
+
+    /// Loads a new boundary into the explorer, overwriting the existing boundary.
+    ///
+    /// This is used when the boundary has been mutated, leading to a new boundary
+    /// to be loaded into the explorer.
+    fn load_boundary(&mut self, boundary: Vec<Halfspace<N>>);
+
     fn boundary_owned(self) -> Vec<Halfspace<N>>;
 
     /// Gets the total number of boundary halfspaces found so far.
