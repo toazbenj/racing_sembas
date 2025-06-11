@@ -29,7 +29,7 @@ where
     let mut i = 0;
 
     while max_samples.is_none_or(|m| i < m)
-        && domain.contains(&sample)
+        && domain.contains(&(sample.into_inner() + s))
         && sample.class() == init_cls
     {
         prev_sample = sample;
