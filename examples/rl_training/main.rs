@@ -1,31 +1,28 @@
 use std::{
+    f64::consts::PI,
     fs::OpenOptions,
     io::{self, Write},
     path::Path,
 };
 
+use nalgebra::vector;
 use sembas::{
-    api::RemoteClassifier,
-    boundary_tools::{
-        bulk_insert_rtree,
-        estimation::{approx_mc_volume_intersection, approx_surface},
-        falls_on_boundary, get_rtree_from_boundary,
-    },
-    metrics::find_chords,
-    prelude::*,
+    api::{ApiInboundMode, ApiOutboundMode, InboundState, OutboundState, SembasSession},
+    boundary_tools::{estimation::approx_surface, reacquisition::reacquire_all_incremental},
+    prelude::{bs_adherer::BinarySearchAdhererFactory, *},
     search::{global_search::*, surfacing::binary_surface_search},
     structs::{
         messagse::{MSG_PHASE_BOUNDARY_EXPL, MSG_PHASE_GLOBAL_SEARCH, MSG_PHASE_SURFACE_SEARCH},
-        Classifier, Halfspace,
+        Classifier,
     },
 };
 use serde::{Deserialize, Serialize};
 
-const NDIM: usize = 4;
-const JUMP_DIST: f64 = 0.01;
-const ANGLE: f64 = 0.0873; // 5 deg
+const NDIM: usize = 2;
+// const JUMP_DIST: f64 = 0.075;
+const JUMP_DIST: f64 = 0.02;
+const ANGLE: f64 = 0.3;
 const MSG_REACQUIRE: &str = "REACQ";
-const MSG_CONTINUE: &str = "CONT";
 
 #[derive(Serialize, Deserialize)]
 struct BoundaryData {
@@ -34,34 +31,15 @@ struct BoundaryData {
 }
 
 fn main() {
-    let domain = Domain::normalized();
-    let mut classifier = RemoteClassifier::<NDIM>::bind("127.0.0.1:2000".to_string()).unwrap();
+    let domain = Domain::<NDIM>::normalized();
+    // let mut classifier = RemoteClassifier::<NDIM>::bind("127.0.0.1:2000".to_string()).unwrap();
+    let mut classifier =
+        SembasSession::<NDIM>::bind("127.0.0.1:2000".to_string(), MSG_PHASE_GLOBAL_SEARCH).unwrap();
 
     println!("Finding initial pair...");
-    classifier.send_msg(MSG_PHASE_GLOBAL_SEARCH).unwrap();
+    // classifier
+    // classifier.send_msg(MSG_PHASE_GLOBAL_SEARCH).unwrap();
     let bp = find_initial_boundary_pair(&mut classifier, 1000).unwrap();
-
-    println!("Establishing roots...");
-    classifier.send_msg(MSG_PHASE_SURFACE_SEARCH).unwrap();
-
-    let roots: Vec<Halfspace<NDIM>> =
-        find_chords(JUMP_DIST * 0.25, &bp, NDIM, &domain, &mut classifier)
-            .unwrap()
-            .into_iter()
-            .flat_map(|(a, b)| vec![a, b])
-            .collect();
-
-    println!("Initial bp: {bp:?}");
-    println!("Roots: {roots:?}");
-
-    classifier.send_msg(MSG_PHASE_BOUNDARY_EXPL).unwrap();
-    let mut classifier = RemoteClassifier::<NDIM>::bind("127.0.0.1:2000".to_string()).unwrap();
-
-    println!("Finding initial pair...");
-    let bp = find_initial_boundary_pair(&mut classifier, 1000).unwrap();
-    println!("Establishing root...");
-    // focusing on just a single starting point
-    let root = binary_surface_search(JUMP_DIST, &bp, 100, &mut classifier).unwrap();
 
     // let roots: Vec<Halfspace<NDIM>> =
     //     find_chords(JUMP_DIST * 0.25, &bp, NDIM, &domain, &mut classifier)
@@ -70,15 +48,83 @@ fn main() {
     //         .flat_map(|(a, b)| vec![a, b])
     //         .collect();
 
-    let adh_f = ConstantAdhererFactory::new(ANGLE, None);
+    // println!("Initial bp: {bp:?}");
+    // println!("Roots: {roots:?}");
+    println!("Establishing roots...");
+    classifier.update_phase(MSG_PHASE_SURFACE_SEARCH);
 
-    let hs = match approx_surface(JUMP_DIST, root, &adh_f, &mut classifier) {
+    let root = binary_surface_search(JUMP_DIST, &bp, 100, &mut classifier).unwrap();
+
+    let adh_f = BinarySearchAdhererFactory::new(PI / 2.0, 3);
+    let mut root = match approx_surface(JUMP_DIST, root, &adh_f, &mut classifier) {
         Ok((hs, _, _)) => hs,
         Err(_) => root,
     };
 
-    let mut expl = MeshExplorer::new(JUMP_DIST, hs, JUMP_DIST * 0.8, adh_f);
-    while let Ok(Some(_)) = expl.step(&mut classifier) {}
+    loop {
+        println!("Starting boundary exploration");
+        classifier.update_phase(MSG_PHASE_BOUNDARY_EXPL);
+        let mut expl = MeshExplorer::new(JUMP_DIST, root, JUMP_DIST * 0.8, adh_f);
+
+        loop {
+            match expl.step(&mut classifier) {
+                Ok(None) => panic!("Ran out of boundary to explore before experiment completion."),
+                Err(e) => println!("Got error: {e:?}"),
+                _ => {
+                    if let Some(msg) = classifier.expect_msg().unwrap() {
+                        println!("FUT updated, reacquiring boundary, {msg} (should be reacq)");
+                        if msg != "REACQ" {
+                            panic!("Did not receive request or REACQ message, but got '{msg}' instead?")
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        println!("Saving boundary before reacquisition...");
+        save_boundary(expl.boundary(), ".data/rl-boundary/pre_reacq.json").unwrap();
+
+        println!("Reacquiring boundary");
+        classifier.update_phase(MSG_REACQUIRE);
+        let (boundary_update, distances) = reacquire_all_incremental(
+            &mut classifier,
+            expl.boundary(),
+            &domain,
+            JUMP_DIST / 2.0,
+            None,
+        )
+        .unwrap();
+
+        let movements: Vec<f64> = distances.into_iter().filter_map(|s| s).collect();
+        let net_movement: f64 = movements.iter().sum();
+        let min_movement = movements
+            .iter()
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+        let max_movement = movements
+            .iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+
+        let num_lost = expl.boundary().len() - movements.len();
+        let total_bps = expl.boundary().len();
+
+        println!("Lost {num_lost} out of {total_bps} b points");
+        println!("net movement: {net_movement}");
+        println!("min movement: {min_movement}");
+        println!("max movement: {max_movement}");
+
+        println!("Saving boundary after reacquisition...");
+        let new_boundary: Vec<Halfspace<2>> = boundary_update.iter().filter_map(|x| *x).collect();
+        save_boundary(&new_boundary, ".data/rl-boundary/post_reacq.json").unwrap();
+
+        root = boundary_update
+            .into_iter()
+            .filter_map(|x| x)
+            .next()
+            .expect("Failed to reacquire the boundary");
+    }
 }
 
 fn find_initial_boundary_pair<const N: usize, C: Classifier<N>>(
