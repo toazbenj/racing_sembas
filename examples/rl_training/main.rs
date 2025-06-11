@@ -7,7 +7,7 @@ use std::{
 
 use nalgebra::vector;
 use sembas::{
-    api::{ApiInboundMode, ApiOutboundMode, InboundState, OutboundState, SembasSession},
+    api::SembasSession,
     boundary_tools::{estimation::approx_surface, reacquisition::reacquire_all_incremental},
     prelude::{bs_adherer::BinarySearchAdhererFactory, *},
     search::{global_search::*, surfacing::binary_surface_search},
