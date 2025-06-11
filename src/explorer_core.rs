@@ -1,5 +1,5 @@
 use crate::{
-    prelude::{report::ExplorationStatus, AdhererFactory, Boundary},
+    prelude::{report::ExplorationStatus, AdhererFactory},
     structs::{Classifier, Halfspace, Result, Sample},
 };
 
