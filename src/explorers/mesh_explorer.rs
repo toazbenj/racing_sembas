@@ -2,6 +2,7 @@ use std::{any::type_name, collections::HashMap};
 
 use crate::{
     adherer_core::{Adherer, AdhererFactory, AdhererState},
+    boundary_tools::get_rtree_from_boundary,
     explorer_core::Explorer,
     extensions::Queue,
     prelude::{report::ExplorationStatus, KnnNode, NodeID},
@@ -208,6 +209,34 @@ impl<const N: usize, F: AdhererFactory<N>> Explorer<N, F> for MeshExplorer<N, F>
             &self.boundary,
             None,
         )
+    }
+
+    /// Loads a new boundary into the explorer, overwriting the existing boundary.
+    ///
+    /// This is used when the boundary has been mutated, leading to a new boundary to be loaded into the explorer.
+    ///
+    /// WARNING: This does not perfectly reconstruct grid-like graph structure, it is simply a nearest-neighbor
+    ///          approach to developing the graph.
+    fn load_boundary(&mut self, boundary: Vec<Halfspace<N>>) {
+        assert!(!boundary.is_empty(), "Boundary must be non-empty!");
+        self.knn_index = get_rtree_from_boundary(&boundary);
+        self.adherer = None;
+        self.path_queue = vec![];
+
+        for hs in boundary.iter() {
+            if self.path_queue.is_empty() {
+                self.add_child(*hs, None);
+                continue;
+            }
+
+            if let Some(neighbor) = self.knn_index.nearest_neighbor(&hs.b.into()) {
+                self.add_child(*hs, Some(NodeIndex::new(neighbor.data)));
+            } else {
+                panic!("Unexpected error while loading")
+            }
+        }
+
+        self.boundary = boundary;
     }
 }
 
