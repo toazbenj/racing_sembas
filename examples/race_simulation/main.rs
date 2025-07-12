@@ -1,8 +1,13 @@
-use std::f64::consts::PI;
+use std::{
+    f64::consts::PI,
+    fs::OpenOptions,
+    io::{self, Write},
+    path::Path,
+};
 
 use sembas::{
     api::SembasSession,
-    boundary_tools::estimation::approx_surface,
+    boundary_tools::estimation::{approx_mc_volume, approx_surface, PredictionMode},
     prelude::{bs_adherer::BinarySearchAdhererFactory, *},
     search::{global_search::*, surfacing::binary_surface_search},
     structs::{
@@ -13,6 +18,7 @@ use sembas::{
 use serde::{Deserialize, Serialize};
 
 const NDIM: usize = 2;
+const NUM_BPOINTS: usize = 1000;
 // const JUMP_DIST: f64 = 0.075;
 const JUMP_DIST: f64 = 0.02;
 
@@ -23,7 +29,7 @@ struct BoundaryData {
 }
 
 fn main() {
-    // let domain = Domain::<NDIM>::normalized();
+    let domain = Domain::<NDIM>::normalized();
     // let mut classifier = RemoteClassifier::<NDIM>::bind("127.0.0.1:2000".to_string()).unwrap();
     let mut classifier =
         SembasSession::<NDIM>::bind("127.0.0.1:2000".to_string(), MSG_PHASE_GLOBAL_SEARCH).unwrap();
@@ -45,13 +51,28 @@ fn main() {
 
     let mut expl = MeshExplorer::new(JUMP_DIST, root, JUMP_DIST * 0.8, adh_f);
 
-    loop {
+    for _ in 0..NUM_BPOINTS {
         match expl.step(&mut classifier) {
-            Ok(None) => panic!("Ran out of boundary to explore before experiment completion."),
+            Ok(None) => println!("Ran out of boundary, ending exploration early."),
             Err(e) => println!("Got error: {e:?}"),
             _ => (),
         }
     }
+
+    println!("Saving boundary");
+    save_boundary(expl.boundary(), ".results/boundary.json")
+        .expect("Unexpected failure while saving boundary");
+
+    let volume = approx_mc_volume(
+        PredictionMode::Union,
+        &[(expl.boundary().as_slice(), expl.knn_index())],
+        1000,
+        1,
+        42,
+        Some(&domain),
+    );
+
+    println!("Volume: {volume}");
 }
 
 fn find_initial_boundary_pair<const N: usize, C: Classifier<N>>(
@@ -95,4 +116,35 @@ fn find_initial_boundary_pair<const N: usize, C: Classifier<N>>(
     } else {
         Err(SamplingError::MaxSamplesExceeded)
     }
+}
+
+fn save_boundary<const N: usize>(boundary: &Boundary<N>, path: &str) -> io::Result<()> {
+    let path = Path::new(path);
+    if let Some(prefix) = path.parent() {
+        std::fs::create_dir_all(prefix).unwrap();
+    }
+    let mut f = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(path)?;
+
+    let (boundary_points, boundary_surface): (Vec<Vec<f64>>, Vec<Vec<f64>>) = boundary
+        .iter()
+        .map(|hs| {
+            (
+                (*hs.b).iter().copied().collect(),
+                hs.n.iter().copied().collect(),
+            )
+        })
+        .unzip();
+
+    f.write_all(
+        serde_json::to_string_pretty(&BoundaryData {
+            boundary_points,
+            boundary_surface,
+        })?
+        .as_bytes(),
+    )?;
+    Ok(())
 }
