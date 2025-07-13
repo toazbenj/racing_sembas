@@ -19,25 +19,21 @@ pub fn binary_surface_search<const N: usize, C: Classifier<N>>(
 ) -> Result<Halfspace<N>> {
     let mut p_t = b_pair.t().0;
     let mut p_x = b_pair.x().0;
-    let mut s = (p_x - p_t) / 2.0;
+    let mut s = p_x - p_t;
     let mut i = 0;
 
     while s.norm() > max_err && i < max_samples {
+        s = (p_x - p_t) / 2.0;
+        i += 1;
+
         match classifier.classify(p_t + s)? {
             Sample::WithinMode(_) => p_t += s,
             Sample::OutOfMode(_) => p_x -= s,
         }
-        // if classifier.classify(&(p_t + s))? {
-        //     p_t += s;
-        // } else {
-        //     p_x -= s;
-        // }
-
-        s = (p_x - p_t) / 2.0;
-        i += 1
     }
 
     if i >= max_samples && s.norm() > max_err {
+        println!("Norm: {}", s.norm());
         return Err(SamplingError::MaxSamplesExceeded);
     }
 
