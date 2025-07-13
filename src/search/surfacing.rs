@@ -51,9 +51,10 @@ pub fn binary_surface_search<const N: usize, C: Classifier<N>>(
 
 #[cfg(all(test, feature = "sps"))]
 mod test_surfacer {
-    use nalgebra::SVector;
+    use nalgebra::{vector, SVector};
 
     use crate::{
+        prelude::FunctionClassifier,
         sps::Sphere,
         structs::{BoundaryPair, Classifier, Domain, OutOfMode, SamplingError, WithinMode},
     };
@@ -160,5 +161,35 @@ mod test_surfacer {
             SamplingError::MaxSamplesExceeded,
             "Unexpected error type? Got: {err:?}"
         )
+    }
+
+    #[test]
+    fn finds_boundary_within_max_dist() {
+        let max_err = 0.05;
+        let domain = Domain::<3>::normalized();
+        let mut classifier = FunctionClassifier::new(|x| {
+            if domain.contains(&x) {
+                Ok(x[0] < 0.75)
+            } else {
+                Err(SamplingError::OutOfBounds)
+            }
+        });
+
+        let result = binary_surface_search(
+            max_err,
+            &BoundaryPair::new(
+                WithinMode(vector![0.5, 0.5, 0.5]),
+                OutOfMode(vector![1.0, 0.5, 0.0]),
+            ),
+            20,
+            &mut classifier,
+        )
+        .expect("Got error when expecting results from BSS");
+
+        let dist = (result.b[0] - 0.75).abs();
+        assert!(
+            dist <= max_err,
+            "Got a distance from boundary greater than max dist: {dist} > {max_err}"
+        );
     }
 }
