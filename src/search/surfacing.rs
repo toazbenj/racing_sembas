@@ -107,13 +107,13 @@ mod test_surfacer {
         let d = 0.05;
 
         // a little perturbed from the center
-        let mut t = SVector::from_fn(|_, _| 0.5);
+        let mut t: SVector<f64, D> = SVector::from_fn(|_, _| 0.5);
         t[D - 1] += 0.15;
         let t = WithinMode(t);
-        let mut x = SVector::from_fn(|_, _| 0.15);
+        let mut x: SVector<f64, D> = SVector::from_fn(|_, _| 0.15);
         x[0] += 0.3;
         let x = OutOfMode(x);
-        let max_samples = (DIAMETER / d).log2().ceil() as u32;
+        let max_samples = ((t - x).norm() / d).log2().ceil() as u32;
 
         let hs = binary_surface_search(d, &BoundaryPair::new(t, x), max_samples, &mut sphere)
             .expect("Failed to find boundary within the maximum number of samples ({max_samples})");
