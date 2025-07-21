@@ -22,6 +22,8 @@ const NUM_BPOINTS: usize = 1000;
 // const JUMP_DIST: f64 = 0.075;
 const JUMP_DIST: f64 = 0.02;
 
+const MSG_NEXT_TEST: &str = "NEXT";
+
 #[derive(Serialize, Deserialize)]
 struct BoundaryData {
     boundary_points: Vec<Vec<f64>>,
@@ -39,8 +41,6 @@ fn main() {
         println!("Running new test");
         run_test(&domain, &mut classifier);
     }
-    
-
 }
 
 fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N>) {
@@ -85,6 +85,7 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
     );
     
     println!("Volume: {volume}");
+    classifier.update_phase(MSG_NEXT_TEST);
 }
 
 fn find_initial_boundary_pair<const N: usize, C: Classifier<N>>(
