@@ -65,7 +65,8 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
     for _ in 0..NUM_BPOINTS {
         match expl.step(classifier) {
             Ok(None) => println!("Ran out of boundary, ending exploration early."),
-            Err(e) => println!("Got error: {e:?}"),
+            Err(_) => (),
+            // Err(e) => println!("Got error: {e:?}"),
             _ => (),
         }
     }
