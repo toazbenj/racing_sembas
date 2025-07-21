@@ -36,14 +36,15 @@ fn main() {
     let mut classifier =
         SembasSession::<NDIM>::bind("127.0.0.1:2000".to_string(), MSG_PHASE_GLOBAL_SEARCH).unwrap();
 
-
+    let mut i = 0;
     loop {
         println!("Running new test");
-        run_test(&domain, &mut classifier);
+        run_test(&domain, &mut classifier, i);
+        i += 1;
     }
 }
 
-fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N>) {
+fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N>, i: u32) {
     
     println!("Finding initial pair...");
     // classifier
@@ -72,7 +73,7 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
     }
     
     println!("Saving boundary");
-    save_boundary(expl.boundary(), ".results/boundary.json")
+    save_boundary(expl.boundary(), format!(".results/boundary{i}.json").as_str())
         .expect("Unexpected failure while saving boundary");
     
     let volume = approx_mc_volume(
