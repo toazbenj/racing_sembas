@@ -34,44 +34,55 @@ fn main() {
     let mut classifier =
         SembasSession::<NDIM>::bind("127.0.0.1:2000".to_string(), MSG_PHASE_GLOBAL_SEARCH).unwrap();
 
+
+    loop {
+        println!("Running new test");
+        run_test(&domain, &mut classifier);
+    }
+    
+
+}
+
+fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N>) {
+    
     println!("Finding initial pair...");
     // classifier
-    let bp = find_initial_boundary_pair(&mut classifier, 1000).unwrap();
-
+    let bp = find_initial_boundary_pair(classifier, 1000).unwrap();
+    
     println!("Establishing roots...");
     classifier.update_phase(MSG_PHASE_SURFACE_SEARCH);
-
-    let root = binary_surface_search(JUMP_DIST, &bp, 100, &mut classifier).unwrap();
-
+    
+    let root = binary_surface_search(JUMP_DIST, &bp, 100, classifier).unwrap();
+    
     let adh_f = BinarySearchAdhererFactory::new(PI / 2.0, 3);
-    let root = match approx_surface(JUMP_DIST, root, &adh_f, &mut classifier) {
+    let root = match approx_surface(JUMP_DIST, root, &adh_f, classifier) {
         Ok((hs, _, _)) => hs,
         Err(_) => root,
     };
-
+    
     let mut expl = MeshExplorer::new(JUMP_DIST, root, JUMP_DIST * 0.8, adh_f);
-
+    
     for _ in 0..NUM_BPOINTS {
-        match expl.step(&mut classifier) {
+        match expl.step(classifier) {
             Ok(None) => println!("Ran out of boundary, ending exploration early."),
             Err(e) => println!("Got error: {e:?}"),
             _ => (),
         }
     }
-
+    
     println!("Saving boundary");
     save_boundary(expl.boundary(), ".results/boundary.json")
         .expect("Unexpected failure while saving boundary");
-
+    
     let volume = approx_mc_volume(
         PredictionMode::Union,
         &[(expl.boundary().as_slice(), expl.knn_index())],
         1000,
         1,
         42,
-        Some(&domain),
+        Some(domain),
     );
-
+    
     println!("Volume: {volume}");
 }
 
