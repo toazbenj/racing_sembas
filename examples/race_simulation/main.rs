@@ -11,7 +11,7 @@ use sembas::{
     prelude::{bs_adherer::BinarySearchAdhererFactory, *},
     search::{global_search::*, surfacing::binary_surface_search},
     structs::{
-        messagse::{MSG_PHASE_GLOBAL_SEARCH, MSG_PHASE_SURFACE_SEARCH},
+        messagse::{MSG_PHASE_BOUNDARY_EXPL, MSG_PHASE_GLOBAL_SEARCH, MSG_PHASE_SURFACE_SEARCH},
         Classifier,
     },
 };
@@ -45,25 +45,26 @@ fn main() {
 }
 
 fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N>, i: u32) {
-    
     println!("Finding initial pair...");
     // classifier
+    classifier.update_phase(MSG_PHASE_GLOBAL_SEARCH);
     let bp = find_initial_boundary_pair(classifier, 1000).unwrap();
-    
+
     println!("Establishing roots...");
     classifier.update_phase(MSG_PHASE_SURFACE_SEARCH);
-    
+
     let root = binary_surface_search(JUMP_DIST, &bp, 100, classifier).unwrap();
-    
+
     let adh_f = BinarySearchAdhererFactory::new(PI / 2.0, 3);
     let root = match approx_surface(JUMP_DIST, root, &adh_f, classifier) {
         Ok((hs, _, _)) => hs,
         Err(_) => root,
     };
-    
+
     let mut expl = MeshExplorer::new(JUMP_DIST, root, JUMP_DIST * 0.8, adh_f);
-    
-    for _ in 0..NUM_BPOINTS {
+    classifier.update_phase(MSG_PHASE_BOUNDARY_EXPL);
+
+    while expl.boundary().len() < NUM_BPOINTS {
         match expl.step(classifier) {
             Ok(None) => println!("Ran out of boundary, ending exploration early."),
             Err(_) => (),
@@ -71,20 +72,27 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
             _ => (),
         }
     }
-    
+
+    if expl.boundary().len() >= NUM_BPOINTS {
+        println!("Found desired number of boundary points!");
+    }
+
     println!("Saving boundary");
-    save_boundary(expl.boundary(), format!(".results/boundary{i}.json").as_str())
-        .expect("Unexpected failure while saving boundary");
-    
+    save_boundary(
+        expl.boundary(),
+        format!(".results/boundary{i}.json").as_str(),
+    )
+    .expect("Unexpected failure while saving boundary");
+
     let volume = approx_mc_volume(
         PredictionMode::Union,
         &[(expl.boundary().as_slice(), expl.knn_index())],
         1000,
         1,
-        42,
         Some(domain),
+        42,
     );
-    
+
     println!("Volume: {volume}");
     classifier.update_phase(MSG_NEXT_TEST);
 }
