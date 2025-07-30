@@ -29,7 +29,11 @@ struct BoundaryData {
     boundary_points: Vec<Vec<f64>>,
     boundary_surface: Vec<Vec<f64>>,
 }
-
+#[derive(Serialize, Deserialize)]
+struct Output {
+    volume: Option<f64>,
+    boundary: BoundaryData,
+}
 fn main() {
     let domain = Domain::<NDIM>::normalized();
     // let mut classifier = RemoteClassifier::<NDIM>::bind("127.0.0.1:2000".to_string()).unwrap();
@@ -77,13 +81,6 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
         println!("Found desired number of boundary points!");
     }
 
-    println!("Saving boundary");
-    save_boundary(
-        expl.boundary(),
-        format!(".results/boundary{i}.json").as_str(),
-    )
-    .expect("Unexpected failure while saving boundary");
-
     let volume = approx_mc_volume(
         PredictionMode::Union,
         &[(expl.boundary().as_slice(), expl.knn_index())],
@@ -94,6 +91,14 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
     );
 
     println!("Volume: {volume}");
+    println!("Saving boundary");
+    save_boundary(
+        expl.boundary(),
+        format!(".results/boundary{i}.json").as_str(),
+        Some(volume),
+    )
+    .expect("Unexpected failure while saving boundary");
+
     classifier.update_phase(MSG_NEXT_TEST);
 }
 
@@ -140,7 +145,11 @@ fn find_initial_boundary_pair<const N: usize, C: Classifier<N>>(
     }
 }
 
-fn save_boundary<const N: usize>(boundary: &Boundary<N>, path: &str) -> io::Result<()> {
+fn save_boundary<const N: usize>(
+    boundary: &Boundary<N>,
+    path: &str,
+    volume: Option<f64>,
+) -> io::Result<()> {
     let path = Path::new(path);
     if let Some(prefix) = path.parent() {
         std::fs::create_dir_all(prefix).unwrap();
@@ -162,11 +171,15 @@ fn save_boundary<const N: usize>(boundary: &Boundary<N>, path: &str) -> io::Resu
         .unzip();
 
     f.write_all(
-        serde_json::to_string_pretty(&BoundaryData {
-            boundary_points,
-            boundary_surface,
+        serde_json::to_string_pretty(&Output {
+            volume,
+            boundary: BoundaryData {
+                boundary_points,
+                boundary_surface,
+            },
         })?
         .as_bytes(),
     )?;
+
     Ok(())
 }
