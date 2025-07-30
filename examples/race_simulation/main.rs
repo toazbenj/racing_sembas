@@ -22,7 +22,7 @@ const NUM_BPOINTS: usize = 1000;
 // const JUMP_DIST: f64 = 0.075;
 const JUMP_DIST: f64 = 0.02;
 
-const MSG_NEXT_TEST: &str = "NEXT";
+const MAX_GS: u32 = 10;
 
 #[derive(Serialize, Deserialize)]
 struct BoundaryData {
@@ -52,7 +52,12 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
     println!("Finding initial pair...");
     // classifier
     classifier.update_phase(MSG_PHASE_GLOBAL_SEARCH);
-    let bp = find_initial_boundary_pair(classifier, 1000).unwrap();
+    let bp = if let Ok(bp) = find_initial_boundary_pair(classifier, MAX_GS) {
+        bp
+    } else {
+        println!("Ending early due to no boundary pair found during GS");
+        return;
+    };
 
     println!("Establishing roots...");
     classifier.update_phase(MSG_PHASE_SURFACE_SEARCH);
@@ -65,9 +70,10 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
         Err(_) => root,
     };
 
+    println!("Starting boundary exploration");
+
     let mut expl = MeshExplorer::new(JUMP_DIST, root, JUMP_DIST * 0.8, adh_f);
     classifier.update_phase(MSG_PHASE_BOUNDARY_EXPL);
-
     while expl.boundary().len() < NUM_BPOINTS {
         match expl.step(classifier) {
             Ok(None) => println!("Ran out of boundary, ending exploration early."),
@@ -98,13 +104,11 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
         Some(volume),
     )
     .expect("Unexpected failure while saving boundary");
-
-    classifier.update_phase(MSG_NEXT_TEST);
 }
 
 fn find_initial_boundary_pair<const N: usize, C: Classifier<N>>(
     classifier: &mut C,
-    max_samples: i32,
+    max_samples: u32,
 ) -> Result<BoundaryPair<N>> {
     let mut search = MonteCarloSearch::new(Domain::normalized(), 1);
     let mut take_sample = move || {
