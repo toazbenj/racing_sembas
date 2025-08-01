@@ -76,7 +76,10 @@ fn run_test<const N: usize>(domain: &Domain<N>, classifier: &mut SembasSession<N
     classifier.update_phase(MSG_PHASE_BOUNDARY_EXPL);
     while expl.boundary().len() < NUM_BPOINTS {
         match expl.step(classifier) {
-            Ok(None) => println!("Ran out of boundary, ending exploration early."),
+            Ok(None) => {
+                println!("Ran out of boundary, ending exploration early.");
+                break;
+            }
             Err(_) => (),
             // Err(e) => println!("Got error: {e:?}"),
             _ => (),
