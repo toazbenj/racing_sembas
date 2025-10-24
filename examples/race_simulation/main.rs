@@ -17,12 +17,10 @@ use sembas::{
 };
 use serde::{Deserialize, Serialize};
 
-const NDIM: usize = 2;
-const NUM_BPOINTS: usize = 1000;
-// const JUMP_DIST: f64 = 0.075;
-const JUMP_DIST: f64 = 0.02;
-
-const MAX_GS: u32 = 10;
+const NDIM: usize = 3;
+const NUM_BPOINTS: usize = 250;
+const JUMP_DIST: f64 = 0.07;
+const MAX_GS: u32 = 500;
 
 #[derive(Serialize, Deserialize)]
 struct BoundaryData {
